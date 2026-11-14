@@ -1,0 +1,12 @@
+{
+  "name": "fireline-twilio-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "twilio-agent-connect": "^2.5.0",
+    "dotenv": "^16.4.7"
+  }
+}
