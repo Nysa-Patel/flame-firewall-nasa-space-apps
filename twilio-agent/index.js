@@ -32,6 +32,14 @@ const tac = await TAC.create({ config: TACConfig.fromEnv() });
 const voiceChannel = new VoiceChannel(tac);
 const smsChannel = new SMSChannel(tac);
 
+// Greet first and wait — without this TAC's default greeting can overlap
+// with the caller's own question.
+voiceChannel.onInboundCallTwiml(async () => ({
+  welcomeGreeting:
+    "You've reached FireLine Mission Control. Ask your question — for example, " +
+    'is heptane safe at 30 percent oxygen and 0.7 atmospheres.',
+}));
+
 tac.onMessageReady(async ({ message }) => {
   try {
     const reply = await askFireline(message);
