@@ -1,0 +1,18 @@
+{
+	"name": "fireline-verdict",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	// Hyperdrive binding: gives the code `env.HYPERDRIVE` (a fast, pooled path to Tiger Data).
+	// Create it once with:
+	//   npx wrangler hyperdrive create fireline-tiger --connection-string="<the Tiger Data string>"
+	// then paste the id it prints here. The password lives inside Cloudflare, never in this repo.
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "b0e88202cc5b471f96528a9233e3f656"
+		}
+	]
+}
