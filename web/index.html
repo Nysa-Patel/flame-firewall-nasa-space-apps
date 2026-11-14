@@ -93,10 +93,12 @@
     --pass-t: rgba(69, 210, 195, .14); --caution-t: rgba(246, 180, 69, .14); --fail-t: rgba(255, 138, 122, .16); --none-t: rgba(169, 180, 198, .12);
     --meter-on: var(--on-dark); --meter-off: var(--line-dark);
     --icon-ink: #0b1f3f;
+    /* Motion spring as a CSS linear() curve: no animation library. Snappy, under half a second. */
+    --spring: linear(0, 0.012 1%, 0.05 2.2%, 0.39 7.2%, 0.73 12.8%, 0.96 18%, 1.07 23%, 1.11 28%, 1.07 34%, 1.01 44%, 0.99 56%, 1);
   }
   body { background: var(--grey); color: var(--ink); font: 16px/1.5 "Space Grotesk", system-ui, sans-serif; }
   .shell { max-width: 1220px; margin: 0 auto; padding: 0 16px; position: relative; z-index: 1; }
-  /* interactive background: a particle ribbon behind the hero, painted by WebGL; decoration only */
+  /* interactive background: a ribbon and a continuously drifting mote field, painted by WebGL; decoration only */
   body { position: relative; }
   canvas.wave-gl { position: absolute; top: 0; left: 0; width: 100%; height: 760px; z-index: 0; pointer-events: none; display: block; }
   a { color: inherit; }
@@ -116,9 +118,11 @@
   .pill-dark { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border-radius: 999px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; }
 
   /* hero: huge title with the flame chamber floating over it */
-  .hero { position: relative; padding: 34px 0 30px; overflow-x: clip; }
+  .hero { position: relative; padding: 34px 0 30px; overflow-x: clip; perspective: 900px; }
   .title { font-size: clamp(76px, 17vw, 236px); line-height: .84; font-weight: 700; letter-spacing: -.06em; color: var(--ink); white-space: nowrap; }
-  .orb { position: absolute; left: 73%; top: 46%; width: clamp(180px, 25vw, 300px); aspect-ratio: 1; transform: translate(-50%, -52%); display: grid; place-items: center; }
+  .orb { position: absolute; left: 73%; top: 46%; width: clamp(180px, 25vw, 300px); aspect-ratio: 1; display: grid; place-items: center;
+    transform: translate(-50%, -52%) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transition: transform .45s var(--spring); transform-style: preserve-3d; }
   .orb .chamber { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
     background: radial-gradient(circle at 50% 46%, #1e2a3e 0%, #0a0f18 70%); box-shadow: 0 30px 60px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .12); }
   .orb svg { position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; }
@@ -215,7 +219,8 @@
   @media (max-width: 760px) {
     .topbar nav { display: none; }
     .title { font-size: 19.5vw; }
-    .orb { position: relative; left: auto; top: auto; transform: none; width: 52vw; margin: 3vw auto 0; }
+    .orb { position: relative; left: auto; top: auto; width: 52vw; margin: 3vw auto 0;
+      transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); }
     .hero-row { grid-template-columns: 1fr; }
     .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }
     .panel { padding: 20px; border-radius: 22px; }
@@ -253,8 +258,44 @@
   .settings summary { gap: 6px; --i: var(--i-settings); }
   /* result cards: round badge showing the kind of material (droplet = liquid fuel, stack = solid) */
   .rank h3 { display: flex; align-items: center; gap: 12px; }
-  .rank h3::before { content: ''; flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--card-2) var(--i-stack-2) center / 22px no-repeat; box-shadow: inset 0 0 0 1px var(--line-dark); }
+  .rank h3::before { content: ''; flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--card-2) var(--i-stack-2) center / 22px no-repeat; box-shadow: inset 0 0 0 1px var(--line-dark);
+    transition: translate .45s var(--spring), rotate .45s var(--spring), scale .45s var(--spring); }
   .rank[data-kind=liquid] h3::before { background-image: var(--i-droplet); }
+  /* icons answer the pointer: a spring on hover, and the chosen mission keeps a slow motion of its own */
+  .preset span::before, h2[id]::before, .settings summary::before {
+    transition: translate .45s var(--spring), rotate .45s var(--spring), scale .45s var(--spring); }
+  .preset:hover span::before, .preset:focus-within span::before,
+  h2[id]:hover::before, .settings summary:hover::before { translate: 0 -2px; scale: 1.14; rotate: -8deg; }
+  .preset input[value=iss]:checked + span::before { animation: sat-spin 8s linear infinite; }
+  .preset input[value=lunar]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
+  .preset input[value=suit]:checked + span::before { animation: helm-bob 2.6s ease-in-out infinite; }
+  .preset input[value=custom]:checked + span::before { animation: slider-nudge 2s ease-in-out infinite; }
+  @keyframes sat-spin { to { rotate: 360deg; } }
+  @keyframes moon-rock { 0%, 100% { rotate: -10deg; } 50% { rotate: 12deg; } }
+  @keyframes helm-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+  @keyframes slider-nudge { 0%, 100% { translate: 0 0; } 50% { translate: 3px 0; } }
+  .settings[open] summary::before { rotate: 90deg; }
+  .rank, .inv { transition: translate .45s var(--spring); }
+  @media (hover: hover) {
+    .rank:hover, .inv:hover { translate: 0 -4px; }
+    .rank:hover h3::before { translate: 0 -3px; rotate: -8deg; scale: 1.08; }
+  }
+  .preset span { transition: background-color .35s var(--spring), color .35s var(--spring), border-color .35s var(--spring); }
+  .meter i { transform-origin: center; scale: 1 .35; transition: scale .4s var(--spring), background-color .3s linear; }
+  .meter i.on { scale: 1 1; }
+  .meter i:nth-child(2) { transition-delay: .04s; } .meter i:nth-child(3) { transition-delay: .08s; }
+  .meter i:nth-child(4) { transition-delay: .12s; } .meter i:nth-child(5) { transition-delay: .16s; }
+  .reply { animation: reply-in .4s var(--spring); }
+  @keyframes reply-in { from { opacity: 0; translate: 0 10px; } }
+  .topbar nav a { transition: background-color .3s var(--spring), scale .4s var(--spring); }
+  .topbar nav a:hover { scale: 1.04; }
+  @media (prefers-reduced-motion: reduce) {
+    .preset span::before, h2[id]::before, .settings summary::before, .rank h3::before, .rank, .inv, .meter i, .topbar nav a, .preset span { transition: none; animation: none; }
+    .preset input:checked + span::before { animation: none; }
+    .rank:hover, .inv:hover, .rank:hover h3::before, .preset:hover span::before, h2[id]:hover::before { translate: none; rotate: none; scale: none; }
+    .meter i, .meter i.on { scale: 1; }
+    .reply, .orb svg ellipse:last-of-type { animation: none; }
+  }
 
   /* ===== craft pass: hierarchy, one entrance sequence, tactile buttons, grain ===== */
   ::selection { background: rgba(212, 42, 28, .22); }
@@ -264,7 +305,8 @@
   .facts > div:first-child { border-left: 0; padding-left: 0; }
   .facts b { display: block; font-size: clamp(30px, 4vw, 52px); font-weight: 300; line-height: 1; letter-spacing: -.035em; }
   .facts span { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); max-width: 24ch; }
-  button, .pill-dark, .accent-dot { transition: scale .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s cubic-bezier(.4, 0, .2, 1); }
+  button, .pill-dark, .accent-dot { transition: scale .45s var(--spring), box-shadow .45s var(--spring), translate .45s var(--spring); }
+  .pill-dark, .accent-dot { translate: var(--pull-x, 0px) var(--pull-y, 0px); }
   button:hover:not(:disabled), .pill-dark:hover, .accent-dot:hover { scale: 1.04; box-shadow: 0 10px 24px rgba(11, 27, 51, .18); }
   button:active:not(:disabled), .pill-dark:active, .accent-dot:active { scale: .97; }
   .dark { position: relative; }
@@ -278,9 +320,12 @@
   .title { animation-delay: .1s; } .hero h1 { animation-delay: .32s; } .lede { animation-delay: .42s; } .flame-note { animation-delay: .5s; }
   .accent-dot { animation-delay: .56s; } .facts { animation-delay: .64s; }
   .orb { animation: settle 1.1s cubic-bezier(.22, 1, .36, 1) .22s backwards; }
+  @keyframes orbit-dash { to { stroke-dashoffset: -176; } }
+  .orb svg ellipse:last-of-type { animation: orbit-dash 7s linear infinite; }
   @media (prefers-reduced-motion: reduce) {
     .topbar, .title, .hero h1, .lede, .flame-note, .accent-dot, .facts, .orb { animation: none; }
-    button, .pill-dark, .accent-dot { transition: none; }
+    button, .pill-dark, .accent-dot, .orb { transition: none; }
+    .orb svg ellipse:last-of-type { animation: none; }
   }
   @media (max-width: 760px) {
     .facts > div { padding: 12px 10px 0; }
@@ -499,7 +544,7 @@
     if (reduceMotion() || !el.animate) return;
     const h1 = el.getBoundingClientRect().height; if (h0 === h1) return;
     el.style.overflow = 'hidden';
-    el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 250, easing: 'ease' }).onfinish = () => { el.style.overflow = ''; };
+    el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 400, easing: 'cubic-bezier(.22, 1, .36, 1)' }).onfinish = () => { el.style.overflow = ''; };
   }
   const slug = (s) => s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x';
 
@@ -771,6 +816,31 @@
     card.style.setProperty('--my', (e.clientY - r.top) + 'px');
   }, { passive: true });
 
+  // chamber leans toward the pointer on the same spring as the icons; the ring keeps orbiting in CSS
+  const orb = document.querySelector('.orb');
+  if (orb) {
+    window.addEventListener('pointermove', (e) => {
+      if (reduce()) return;
+      const r = orb.getBoundingClientRect();
+      const dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / 280));
+      const dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / 280));
+      orb.style.setProperty('--tilt-y', (dx * 10).toFixed(2) + 'deg');
+      orb.style.setProperty('--tilt-x', (-dy * 8).toFixed(2) + 'deg');
+    }, { passive: true });
+  }
+  document.querySelectorAll('.accent-dot, .pill-dark').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      if (reduce()) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--pull-x', ((e.clientX - (r.left + r.width / 2)) / r.width * 10).toFixed(1) + 'px');
+      el.style.setProperty('--pull-y', ((e.clientY - (r.top + r.height / 2)) / r.height * 8).toFixed(1) + 'px');
+    });
+    el.addEventListener('pointerleave', () => {
+      el.style.setProperty('--pull-x', '0px');
+      el.style.setProperty('--pull-y', '0px');
+    });
+  });
+
   // ---- WebGL flame: a swirling microgravity fire sphere. Falls back to the CSS flame if WebGL is unavailable. ----
   (function flameGL() {
     const flame = $('flame'), host = flame && flame.parentElement; if (!host) return;
@@ -806,7 +876,22 @@
       '  float lit = .82 + .28 * dot(normalize(vec3(uv / R, .9)), normalize(vec3(-.5, .6, .7)));',
       '  col *= mix(1., lit, body);',
       '  float a = clamp(max(body, halo * .9), 0., 1.);',
-      '  gl_FragColor = vec4(col * a, a);',
+      // same drifting motes as the page background, so the chamber interior moves with the field outside
+      '  vec2 pf = gl_FragCoord.xy + vec2(u_time * 70., sin(u_time * .35) * 10.);',
+      '  float cell = 22.;',
+      '  vec2 mid = floor(pf / cell);',
+      '  vec2 mf = fract(pf / cell) - .5;',
+      '  float mh = hash(mid);',
+      '  vec2 mo = (vec2(hash(mid + 1.7), hash(mid + 8.2)) - .5) * .65;',
+      '  float medge = smoothstep(.5, .18, max(abs(mf.x), abs(mf.y)));',
+      '  float mtw = .55 + .45 * sin(u_time * 2.2 + mh * 6.28318);',
+      '  float mote = smoothstep(.16, .02, length(mf - mo)) * medge * mtw;',
+      '  float inDisc = smoothstep(.5, .4, length(uv));',
+      '  float moteA = mote * inDisc * (1. - body * .85) * .75;',
+      '  vec3 moteC = mix(vec3(.62, .78, 1.), vec3(1., .86, .55), u_t);',
+      '  vec3 prem = col * a + moteC * moteA;',
+      '  float outA = clamp(a + moteA * (1. - a), 0., 1.);',
+      '  gl_FragColor = vec4(prem, outA);',
       '}'].join('\n');
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; };
     const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS); if (!vs || !fs) return;
@@ -856,21 +941,40 @@
       'precision mediump float;',
       'uniform vec2 u_res; uniform float u_time; uniform vec3 u_m;',   // u_m = pointer x, pointer y (0..1, y up), strength
       'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+      // dots travel through the cell and fade at the edge, so they stream instead of blinking in place
+      'float motes(vec2 frag, float t){',
+      '  float cell = 26.;',
+      '  vec2 p = frag + vec2(t * 70., sin(t * .35) * 10.);',
+      '  vec2 id = floor(p / cell);',
+      '  vec2 f = fract(p / cell) - .5;',
+      '  float h = hash(id);',
+      '  vec2 o = (vec2(hash(id + 1.7), hash(id + 8.2)) - .5) * .65;',
+      '  float edge = smoothstep(.5, .18, max(abs(f.x), abs(f.y)));',
+      '  float tw = .55 + .45 * sin(t * 2.2 + h * 6.28318);',
+      '  return smoothstep(.055 + h * .02, 0., length(f - o)) * edge * tw;',
+      '}',
       'void main(){',
       '  vec2 uv = gl_FragCoord.xy / u_res; float x = uv.x * u_res.x / u_res.y;',
-      '  float t = u_time * .1;',
-      '  float m = exp(-pow((uv.x - u_m.x) * 3.4, 2.)) * u_m.z;',                       // how close this column is to the pointer
-      '  float c = .50 + .15 * sin(x * 1.25 + t * 2.) + .07 * sin(x * 2.8 - t * 3.1 + 1.7) + m * (u_m.y - .5) * .42;',
-      '  float w = .17 + .09 * sin(x * 1.05 - t * 1.6 + .6) + .04 * m;',
+      '  float t = u_time;',
+      '  vec2 frag = gl_FragCoord.xy;',
+      '  vec2 mouse = vec2(u_m.x, u_m.y) * u_res;',
+      '  vec2 delta = mouse - frag;',
+      '  vec2 pull = delta * exp(-dot(delta, delta) / 22000.) * .55 * u_m.z;',
+      '  float m = exp(-pow((uv.x - u_m.x) * 3.4, 2.)) * u_m.z;',
+      '  float ribbonT = t * .16;',
+      '  float c = .50 + .15 * sin(x * 1.25 + ribbonT * 2.) + .07 * sin(x * 2.8 - ribbonT * 3.1 + 1.7) + m * (u_m.y - .5) * .42;',
+      '  float w = .17 + .09 * sin(x * 1.05 - ribbonT * 1.6 + .6) + .04 * m;',
       '  float d = (uv.y - c) / w;',
       '  float sheet = smoothstep(1., 0., abs(d)); sheet *= sheet;',
-      '  float fold = .5 + .5 * sin(d * 3.2 + x * 2.1 + t * 4.);',                      // soft folds, like fabric catching light
-      '  float g = hash(floor(gl_FragCoord.xy / 1.6) + floor(u_time * 5.) * 7.);',      // fine dust, re-rolled 5 times a second
-      '  float aS = sheet * (.26 + .30 * fold) * (.72 + .5 * step(.55, g)) * (1. + .5 * m);',
-      '  float aD = smoothstep(1.35, .55, abs(d)) * step(.955, g) * .26;',                 // dust halo around the ribbon
+      '  float fold = .5 + .5 * sin(d * 3.2 + x * 2.1 + ribbonT * 4.);',
+      '  float g = hash(floor(frag / 2.));',
+      '  float aS = sheet * (.20 + .26 * fold) * (.88 + .12 * g) * (1. + .35 * m);',
+      '  float band = smoothstep(1.7, .15, abs(d));',
+      '  float dust = motes(frag + pull, t) + .85 * motes(frag * .72 + 40. + pull * 1.3, t * .75 + 3.);',
+      '  float aD = dust * (.28 + .72 * band) * .55 * (1. + .8 * m);',
       '  vec3 cS = mix(vec3(.30, .50, 1.), vec3(.78, .87, 1.), fold);',
-      '  vec3 cD = vec3(.05, .12, .26);',
-      '  float fade = smoothstep(0., .32, uv.y) * smoothstep(1., .82, uv.y);',
+      '  vec3 cD = vec3(.08, .18, .42);',
+      '  float fade = smoothstep(0., .18, uv.y) * smoothstep(1., .78, uv.y);',
       '  aS *= fade; aD *= fade;',
       '  float a = clamp(aS + aD, 0., .6);',
       '  gl_FragColor = vec4(cS * aS + cD * aD, a);',
