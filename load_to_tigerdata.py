@@ -115,9 +115,16 @@ def normalize_date(raw_value):
         return None
     for fmt in DATE_FORMATS:
         try:
-            return datetime.strptime(s, fmt)
+            parsed = datetime.strptime(s, fmt)
         except ValueError:
             continue
+        # Sanity clamp: PSI's own source CSVs have at least one typo'd year
+        # (e.g. "5/15/2103" in the BASS data). Combustion research on PSI
+        # predates this challenge, so anything outside this window is a
+        # data-entry error upstream, not a real test date.
+        if 1960 <= parsed.year <= 2026:
+            return parsed
+        return None
     return None
 
 
