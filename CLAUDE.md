@@ -20,14 +20,20 @@ Will a material burn in a given spacecraft atmosphere? Answered from real NASA P
 
 ### Design
 
-- Direction: ISS interior, not sci-fi. Light cool-grey panel background, blue-black ink, one accent: the blue of a microgravity flame. The hero's combustion-chamber viewport with the flame sphere that reacts to the oxygen field is the single bold element; everything else stays quiet.
+- Direction: white and NASA red (chosen 14 Nov 2026). A huge navy "FireLine." title on a white-grey top section with the flame chamber beside it, then a deep navy section holding results, investigations and chat as navy cards. Pill-shaped buttons and presets.
 - Tokens live in `:root` in `web/index.html`; use them, do not hardcode new colors.
-  - Paper `#eef1f4`, surface `#ffffff`, ink `#14202b`, secondary ink `#51616f`, rules `#d3dbe2` / `#aab6c2`.
-  - Accent (microgravity flame blue) `#1f5eea` with tint `#e3ecff`. Verdicts: pass `#157a4e`, caution `#9c6208`, fail `#bf3129`, no data `#66727f`, each with a matching `-tint` fill.
-- Type: Archivo variable from Google Fonts, one family. Width axis does the hierarchy: condensed heavy (`font-stretch` 72–88%) for the headline, section headings and verdict words; regular width for body. Tabular numerals on. Monospace only for the worker URL field.
-- Structure over decoration: rules between rows instead of cards, no all-caps eyebrow labels, no middle-dot meta strings, sentence case everywhere including verdict words. Rank numbers are allowed because the ranking is a real sequence.
-- Verdicts are always the word plus color plus the evidence line. Never rely on color alone to convey meaning.
-- Motion: only the flame's size and color transition when oxygen changes, and it respects `prefers-reduced-motion`. No entrance animations.
+  - Light section: grey `#eef1f5`, paper `#ffffff`, navy ink `#0b1b33`, secondary ink `#47556b`. Navy section: `#0b1f3f`, cards `#132b52` / `#1b3766`, text `#f2f5fa`, secondary `#b6c3d8`.
+  - Accent red `#d42a1c` with white text is for actions in the light section only (Rank materials, How it works, the orbit line). In the navy section red means Fail and nothing else: buttons there are white, links and focus rings are sky blue `#9cc4ff`.
+  - Verdicts on navy: pass teal `#45d2c3`, caution amber `#f6b445`, fail coral `#ff8a7a`, no data `#a9b4c6`.
+- Icons are Tabler Icons (MIT) fetched once from Iconify and inlined as CSS variables (`--i-*`), so there is no runtime dependency. Presets, section headings and Settings use them as masks; result cards show a round badge (droplet for liquid fuels, stack for solids) chosen by the decoration script from the material name.
+- Verdicts are always word + shape icon + evidence line: tick in a circle (pass), ! in a triangle (caution), cross in an octagon (fail), dash in a square (no data). Never color alone.
+- Type: Space Grotesk from Google Fonts, one family, weights 300 to 700. Sentence case everywhere.
+- The flame is a WebGL fragment shader on a canvas inside the chamber (blue ringed sphere in cabin air, orange fireball in rich oxygen). It reads the oxygen field, pauses off screen, and falls back to the CSS `#flame` gradient when WebGL is missing. No 3D models or images.
+- The page has two scripts. The first is the app (settings, worker calls, verdict logic, rendering). The second is decoration only (WebGL flame, count-up numbers, pointer spotlight on cards, table roles): it reads what the app rendered and must never fetch or change app state.
+- Motion: a particle fireball loader on first paint (ember to white-hot as it advances, with the same dots blazing rightward on the bar), then the page rises as that loader leaves; flame reacting to oxygen; results appearing or re-ranking as one View Transition; the same fireball curtain while a ranking is in flight; a height tween on the investigation list when filtering; numbers counting up when results arrive; a spotlight following the pointer on cards. Everything else under 0.5s, and all of it off or static under `prefers-reduced-motion`. One entrance sequence on page load is allowed (the fireball, then the top bar drops in, hero rises, flame chamber settles). Rest state visible if it never runs. No per-section fades, no scroll effects, no parallax.
+- Hero background: a second WebGL canvas (`canvas.wave-gl`, first child of `body`, behind everything, pointer-events none) paints a controlled sphere of gold fire-dust, plus a sparse field of the same dots, drifting slowly and bending toward the pointer. Keep the dust light (alpha under 0.65, warm gold and ember only) so navy text over it stays readable. It pauses off screen and shows one still frame under `prefers-reduced-motion`. It lives in the decoration script.
+- The hero facts strip (2,954 tests, 26 investigations, 361 with oxygen and pressure) is static text taken from the worker's `/health` and the README on 14 Nov 2026. Update it by hand if the data is reloaded.
+- Hero type: mega wordmark at weight 700 with -0.06em tracking; the question headline at weight 500; big numerals at weight 300. Buttons are pills that grow 4% on hover and press to 97%. The navy section carries a 5% grain layer.
 
 ### Must work on mobile
 
