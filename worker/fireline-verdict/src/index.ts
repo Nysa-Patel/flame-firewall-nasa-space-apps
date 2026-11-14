@@ -4,7 +4,7 @@
 import postgres from 'postgres';
 import { handleChat } from './chat';
 
-export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string }
+export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string }
 export type Sql = ReturnType<typeof postgres>;
 
 // ---- how flammability_envelope buckets work (from its view definition) ----

@@ -9,6 +9,7 @@ export interface ChatEnv {
   GEMINI_API_KEY: string;
   AI_GATEWAY_ACCOUNT_ID: string;
   AI_GATEWAY_ID: string;
+  CF_AIG_TOKEN?: string;
 }
 
 function geminiUrl(env: ChatEnv, model = 'gemini-2.5-flash') {
@@ -19,7 +20,11 @@ function geminiUrl(env: ChatEnv, model = 'gemini-2.5-flash') {
 async function callGemini(env: ChatEnv, systemPrompt: string, userText: string, jsonMode: boolean) {
   const res = await fetch(geminiUrl(env), {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': env.GEMINI_API_KEY,
+      ...(env.CF_AIG_TOKEN ? { 'cf-aig-authorization': `Bearer ${env.CF_AIG_TOKEN}` } : {}),
+    },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: 'user', parts: [{ text: userText }] }],
