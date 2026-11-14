@@ -5,247 +5,408 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FireLine</title>
 <meta name="description" content="Rank candidate materials against NASA microgravity combustion tests for a chosen cabin atmosphere.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22g%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%235f8dff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b1f3f%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2216%22%20fill%3D%22%230b1f3f%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2210%22%20fill%3D%22url(%23g)%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #eef1f4; --surface: #ffffff; --ink: #14202b; --ink-2: #51616f; --rule: #d3dbe2; --rule-strong: #aab6c2;
-    --flame: #1f5eea; --flame-tint: #e3ecff;
-    --pass: #157a4e; --pass-tint: #dff2e7; --caution: #9c6208; --caution-tint: #fbefd6; --fail: #bf3129; --fail-tint: #fbe3e0; --none: #66727f; --none-tint: #e6ebf0;
-    --chamber: #0a1320;
-    --flame-d: 120px; --flame-core: #eef4ff; --flame-mid: #5f8dff; --flame-edge: #1f4fd6;
-  }
+  html { background: #eef1f5; }
+
   * { box-sizing: border-box; }
-  html { background: var(--paper); }
-  body { margin: 0; color: var(--ink); background: var(--paper); font-family: Archivo, system-ui, sans-serif; font-size: 16px; line-height: 1.5; font-variant-numeric: tabular-nums; }
-  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; }
-  h1, h2, h3 { margin: 0; font-weight: 800; letter-spacing: -0.01em; }
-  h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1; font-stretch: 78%; max-width: 12ch; }
-  h2 { font-size: 26px; line-height: 1.15; font-stretch: 88%; margin: 56px 0 14px; }
-  h3 { font-size: 18px; font-weight: 700; }
-  p { margin: 0; }
-  .lede { font-size: 18px; color: var(--ink-2); max-width: 52ch; margin-top: 14px; }
-  .quiet { color: var(--ink-2); }
-  .small { font-size: 14px; }
-  a { color: var(--flame); text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  :focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; border-radius: 2px; }
+  body { margin: 0; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, p { margin: 0; }
   .hidden { display: none !important; }
-
-  /* ---- hero: text + chamber viewport ---- */
-  .hero { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
-  .chamber-wrap { justify-self: end; text-align: center; width: 100%; max-width: 300px; }
-  .chamber { position: relative; width: 100%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #182538 0%, var(--chamber) 70%);
-    border: 10px solid #d7dee5; box-shadow: inset 0 0 0 2px #96a3b0, inset 0 10px 24px rgba(0,0,0,.6), 0 1px 0 #fff; display: grid; place-items: center; overflow: hidden; }
-  .chamber::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(160deg, rgba(255,255,255,.14), transparent 45%); pointer-events: none; }
-  .flame { width: var(--flame-d); height: var(--flame-d); border-radius: 50%; transition: width .5s ease, height .5s ease, filter .5s ease;
-    background: radial-gradient(circle at 50% 50%, var(--flame-core) 0%, var(--flame-mid) 30%, var(--flame-edge) 58%, transparent 72%);
-    filter: blur(2px) drop-shadow(0 0 24px var(--flame-mid)); }
-  .chamber-note { margin-top: 12px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
-  .chamber-note b { color: var(--ink); font-weight: 600; }
-  @media (prefers-reduced-motion: reduce) { .flame { transition: none; } }
-
-  /* ---- scenario form ---- */
-  .scenario { margin-top: 28px; }
-  .presets { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid var(--rule); }
+  .wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 12px; vertical-align: top; white-space: nowrap; }
+  pre { overflow-x: auto; font-size: 13px; padding: 12px; border-radius: 10px; }
+  label { display: block; }
+  input, textarea { width: 100%; font: inherit; min-height: 44px; padding: 10px 14px; }
+  textarea { resize: vertical; }
+  button { font: inherit; min-height: 44px; cursor: pointer; }
+  button:disabled { opacity: .55; cursor: progress; }
+  details summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; }
   .preset { position: relative; }
   .preset input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .preset span { display: block; padding: 10px 14px 12px; min-height: 44px; cursor: pointer; color: var(--ink-2); margin-bottom: -2px; border-bottom: 2px solid transparent; font-weight: 600; }
-  .preset small { display: block; font-weight: 400; font-size: 13px; }
-  .preset input:checked + span { color: var(--ink); border-bottom-color: var(--flame); }
-  .preset input:focus-visible + span { outline: 2px solid var(--flame); outline-offset: -2px; }
-  .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+  .preset span { display: block; cursor: pointer; min-height: 44px; }
+  .preset small { display: block; }
+  .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .fields .wide { grid-column: 1 / -1; }
-  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-  label .quiet { font-weight: 400; }
-  input, textarea { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); font: inherit; min-height: 44px; }
-  textarea { resize: vertical; }
-  .conv { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
-  .preset-note { margin-top: 14px; max-width: 70ch; color: var(--ink-2); font-size: 15px; }
-  .actions { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-top: 20px; }
-  button { font: inherit; font-weight: 600; min-height: 44px; padding: 10px 20px; border-radius: 6px; border: 1px solid var(--flame); background: var(--flame); color: #fff; cursor: pointer; }
-  button.secondary { background: var(--surface); color: var(--ink); border-color: var(--rule-strong); }
-  button:disabled { opacity: .55; cursor: progress; }
-  details.settings { margin-top: 18px; font-size: 14px; color: var(--ink-2); }
-  details.settings summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; }
-  details.settings label { margin-top: 12px; }
-  details.settings input[type=url] { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; }
-  details.settings label.inline { display: flex; align-items: center; gap: 10px; font-weight: 400; }
-  details.settings label.inline input { width: 20px; height: 20px; min-height: 0; margin: 0; }
-  .banner { margin-top: 20px; padding: 12px 16px; border-left: 4px solid var(--caution); background: var(--caution-tint); color: var(--ink); border-radius: 0 6px 6px 0; font-size: 15px; }
-  .status { margin-top: 16px; min-height: 1.5em; color: var(--ink-2); }
-  .status.error { color: var(--fail); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; }
+  .settings label.inline { display: flex; align-items: center; gap: 10px; }
+  .settings label.inline input { width: 20px; height: 20px; min-height: 0; margin: 0; }
+  .sweep { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { white-space: nowrap; }
+  .meter { display: flex; gap: 3px; margin: 6px 0 4px; max-width: 180px; }
+  .meter i { flex: 1; height: 10px; border-radius: 3px; background: var(--meter-off); }
+  .meter i.on { background: var(--meter-on); }
 
-  /* ---- verdict list ---- */
-  .verdict-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
-  .verdict-head .quiet { font-size: 17px; }
-  .rank { display: grid; grid-template-columns: 150px 1fr 170px; gap: 8px 24px; padding: 22px 0; border-top: 1px solid var(--rule); }
-  .rank:last-child { border-bottom: 1px solid var(--rule); }
-  .word { font-size: 34px; line-height: 1; font-weight: 800; font-stretch: 72%; letter-spacing: -0.005em; }
-  .word.ok { color: var(--pass); } .word.warn { color: var(--caution); } .word.bad { color: var(--fail); } .word.none { color: var(--none); }
-  .rank .num { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
-  .rank h3 { font-size: 22px; }
-  .rank .rec { margin-top: 6px; max-width: 72ch; }
-  .rank .cite { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 80ch; }
-  .rank .cite b { color: var(--ink); font-weight: 600; }
-  .conf { font-size: 14px; color: var(--ink-2); }
-  .conf .meter { display: flex; gap: 3px; margin: 6px 0 4px; }
-  .conf .meter i { flex: 1; height: 10px; background: var(--rule); border-radius: 2px; }
-  .conf .meter i.on { background: var(--flame); }
-  .sweep { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .chip { font-size: 13px; padding: 5px 10px; border-radius: 4px; background: var(--none-tint); color: var(--ink); white-space: nowrap; }
-  .chip b { font-weight: 700; }
-  .chip.ok { background: var(--pass-tint); } .chip.ok b { color: var(--pass); }
-  .chip.warn { background: var(--caution-tint); } .chip.warn b { color: var(--caution); }
-  .chip.bad { background: var(--fail-tint); } .chip.bad b { color: var(--fail); }
-  .chip.none b { color: var(--none); }
-  details.ev { margin-top: 12px; font-size: 14px; }
-  details.ev summary { cursor: pointer; color: var(--flame); min-height: 32px; display: inline-flex; align-items: center; }
+  /* flame: CSS-drawn microgravity sphere, sized and tinted by the app's updateFlame() via custom properties */
+  :root { --flame-d: 120px; --flame-core: #eef4ff; --flame-mid: #5f8dff; --flame-edge: #1f4fd6; }
+  #flame { width: var(--flame-d); height: var(--flame-d); border-radius: 50%; transition: width .5s ease, height .5s ease;
+    background: radial-gradient(circle at 50% 50%, var(--flame-core) 0%, var(--flame-mid) 30%, var(--flame-edge) 58%, transparent 72%);
+    filter: blur(2px) drop-shadow(0 0 24px var(--flame-mid)); }
+  @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  #flame.hot { animation: breathe 3.2s ease-in-out infinite; }
 
-  /* ---- tables ---- */
-  .wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; white-space: nowrap; }
-  th { font-weight: 600; color: var(--ink-2); border-bottom-color: var(--rule-strong); }
-  th .quiet { font-weight: 400; }
-  td.cell { font-weight: 700; }
-  td.cell.ok { background: var(--pass-tint); color: var(--pass); } td.cell.warn { background: var(--caution-tint); color: var(--caution); }
-  td.cell.bad { background: var(--fail-tint); color: var(--fail); } td.cell.none { color: var(--none); font-weight: 400; }
-  td.cell .quiet { font-weight: 400; color: var(--ink-2); }
-  .intro { max-width: 72ch; color: var(--ink-2); margin-bottom: 14px; }
+  /* verdict shapes: never color alone. circle-check = pass, triangle-! = caution, octagon-x = fail, square-dash = no data */
+  .ok { --lv: var(--pass); --lv-t: var(--pass-t); } .warn { --lv: var(--caution); --lv-t: var(--caution-t); }
+  .bad { --lv: var(--fail); --lv-t: var(--fail-t); } .none { --lv: var(--none); --lv-t: var(--none-t); }
+  :is(.word, td.cell, .chip b)::before { display: inline-grid; place-items: center; width: 1.2em; height: 1.2em; margin-right: .35em; vertical-align: -.18em;
+    font-size: .8em; font-weight: 800; line-height: 1; color: var(--icon-ink, #fff); background: var(--icon-bg, var(--lv)); }
+  :is(.word.ok, td.cell.ok, .chip.ok b)::before { content: '\2713' / ''; border-radius: 50%; }
+  :is(.word.warn, td.cell.warn, .chip.warn b)::before { content: '!' / ''; clip-path: polygon(50% 2%, 100% 98%, 0 98%); padding-top: .3em; }
+  :is(.word.bad, td.cell.bad, .chip.bad b)::before { content: '\2715' / ''; clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+  :is(.word.none, td.cell.none, .chip.none b)::before { content: '\2013' / ''; border-radius: 3px; }
 
-  /* ---- method ---- */
-  .method { max-width: 72ch; }
-  .method p + p { margin-top: 10px; }
-  pre { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 13px; }
-  details.raw { margin-top: 14px; font-size: 14px; color: var(--ink-2); }
-  details.raw summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; }
-
-  /* ---- investigations ---- */
-  .inv-search { max-width: 520px; }
-  .inv-source { margin-top: 12px; max-width: 72ch; color: var(--ink-2); font-size: 14px; }
-  .inv { padding: 16px 0; border-top: 1px solid var(--rule); max-width: 80ch; }
-  .inv:last-child { border-bottom: 1px solid var(--rule); }
-  .inv h3 { display: inline; margin-right: 8px; }
-  .inv .meta { font-size: 14px; color: var(--ink-2); margin-top: 4px; }
-  .inv .objective { margin-top: 6px; font-size: 15px; }
-  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; vertical-align: 2px; }
-  .tag.cited { background: var(--flame-tint); color: var(--flame); }
-  .tag.placeholder { background: var(--none-tint); color: var(--none); }
-
-  /* ---- Mission Control ---- */
-  .chat-row { display: flex; gap: 10px; flex-wrap: wrap; max-width: 720px; }
-  .chat-row input { flex: 1 1 260px; }
-  .reply { white-space: pre-wrap; margin-top: 14px; padding: 14px 16px; background: var(--surface); border-left: 4px solid var(--flame); border-radius: 0 6px 6px 0; max-width: 72ch; }
-
-  footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); max-width: 72ch; }
-
+  /* motion: one move per change the user made, under .5s, off for reduced motion */
+  ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(*) { animation-duration: .3s; }
+  #results { transition: opacity .3s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    #flame { transition: none; } #flame.hot { animation: none; } #results { transition: none; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
   @media (max-width: 760px) {
-    .hero { grid-template-columns: 1fr; }
-    .chamber-wrap { justify-self: start; max-width: 220px; text-align: left; }
     .fields { grid-template-columns: 1fr 1fr; }
     .fields > div:first-child { grid-column: 1 / -1; }
-    .rank { grid-template-columns: 1fr; gap: 6px; }
-    .rank .num { margin-top: 0; }
-    .word { font-size: 30px; }
-    .conf { margin-top: 4px; }
-    .conf .meter { max-width: 180px; }
-    h2 { margin-top: 44px; }
+  }
+  /* WebGL flame canvas fills its round host; the CSS flame hides once WebGL is running */
+  .flame-host { position: relative; }
+  canvas.flame-gl { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; display: block; pointer-events: none; }
+  #flame.gl { opacity: 0; animation: none; }
+
+  /* spotlight that follows the pointer over cards */
+  .rank, .inv { position: relative; }
+  @media (hover: hover) {
+    .rank::after, .inv::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s ease;
+      background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), var(--spot, rgba(255, 255, 255, .12)), transparent 70%); }
+    .rank:hover::after, .inv:hover::after { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .rank::after, .inv::after { transition: none; } }
+
+  /* ===== White and NASA red: navy title on white-grey, then a deep navy section. Red is for actions up top; in the navy section red means Fail only ===== */
+  :root { --spot: rgba(156, 196, 255, .10);
+    --grey: #eef1f5; --paper: #ffffff; --ink: #0b1b33; --ink-2: #47556b; --line: #d5dbe5;
+    --char: #0b1f3f; --card: #132b52; --card-2: #1b3766; --on-dark: #f2f5fa; --on-dark-2: #b6c3d8; --line-dark: #2c4878;
+    --accent: #d42a1c; --accent-ink: #ffffff; --sky: #9cc4ff;
+    --pass: #45d2c3; --caution: #f6b445; --fail: #ff8a7a; --none: #a9b4c6;
+    --pass-t: rgba(69, 210, 195, .14); --caution-t: rgba(246, 180, 69, .14); --fail-t: rgba(255, 138, 122, .16); --none-t: rgba(169, 180, 198, .12);
+    --meter-on: var(--on-dark); --meter-off: var(--line-dark);
+    --icon-ink: #0b1f3f;
+  }
+  body { background: var(--grey); color: var(--ink); font: 16px/1.5 "Space Grotesk", system-ui, sans-serif; }
+  .shell { max-width: 1220px; margin: 0 auto; padding: 0 16px; position: relative; z-index: 1; }
+  /* interactive background: a particle ribbon behind the hero, painted by WebGL; decoration only */
+  body { position: relative; }
+  canvas.wave-gl { position: absolute; top: 0; left: 0; width: 100%; height: 760px; z-index: 0; pointer-events: none; display: block; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 8px; }
+  .dark :focus-visible { outline-color: var(--sky); }
+  .quiet, .conv, .hint, .small, .preset-note { color: var(--ink-2); }
+  .small, .hint, .conv { font-size: 14px; }
+  button { border-radius: 999px; padding: 10px 24px; font-weight: 700; background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); }
+  button.secondary { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+
+  /* top bar */
+  .topbar { display: flex; align-items: center; gap: 16px; background: var(--paper); border-radius: 0 0 20px 20px; padding: 12px 16px 12px 22px; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.02em; margin-right: auto; }
+  .topbar nav { display: flex; gap: 2px; background: var(--grey); border-radius: 999px; padding: 4px; }
+  .topbar nav a { text-decoration: none; font-size: 14px; font-weight: 600; padding: 9px 14px; border-radius: 999px; min-height: 40px; display: inline-flex; align-items: center; }
+  .topbar nav a:hover { background: var(--paper); }
+  .pill-dark { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 18px; border-radius: 999px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; }
+
+  /* hero: huge title with the flame chamber floating over it */
+  .hero { position: relative; padding: 34px 0 30px; overflow-x: clip; }
+  .title { font-size: clamp(76px, 17vw, 236px); line-height: .84; font-weight: 700; letter-spacing: -.06em; color: var(--ink); white-space: nowrap; }
+  .orb { position: absolute; left: 73%; top: 46%; width: clamp(180px, 25vw, 300px); aspect-ratio: 1; transform: translate(-50%, -52%); display: grid; place-items: center; }
+  .orb .chamber { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
+    background: radial-gradient(circle at 50% 46%, #1e2a3e 0%, #0a0f18 70%); box-shadow: 0 30px 60px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .12); }
+  .orb svg { position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; }
+  .hero-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 30px; }
+  .hero h1 { font-size: clamp(30px, 3.6vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -.035em; }
+  .lede { margin-top: 14px; max-width: 30rem; font-size: 17px; color: var(--ink-2); }
+  .flame-note { margin-top: 10px; font-size: 14px; color: var(--ink-2); max-width: 52ch; }
+  .flame-note b { color: var(--ink); }
+  .accent-dot { width: 132px; height: 132px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 700; font-size: 15px;
+    display: grid; place-items: center; text-align: center; line-height: 1.2; padding: 16px; border: 0; }
+
+  /* scenario on the light section */
+  .panel { background: var(--paper); border-radius: 28px; padding: 28px; }
+  .panel h2 { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 16px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; }
+  .preset span { padding: 9px 18px; border-radius: 999px; border: 1px solid var(--line); font-weight: 700; }
+  .preset small { font-weight: 400; font-size: 13px; color: var(--ink-2); }
+  .preset input:checked + span { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .preset input:checked + span small { color: #d3dbe8; }
+  .preset input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .fields { margin-top: 22px; }
+  label { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  label .quiet { font-weight: 400; }
+  input, textarea { border: 1px solid #b4bfcf; border-radius: 14px; background: #f8fafc; color: var(--ink); }
+  .conv { margin-top: 4px; }
+  .preset-note { margin-top: 14px; max-width: 72ch; }
+  .actions { margin-top: 18px; }
+  .settings { margin-top: 16px; font-size: 14px; color: var(--ink-2); }
+  .settings label { margin-top: 12px; }
+  .settings label.inline { font-weight: 400; }
+  .banner { margin-top: 18px; padding: 12px 18px; border-radius: 16px; background: var(--paper); border: 1px solid var(--ink); font-weight: 600; }
+  .status { min-height: 1.5em; margin: 14px 0 0; color: var(--ink-2); }
+  .status.error { color: #a3221a; font-weight: 700; }
+
+  /* dark section */
+  .dark { background: var(--char); color: var(--on-dark); border-radius: 36px 36px 0 0; margin-top: 40px; padding: 56px 0 64px; }
+  .dark h2 { font-size: clamp(30px, 4vw, 46px); font-weight: 600; letter-spacing: -.02em; line-height: 1.08; margin: 0 0 18px; }
+  .dark .quiet, .dark .intro, .dark .inv-source, .dark .scenario-label { color: var(--on-dark-2); }
+  .dark a { color: var(--sky); }
+  .dark section + section, .dark .block + .block { margin-top: 56px; }
+  .results-head { text-align: center; margin-bottom: 26px; }
+  .results-head h2 { margin-bottom: 10px; }
+  .scenario-label { display: inline-block; background: var(--paper); color: var(--ink) !important; font-weight: 700; padding: 4px 14px; border-radius: 999px; }
+  .ranking { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .rank { display: flex; flex-direction: column; gap: 6px; background: var(--card); border-radius: 24px; padding: 22px 24px; }
+  .rank > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .word { font-size: 15px; font-weight: 800; color: var(--lv); display: inline-flex; align-items: center; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--lv-t); }
+  .word::before { width: 30px; height: 30px; font-size: 16px; margin-right: 8px; vertical-align: 0; }
+  .rank .num { font-size: 13px; color: var(--on-dark-2); }
+  .rank h3 { font-size: 26px; font-weight: 600; letter-spacing: -.01em; margin-top: 10px; }
+  .rank .rec { color: var(--on-dark); }
+  .rank .cite { font-size: 14px; color: var(--on-dark-2); }
+  .rank .cite b { color: var(--on-dark); font-weight: 600; }
+  .sweep { margin-top: 8px; }
+  .chip { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--lv-t); color: var(--on-dark); }
+  .chip b { color: var(--lv); }
+  .conf { font-size: 14px; color: var(--on-dark-2); order: 9; margin-top: 6px; }
+  details.ev { font-size: 14px; order: 10; }
+  details.ev summary { color: var(--sky); font-weight: 600; }
+  details.ev table, .method pre, #matrix { background: var(--card-2); border-radius: 14px; color: var(--on-dark); }
+  details.ev th, details.ev td, #matrix th, #matrix td { border-bottom: 1px solid var(--line-dark); }
+  details.ev th, #matrix th { color: var(--on-dark-2); font-weight: 600; }
+  .intro { max-width: 72ch; margin-bottom: 18px; }
+  .matrix-wrap { border-radius: 14px; }
+  #matrix { font-size: 14px; overflow: hidden; }
+  #matrix td.cell { font-weight: 700; color: var(--lv); background: var(--lv-t); }
+  #matrix td.cell.none { background: transparent; font-weight: 400; }
+  #matrix td.cell .quiet { font-weight: 400; color: var(--on-dark-2); }
+  .method { max-width: 74ch; color: var(--on-dark); }
+  .method p + p { margin-top: 10px; }
+  details.raw { margin-top: 14px; font-size: 14px; color: var(--on-dark-2); }
+
+  .dark label { color: var(--on-dark); }
+  .dark input { background: var(--card); border-color: #3d5a8c; color: var(--on-dark); }
+  .dark input::placeholder { color: #93a4c0; }
+  .inv-search { max-width: 520px; }
+  .inv-source { margin-top: 10px; font-size: 14px; }
+  .inv-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+  .inv { background: var(--card); border-radius: 22px; padding: 18px 20px; }
+  .inv h3 { display: inline; font-size: 18px; font-weight: 600; margin-right: 8px; }
+  .inv .meta { font-size: 14px; color: var(--on-dark-2); margin-top: 4px; }
+  .inv .objective { margin-top: 6px; font-size: 15px; color: var(--on-dark); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; vertical-align: 2px; }
+  .tag.cited { background: var(--paper); color: var(--ink); }
+  .tag.placeholder { background: var(--card-2); color: var(--on-dark-2); }
+  .chat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chat-row input { flex: 1 1 260px; border-radius: 999px; padding-inline: 20px; }
+  .reply { white-space: pre-wrap; margin-top: 14px; padding: 16px 18px; background: var(--card); border-radius: 20px; max-width: 72ch; }
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line-dark); font-size: 14px; color: var(--on-dark-2); max-width: 72ch; }
+
+  @media (max-width: 900px) {
+    .ranking, .inv-list { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .topbar nav { display: none; }
+    .title { font-size: 19.5vw; }
+    .orb { position: relative; left: auto; top: auto; transform: none; width: 52vw; margin: 3vw auto 0; }
+    .hero-row { grid-template-columns: 1fr; }
+    .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }
+    .panel { padding: 20px; border-radius: 22px; }
+    .dark { border-radius: 26px 26px 0 0; padding-top: 40px; }
+    .rank { padding: 18px; }
+  }
+
+  /* ===== icons: Tabler Icons (MIT) via Iconify, inlined so the page has no runtime dependency ===== */
+  :root {
+    --i-satellite: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m3.707%206.293l2.586-2.586a1%201%200%200%201%201.414%200l5.586%205.586a1%201%200%200%201%200%201.414l-2.586%202.586a1%201%200%200%201-1.414%200L3.707%207.707a1%201%200%200%201%200-1.414%22%2F%3E%3Cpath%20d%3D%22m6%2010l-3%203l3%203l3-3m1-7l3-3l3%203l-3%203m-1%203l1.5%201.5m1%203.5a2.5%202.5%200%200%200%202.5-2.5M15%2021a6%206%200%200%200%206-6%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-moon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M12%203h.393a7.5%207.5%200%200%200%207.92%2012.446A9%209%200%201%201%2012%202.992z%22%2F%3E%3C%2Fsvg%3E");
+    --i-helmet: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M12%204a9%209%200%200%201%205.656%2016H6.344A9%209%200%200%201%2012%204%22%2F%3E%3Cpath%20d%3D%22M20%209h-8.8a1%201%200%200%200-.968%201.246q.76%203%203.268%204.254q3%201.5%207%201.5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-adjustments-horizontal: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M12%206a2%202%200%201%200%204%200a2%202%200%201%200-4%200M4%206h8m4%200h4M6%2012a2%202%200%201%200%204%200a2%202%200%201%200-4%200m-2%200h2m4%200h10m-5%206a2%202%200%201%200%204%200a2%202%200%201%200-4%200M4%2018h11m4%200h1%22%2F%3E%3C%2Fsvg%3E");
+    --i-droplet: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M7.502%2019.423c2.602%202.105%206.395%202.105%208.996%200s3.262-5.708%201.566-8.546l-4.89-7.26c-.42-.625-1.287-.803-1.936-.397a1.4%201.4%200%200%200-.41.397l-4.893%207.26C4.24%2013.715%204.9%2017.318%207.502%2019.423%22%2F%3E%3C%2Fsvg%3E");
+    --i-stack-2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M12%204L4%208l8%204l8-4zm-8%208l8%204l8-4M4%2016l8%204l8-4%22%2F%3E%3C%2Fsvg%3E");
+    --i-flask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M9%203h6m-5%206h4m-4-6v6L6%2020a.7.7%200%200%200%20.5%201h11a.7.7%200%200%200%20.5-1L14%209V3%22%2F%3E%3C%2Fsvg%3E");
+    --i-headset: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M4%2014v-3a8%208%200%201%201%2016%200v3m-2%205c0%201.657-2.686%203-6%203%22%2F%3E%3Cpath%20d%3D%22M4%2014a2%202%200%200%201%202-2h1a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202H6a2%202%200%200%201-2-2zm11%200a2%202%200%200%201%202-2h1a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202h-1a2%202%200%200%201-2-2z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-list-numbers: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M11%206h9m-9%206h9m-8%206h8M4%2016a2%202%200%201%201%204%200c0%20.591-.5%201-1%201.5L4%2020h4M6%2010V4L4%206%22%2F%3E%3C%2Fsvg%3E");
+    --i-gauge: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M3%2012a9%209%200%201%200%2018%200a9%209%200%201%200-18%200%22%2F%3E%3Cpath%20d%3D%22M11%2012a1%201%200%201%200%202%200a1%201%200%201%200-2%200m2.41-1.41L16%208m-9%204a5%205%200%200%201%205-5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-scale: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M7%2020h10M6%206l6-1l6%201m-6-3v17m-3-8L6%206l-3%206a3%203%200%200%200%206%200m12%200l-3-6l-3%206a3%203%200%200%200%206%200%22%2F%3E%3C%2Fsvg%3E");
+    --i-planet: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M18.816%2013.58c2.292%202.138%203.546%204%203.092%204.9c-.745%201.46-5.783-.259-11.255-3.838c-5.47-3.579-9.304-7.664-8.56-9.123c.464-.91%202.926-.444%205.803.805%22%2F%3E%3Cpath%20d%3D%22M5%2012a7%207%200%201%200%2014%200a7%207%200%201%200-14%200%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-settings: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M10.325%204.317c.426-1.756%202.924-1.756%203.35%200a1.724%201.724%200%200%200%202.573%201.066c1.543-.94%203.31.826%202.37%202.37a1.724%201.724%200%200%200%201.065%202.572c1.756.426%201.756%202.924%200%203.35a1.724%201.724%200%200%200-1.066%202.573c.94%201.543-.826%203.31-2.37%202.37a1.724%201.724%200%200%200-2.572%201.065c-.426%201.756-2.924%201.756-3.35%200a1.724%201.724%200%200%200-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724%201.724%200%200%200-1.065-2.572c-1.756-.426-1.756-2.924%200-3.35a1.724%201.724%200%200%200%201.066-2.573c-.94-1.543.826-3.31%202.37-2.37c1%20.608%202.296.07%202.572-1.065%22%2F%3E%3Cpath%20d%3D%22M9%2012a3%203%200%201%200%206%200a3%203%200%200%200-6%200%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  }
+  .ico-before::before, .preset span::before, h2[id]::before, .settings summary::before { content: ''; flex: none; display: inline-block; width: 1em; height: 1em; background: currentColor;
+    -webkit-mask: var(--i) center / contain no-repeat; mask: var(--i) center / contain no-repeat; }
+  /* mission presets */
+  .preset span { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+  .preset span::before { grid-row: 1 / span 2; width: 24px; height: 24px; }
+  .preset input[value=iss] + span { --i: var(--i-satellite); } .preset input[value=lunar] + span { --i: var(--i-moon); }
+  .preset input[value=suit] + span { --i: var(--i-helmet); } .preset input[value=custom] + span { --i: var(--i-adjustments-horizontal); }
+  /* section headings */
+  h2[id]::before { width: .8em; height: .8em; margin-right: .32em; vertical-align: -.06em; opacity: .75; }
+  #scenario-h { --i: var(--i-planet); } #results-h { --i: var(--i-list-numbers); } #range-h { --i: var(--i-gauge); }
+  #method { --i: var(--i-scale); } #inv-h { --i: var(--i-flask); } #chat-h { --i: var(--i-headset); }
+  .settings summary { gap: 6px; --i: var(--i-settings); }
+  /* result cards: round badge showing the kind of material (droplet = liquid fuel, stack = solid) */
+  .rank h3 { display: flex; align-items: center; gap: 12px; }
+  .rank h3::before { content: ''; flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--card-2) var(--i-stack-2) center / 22px no-repeat; box-shadow: inset 0 0 0 1px var(--line-dark); }
+  .rank[data-kind=liquid] h3::before { background-image: var(--i-droplet); }
+
+  /* ===== craft pass: hierarchy, one entrance sequence, tactile buttons, grain ===== */
+  ::selection { background: rgba(212, 42, 28, .22); }
+  .dark ::selection { background: rgba(156, 196, 255, .3); }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 34px; border-top: 1px solid var(--line); }
+  .facts > div { padding: 16px 20px 0; border-left: 1px solid var(--line); }
+  .facts > div:first-child { border-left: 0; padding-left: 0; }
+  .facts b { display: block; font-size: clamp(30px, 4vw, 52px); font-weight: 300; line-height: 1; letter-spacing: -.035em; }
+  .facts span { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); max-width: 24ch; }
+  button, .pill-dark, .accent-dot { transition: scale .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s cubic-bezier(.4, 0, .2, 1); }
+  button:hover:not(:disabled), .pill-dark:hover, .accent-dot:hover { scale: 1.04; box-shadow: 0 10px 24px rgba(11, 27, 51, .18); }
+  button:active:not(:disabled), .pill-dark:active, .accent-dot:active { scale: .97; }
+  .dark { position: relative; }
+  .dark::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.9%22%20numOctaves%3D%222%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20values%3D%220%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%20.5%200%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22160%22%20height%3D%22160%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E"); }
+  /* entrance: one sequence on load, top bar from above, the rest rising; rest state is the visible one */
+  @keyframes drop { from { opacity: 0; translate: 0 -18px; } }
+  @keyframes rise { from { opacity: 0; translate: 0 26px; filter: blur(8px); } }
+  @keyframes settle { from { opacity: 0; scale: .88; } }
+  .topbar { animation: drop .7s cubic-bezier(.22, 1, .36, 1) backwards; }
+  .title, .hero h1, .lede, .flame-note, .accent-dot, .facts { animation: rise .8s cubic-bezier(.22, 1, .36, 1) backwards; }
+  .title { animation-delay: .1s; } .hero h1 { animation-delay: .32s; } .lede { animation-delay: .42s; } .flame-note { animation-delay: .5s; }
+  .accent-dot { animation-delay: .56s; } .facts { animation-delay: .64s; }
+  .orb { animation: settle 1.1s cubic-bezier(.22, 1, .36, 1) .22s backwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar, .title, .hero h1, .lede, .flame-note, .accent-dot, .facts, .orb { animation: none; }
+    button, .pill-dark, .accent-dot { transition: none; }
+  }
+  @media (max-width: 760px) {
+    .facts > div { padding: 12px 10px 0; }
+    .facts span { font-size: 12px; }
   }
 </style>
 </head>
 <body>
-<main>
-  <header class="hero">
-    <div>
-      <h1>Will it burn up there?</h1>
-      <p class="lede">Choose a cabin atmosphere and list the materials you're considering. FireLine ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
-    </div>
-    <div class="chamber-wrap" aria-hidden="true">
-      <div class="chamber"><div class="flame" id="flame"></div></div>
-      <p class="chamber-note" id="flameNote"></p>
-    </div>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">FireLine.</div>
+    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#inv-h">Investigations</a><a href="#chat-h">Mission Control</a></nav>
+    <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
-  <div id="mockBanner" class="banner hidden" role="status">Mock mode is on. Every number below is synthetic. Turn it off in Settings once the worker is reachable.</div>
+  <section class="hero" aria-labelledby="hero-h">
+    <p class="title" aria-hidden="true">FireLine.</p>
+    <div class="orb" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
+      <div class="chamber"><div id="flame"></div></div>
+    </div>
+    <div class="hero-row">
+      <div>
+        <h1 id="hero-h">Will it burn up there?</h1>
+        <p class="lede">Choose a cabin atmosphere and list the materials you're considering. FireLine ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
+        <p class="flame-note" id="flameNote"></p>
+      </div>
+      <a class="accent-dot" href="#method">How it works</a>
+    </div>
+    <div class="facts" aria-label="What the data covers">
+      <div><b>2,954</b><span>NASA combustion tests</span></div>
+      <div><b>26</b><span>investigations, from FLEX to Saffire</span></div>
+      <div><b>361</b><span>tests with oxygen and pressure on record</span></div>
+    </div>
+  </section>
 
-  <section class="scenario" aria-labelledby="scenario-h">
+  <div id="mockBanner" class="banner hidden" role="status">Mock mode is on. Every number below is synthetic. Turn it off in Settings once the worker is reachable.</div>
+  <section class="panel" aria-labelledby="scenario-h">
     <h2 id="scenario-h">Mission atmosphere</h2>
-    <div class="presets" role="radiogroup" aria-label="Mission preset" id="presets"></div>
-    <form id="form">
-      <div class="fields">
-        <div>
-          <label for="o2">Oxygen <span class="quiet">(% by volume)</span></label>
-          <input id="o2" type="number" min="1" max="100" step="0.1" required>
-          <div class="conv" id="o2conv"></div>
+    
+      <div class="presets" role="radiogroup" aria-label="Mission preset" id="presets"></div>
+      <form id="form">
+        <div class="fields">
+          <div>
+            <label for="o2">Oxygen <span class="quiet">(% by volume)</span></label>
+            <input id="o2" type="number" min="1" max="100" step="0.1" required>
+            <div class="conv" id="o2conv"></div>
+          </div>
+          <div>
+            <label for="p">Nominal pressure <span class="quiet">(psia)</span></label>
+            <input id="p" type="number" min="0.5" max="70" step="0.1" required>
+            <div class="conv" id="pconv"></div>
+          </div>
+          <div>
+            <label for="pmin">Depress floor <span class="quiet">(psia)</span></label>
+            <input id="pmin" type="number" min="0.5" max="70" step="0.1" required>
+            <div class="conv" id="pminconv"></div>
+          </div>
+          <div class="wide">
+            <label for="materials">Candidate materials <span class="quiet">(comma separated; matched against NASA test fuel names)</span></label>
+            <textarea id="materials" rows="2"></textarea>
+          </div>
         </div>
-        <div>
-          <label for="p">Nominal pressure <span class="quiet">(psia)</span></label>
-          <input id="p" type="number" min="0.5" max="70" step="0.1" required>
-          <div class="conv" id="pconv"></div>
+        <p class="preset-note" id="presetNote"></p>
+        <div class="actions">
+          <button id="go" type="submit">Rank materials</button>
+          <span class="hint">Checks each material at nominal pressure and at three steps down to the depress floor.</span>
         </div>
-        <div>
-          <label for="pmin">Depress floor <span class="quiet">(psia)</span></label>
-          <input id="pmin" type="number" min="0.5" max="70" step="0.1" required>
-          <div class="conv" id="pminconv"></div>
-        </div>
-        <div class="wide">
-          <label for="materials">Candidate materials <span class="quiet">(comma separated; matched against NASA test fuel names)</span></label>
-          <textarea id="materials" rows="2"></textarea>
-        </div>
-      </div>
-      <p class="preset-note" id="presetNote"></p>
-      <div class="actions">
-        <button id="go" type="submit">Rank materials</button>
-        <span class="small quiet">Checks each material at nominal pressure and at three steps down to the depress floor.</span>
-      </div>
-    </form>
-    <details class="settings">
-      <summary>Settings</summary>
-      <label for="api">Worker address</label>
-      <input id="api" type="url" spellcheck="false">
-      <label class="inline"><input id="mock" type="checkbox"> Mock mode: no network, synthetic data</label>
-      <p class="small" style="margin-top:8px">Defaults to this page's origin when served by the worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
-    </details>
+      </form>
+      <details class="settings">
+        <summary>Settings</summary>
+        <label for="api">Worker address</label>
+        <input id="api" type="url" spellcheck="false">
+        <label class="inline"><input id="mock" type="checkbox"> Mock mode: no network, synthetic data</label>
+        <p class="small">Defaults to the live FireLine worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
+      </details>
   </section>
   <div id="status" class="status" role="status" aria-live="polite"></div>
+</div>
 
-  <div id="results" class="hidden">
-    <div class="verdict-head" style="margin-top:56px"><h2 style="margin:0">Ranking</h2><span class="quiet" id="scenarioLabel"></span></div>
-    <section id="ranking" style="margin-top:14px"></section>
-
-    <h2>Across the operational range</h2>
-    <p class="intro" id="rangeIntro"></p>
-    <div class="wrap"><table id="matrix"></table></div>
-
-    <h2>How the verdicts are made</h2>
-    <div class="method">
-      <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
-      <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
-      <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
-      <p>This is FireLine's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
-      <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
+<div class="dark">
+  <div class="shell">
+    <div id="results" class="hidden">
+      <div class="block">
+        <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
+        <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
+      </div>
+      <div class="block">
+        <h2 id="range-h">Across the operational range</h2>
+      <p class="intro" id="rangeIntro"></p>
+      <div class="wrap matrix-wrap"><table id="matrix" aria-labelledby="range-h"></table></div>
+      </div>
+      <div class="block">
+        <h2 id="method">How the verdicts are made</h2>
+      <div class="method">
+        <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
+        <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
+        <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
+        <p>This is FireLine's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
+        <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
+      </div>
+      </div>
     </div>
+    <section style="margin-top:56px">
+      
+      <h2 id="inv-h">NASA investigations</h2>
+      <div class="inv-search">
+        <label for="invSearch">Search by title, id or objective</label>
+        <input id="invSearch" type="search" placeholder="Saffire, droplet, fabric">
+      </div>
+      <p class="inv-source" id="invSource"></p>
+      <div id="invList" class="inv-list"></div>
+    </section>
+    <section>
+      
+      <h2 id="chat-h">Ask Mission Control</h2>
+      <p class="intro">Plain-English questions go to the worker's Gemini-backed assistant, which looks up the same test data.</p>
+      <form id="chatForm" class="chat-row">
+        <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen and 0.7 atm?" aria-label="Question for Mission Control">
+        <button type="submit" id="chatGo" class="secondary">Ask</button>
+      </form>
+      <div id="chatReply" class="reply hidden"></div>
+    </section>
+    <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
-
-  <h2 id="inv-h">NASA investigations</h2>
-  <div class="inv-search">
-    <label for="invSearch">Search by title, id or objective</label>
-    <input id="invSearch" type="search" placeholder="Saffire, droplet, fabric">
-  </div>
-  <p class="inv-source" id="invSource"></p>
-  <div id="invList"></div>
-
-  <h2>Ask Mission Control</h2>
-  <p class="intro">Plain-English questions go to the worker's Gemini-backed assistant, which looks up the same test data.</p>
-  <form id="chatForm" class="chat-row">
-    <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen and 0.7 atm?" aria-label="Question for Mission Control">
-    <button type="submit" id="chatGo" class="secondary">Ask</button>
-  </form>
-  <div id="chatReply" class="reply hidden"></div>
-
-  <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
-</main>
+</div>
 
 <script>
 (() => {
@@ -297,6 +458,7 @@
     root.setProperty('--flame-core', rgb(mix([238, 244, 255], [255, 250, 225])));
     root.setProperty('--flame-mid', rgb(mix([95, 141, 255], [255, 196, 90])));
     root.setProperty('--flame-edge', rgb(mix([31, 79, 214], [230, 110, 40])));
+    $('flame').classList.toggle('hot', o2pct > 30);
     const note = o2pct >= 60 ? 'In oxygen this rich a flame burns hot, bright and fast. Almost nothing is safe.'
       : o2pct >= 30 ? 'Enriched oxygen makes the sphere larger and brighter. Materials that self-extinguish in air may keep burning.'
       : 'In cabin air a microgravity flame is a small, steady blue sphere: no flicker, because nothing rises.';
@@ -320,6 +482,26 @@
   ['o2', 'p', 'pmin'].forEach((id) => $(id).addEventListener('input', () => { updateConv(); document.querySelector('input[name=preset][value=custom]').checked = true; $('presetNote').textContent = PRESETS.custom.note; }));
   $('materials').value = DEFAULT_MATERIALS;
   applyPreset('iss');
+
+  // ---------- motion helpers ----------
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Run a DOM update as one View Transition (rows with a view-transition-name morph to their new rank).
+  // Fallback is a single opacity fade on the results block; reduced motion gets an instant swap.
+  async function withTransition(update) {
+    if (reduceMotion()) return update();
+    if (document.startViewTransition) { await document.startViewTransition(update).updateCallbackDone; return; }
+    const el = $('results'); el.style.opacity = '0'; update();
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.opacity = ''; }));
+  }
+  // Animate a container between its old and new height so a filtered list does not jump.
+  function animateHeight(el, update) {
+    const h0 = el.getBoundingClientRect().height; update();
+    if (reduceMotion() || !el.animate) return;
+    const h1 = el.getBoundingClientRect().height; if (h0 === h1) return;
+    el.style.overflow = 'hidden';
+    el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 250, easing: 'ease' }).onfinish = () => { el.style.overflow = ''; };
+  }
+  const slug = (s) => s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x';
 
   // ---------- API (real or mock) ----------
   async function verdict(o2, p, material) {
@@ -386,7 +568,7 @@
         return { material: m, nominal: perPoint[0], perPoint, worst: Math.max(...perPoint.map((x) => x.a.level === 3 ? -1 : x.a.level)) };
       });
       rows.sort((x, y) => x.nominal.a.level - y.nominal.a.level || x.worst - y.worst || y.nominal.a.confidence - x.nominal.a.confidence);
-      render(rows, points, { o2, pNom, pMin, name: PRESETS[preset].name });
+      await withTransition(() => render(rows, points, { o2, pNom, pMin, name: PRESETS[preset].name }));
       $('raw').textContent = JSON.stringify(flat, null, 2);
       setStatus('');
       renderInvestigations();
@@ -408,6 +590,8 @@
   function render(rows, points, s) {
     $('scenarioLabel').textContent = `${s.name}, ${num(s.o2 * 100, 1)}% oxygen at ${s.pNom} psia`;
     const best = rows.find((r) => r.nominal.a.level === 0)?.material;
+    const usedNames = new Map();
+    const vtName = (m) => { const b = 'rank-' + slug(m); const n = (usedNames.get(b) || 0) + 1; usedNames.set(b, n); return n > 1 ? `${b}-${n}` : b; };
     $('ranking').innerHTML = rows.map((row, i) => {
       const r = row.nominal.r, a = row.nominal.a, lv = LEVELS[a.level], n = r.nearest;
       const cite = n ? `Nearest evidence: ${n.n_tests} tests of <b>${esc(n.fuel_material || 'an unnamed fuel')}</b> at ${pct(n.o2_bucket.range[0])} to ${pct(n.o2_bucket.range[1])} oxygen and ${num(n.pressure_bucket.range[0])} to ${num(n.pressure_bucket.range[1])} atm, from <b>${esc(n.investigation_title || n.investigation_id)}</b> (${esc(n.investigation_id)}, DOI ${doiLink(n.doi)}). ${n.n_extinctions} extinguished, ${n.n_disruptions} disrupted; average burn rate ${num(n.avg_burn_rate, 3)}. ${esc(r.relation.replace('_', ' '))}${a.flags.length ? ', and ' + esc(a.flags.join('; ')) : ''}.`
@@ -417,7 +601,7 @@
           <tr><th>Date</th><th>Oxygen</th><th>Pressure (atm)</th><th>Burn rate</th><th>Outcome</th><th>Source file</th><th>DOI</th></tr>
           ${r.evidence.map((t) => `<tr><td>${esc(t.test_date ? String(t.test_date).slice(0, 10) : '—')}</td><td>${pct(t.o2_fraction)}</td><td>${num(t.pressure_atm)}</td><td>${num(t.burn_rate, 3)}</td><td>${esc(t.outcome || '—')}</td><td class="quiet">${esc(t.source_file || '—')}</td><td>${doiLink(t.doi)}</td></tr>`).join('')}
         </table></div></details>` : '';
-      return `<article class="rank" aria-label="${esc(row.material)}: ${lv.label}">
+      return `<article class="rank" style="view-transition-name:${vtName(row.material)}" aria-label="${esc(row.material)}: ${lv.label}">
         <div><div class="word ${lv.key}">${lv.label}</div><div class="num">Rank ${i + 1}${a.burnShare != null ? `, burn share ${pct(a.burnShare)}` : ''}</div></div>
         <div><h3>${esc(row.material)}</h3>
           <p class="rec">${esc(recommend(a.level, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
@@ -460,7 +644,7 @@
       <p class="meta">${esc(x.accession)}. DOI ${doiLink(x.doi)}.${x.n_tests ? ` ${x.n_tests} tests.` : ''}</p>${x.objective ? `<p class="objective">${esc(x.objective)}</p>` : ''}</div>`).join('')
       : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
   }
-  $('invSearch').addEventListener('input', renderInvestigations);
+  $('invSearch').addEventListener('input', () => animateHeight($('invList'), renderInvestigations));
 
   // ---------- Mission Control chat ----------
   $('chatForm').addEventListener('submit', async (e) => {
@@ -519,6 +703,220 @@
   }
 
   loadInvestigations();
+})();
+</script>
+<script>
+// Decorations only. Reads what the app already rendered; never fetches, never changes app state.
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ranking = $('ranking'), matrix = $('matrix');
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+
+  // ---- count-up: numbers roll from 0 to their value when results arrive ----
+  function countUp(node, to, fmt) {
+    if (reduce() || !Number.isFinite(to) || to <= 0) { node.textContent = fmt(to); return; }
+    const t0 = performance.now(), dur = 600;
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      node.textContent = fmt(Math.round(to * e));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  function stats() {
+    const ranks = ranking.querySelectorAll('.rank');
+    if (!ranks.length) return;
+    // icon badge: liquid fuels get a droplet, everything else a solid stack
+    ranks.forEach((r) => { r.dataset.kind = /(ane|anol|ene)(?![a-z])|fuel|kerosene/i.test(r.querySelector('h3')?.textContent || '') ? 'liquid' : 'solid'; });
+    const confs = [...ranking.querySelectorAll('.conf')].map((c) => (c.textContent.match(/Confidence (\d+)/) || [])[1]).filter(Boolean).map(Number);
+    const tests = [...ranking.querySelectorAll('.cite')].reduce((s, c) => s + Number((c.textContent.match(/Nearest evidence: (\d+) tests/) || [0, 0])[1]), 0);
+    const tile = (id, to, fmt) => { const el = $(id); if (el) countUp(el, to, fmt); };
+    const passes = ranking.querySelectorAll('.word.ok').length;
+    tile('statRanked', ranks.length, String);
+    tile('statPass', passes, (n) => n + ' of ' + ranks.length);
+    if (confs.length) tile('statConf', Math.round(confs.reduce((a, b) => a + b, 0) / confs.length), String); else set('statConf', '—');
+    tile('statTests', tests, String);
+    // confidence scores on each card
+    ranking.querySelectorAll('.conf').forEach((c) => {
+      const tn = c.firstChild; if (!tn || tn.nodeType !== 3) return;
+      const m = tn.textContent.match(/^Confidence (\d+) of 99/); if (!m) return;
+      countUp(tn, Number(m[1]), (n) => 'Confidence ' + n + ' of 99');
+    });
+  }
+  function tableRoles() {
+    // Some option layouts restyle table rows as flex or grid; keep the table readable to screen readers.
+    matrix.setAttribute('role', 'table');
+    matrix.querySelectorAll('tr').forEach((tr) => tr.setAttribute('role', 'row'));
+    matrix.querySelectorAll('th').forEach((th) => th.setAttribute('role', 'columnheader'));
+    matrix.querySelectorAll('td').forEach((td) => td.setAttribute('role', td.cellIndex === 0 ? 'rowheader' : 'cell'));
+  }
+  function gauge() {
+    const arc = $('gaugeArc'); if (!arc) return;
+    const v = Math.max(0, Math.min(100, Number($('o2').value) || 0));
+    arc.style.strokeDasharray = v + ' 100';
+    set('gaugeValue', (Math.round(v * 10) / 10) + '%');
+  }
+  new MutationObserver(stats).observe(ranking, { childList: true });
+  new MutationObserver(tableRoles).observe(matrix, { childList: true, subtree: true });
+  new MutationObserver(gauge).observe($('o2conv'), { childList: true, characterData: true, subtree: true });
+  gauge();
+
+  // ---- spotlight: a soft light follows the pointer across result and investigation cards ----
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest && e.target.closest('.rank, .inv');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  }, { passive: true });
+
+  // ---- WebGL flame: a swirling microgravity fire sphere. Falls back to the CSS flame if WebGL is unavailable. ----
+  (function flameGL() {
+    const flame = $('flame'), host = flame && flame.parentElement; if (!host) return;
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+    if (!gl) return;
+    const VS = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
+    const FS = [
+      'precision mediump float;',
+      'uniform vec2 u_res; uniform float u_time; uniform float u_t;',
+      'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+      'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);',
+      '  return mix(mix(hash(i), hash(i+vec2(1.,0.)), f.x), mix(hash(i+vec2(0.,1.)), hash(i+vec2(1.,1.)), f.x), f.y); }',
+      'float fbm(vec2 p){ float v = 0., a = .5; for(int i=0;i<5;i++){ v += a*noise(p); p = p*2.03 + 7.1; a *= .5; } return v; }',
+      'void main(){',
+      '  vec2 uv = (gl_FragCoord.xy - .5*u_res) / min(u_res.x, u_res.y);',
+      '  float R = mix(.23, .39, u_t);',
+      '  float tm = u_time * mix(.18, .5, u_t);',
+      // domain-warped turbulence: calm in cabin air, churning in rich oxygen
+      '  vec2 q = uv * 5. + vec2(fbm(uv*3. + tm), fbm(uv*3. - tm + 4.));',
+      '  float n = fbm(q + tm*.7);',
+      '  float d = length(uv) + (n - .5) * mix(.035, .12, u_t);',
+      '  float body  = smoothstep(R, R*.55, d);',
+      '  float core  = smoothstep(R*.62, 0., d);',
+      '  float shell = exp(-pow((d - R*.8) / (R*.16), 2.));',   // bright thin reaction shell, like real droplet flames
+      '  float halo  = exp(-max(d - R*.7, 0.) * mix(11., 6.5, u_t));',
+      '  vec3 cCore = mix(vec3(.93,.96,1.), vec3(1.,.98,.86), u_t);',
+      '  vec3 cMid  = mix(vec3(.30,.52,1.), vec3(1.,.72,.28), u_t);',
+      '  vec3 cEdge = mix(vec3(.10,.26,.86), vec3(.92,.36,.12), u_t);',
+      '  float swirl = .7 + .6 * fbm(q*1.7 - tm);',
+      '  vec3 col = cEdge * halo * .75 + cMid * body * swirl * .8 + cMid * shell * .9 + cCore * core * core * 1.1;',
+      // fake depth: lit from upper left, darker lower right, so it reads as a ball not a disc
+      '  float lit = .82 + .28 * dot(normalize(vec3(uv / R, .9)), normalize(vec3(-.5, .6, .7)));',
+      '  col *= mix(1., lit, body);',
+      '  float a = clamp(max(body, halo * .9), 0., 1.);',
+      '  gl_FragColor = vec4(col * a, a);',
+      '}'].join('\n');
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; };
+    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS); if (!vs || !fs) return;
+    const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const uRes = gl.getUniformLocation(prog, 'u_res'), uTime = gl.getUniformLocation(prog, 'u_time'), uT = gl.getUniformLocation(prog, 'u_t');
+
+    canvas.className = 'flame-gl'; canvas.setAttribute('aria-hidden', 'true');
+    host.classList.add('flame-host'); host.insertBefore(canvas, flame); flame.classList.add('gl');
+
+    const target = () => Math.max(0, Math.min(1, ((Number($('o2').value) || 0) - 15) / 85));
+    let t = target(), visible = true, raf = 0, last = 0;
+    function size() {
+      const r = host.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.max(2, Math.round(r.width * dpr)), h = Math.max(2, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+    }
+    function draw(now) {
+      size();
+      const tg = target(), dt = Math.min(.25, (now - last) / 1000 || 0); last = now; t += (tg - t) * (reduce() ? 1 : 1 - Math.exp(-dt * 5));
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, reduce() ? 3.7 : now / 1000);
+      gl.uniform1f(uT, t);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    function loop(now) { raf = 0; draw(now); if (visible && !reduce()) raf = requestAnimationFrame(loop); }
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) kick(); }).observe(canvas);
+    new ResizeObserver(kick).observe(host);
+    new MutationObserver(kick).observe($('o2conv'), { childList: true, characterData: true, subtree: true });   // redraw on oxygen change (reduced motion)
+    kick();
+  })();
+
+  // ---- interactive background: a drifting ribbon of light and dust behind the hero that bends toward the pointer ----
+  (function waveGL() {
+    const hero = document.querySelector('.hero'); if (!hero) return;
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+    if (!gl) return;
+    const VS = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
+    const FS = [
+      'precision mediump float;',
+      'uniform vec2 u_res; uniform float u_time; uniform vec3 u_m;',   // u_m = pointer x, pointer y (0..1, y up), strength
+      'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+      'void main(){',
+      '  vec2 uv = gl_FragCoord.xy / u_res; float x = uv.x * u_res.x / u_res.y;',
+      '  float t = u_time * .1;',
+      '  float m = exp(-pow((uv.x - u_m.x) * 3.4, 2.)) * u_m.z;',                       // how close this column is to the pointer
+      '  float c = .50 + .15 * sin(x * 1.25 + t * 2.) + .07 * sin(x * 2.8 - t * 3.1 + 1.7) + m * (u_m.y - .5) * .42;',
+      '  float w = .17 + .09 * sin(x * 1.05 - t * 1.6 + .6) + .04 * m;',
+      '  float d = (uv.y - c) / w;',
+      '  float sheet = smoothstep(1., 0., abs(d)); sheet *= sheet;',
+      '  float fold = .5 + .5 * sin(d * 3.2 + x * 2.1 + t * 4.);',                      // soft folds, like fabric catching light
+      '  float g = hash(floor(gl_FragCoord.xy / 1.6) + floor(u_time * 5.) * 7.);',      // fine dust, re-rolled 5 times a second
+      '  float aS = sheet * (.26 + .30 * fold) * (.72 + .5 * step(.55, g)) * (1. + .5 * m);',
+      '  float aD = smoothstep(1.35, .55, abs(d)) * step(.955, g) * .26;',                 // dust halo around the ribbon
+      '  vec3 cS = mix(vec3(.30, .50, 1.), vec3(.78, .87, 1.), fold);',
+      '  vec3 cD = vec3(.05, .12, .26);',
+      '  float fade = smoothstep(0., .32, uv.y) * smoothstep(1., .82, uv.y);',
+      '  aS *= fade; aD *= fade;',
+      '  float a = clamp(aS + aD, 0., .6);',
+      '  gl_FragColor = vec4(cS * aS + cD * aD, a);',
+      '}'].join('\n');
+    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS); if (!vs || !fs) return;
+    const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const uRes = gl.getUniformLocation(prog, 'u_res'), uTime = gl.getUniformLocation(prog, 'u_time'), uM = gl.getUniformLocation(prog, 'u_m');
+    canvas.className = 'wave-gl'; canvas.setAttribute('aria-hidden', 'true');
+    document.body.insertBefore(canvas, document.body.firstChild);
+
+    let visible = true, raf = 0, mx = .5, my = .5, ms = 0, tx = .5, ty = .5, ts = 0;
+    function size() {
+      const h = Math.round(hero.getBoundingClientRect().bottom + window.scrollY + 40);
+      if (canvas.style.height !== h + 'px') canvas.style.height = h + 'px';
+      const r = canvas.getBoundingClientRect(), dpr = Math.min(1.5, window.devicePixelRatio || 1);
+      const w = Math.max(2, Math.round(r.width * dpr)), hh = Math.max(2, Math.round(r.height * dpr));
+      if (canvas.width !== w || canvas.height !== hh) { canvas.width = w; canvas.height = hh; gl.viewport(0, 0, w, hh); }
+    }
+    function draw(now) {
+      size();
+      mx += (tx - mx) * .08; my += (ty - my) * .08; ms += (ts - ms) * .06;
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, reduce() ? 12.3 : now / 1000);
+      gl.uniform3f(uM, mx, my, reduce() ? 0 : ms);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    function loop(now) { raf = 0; draw(now); if (visible && !reduce()) raf = requestAnimationFrame(loop); }
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    window.addEventListener('pointermove', (e) => {
+      const r = canvas.getBoundingClientRect();
+      const inside = e.clientY >= r.top && e.clientY <= r.bottom;
+      ts = inside ? 1 : 0;
+      if (inside) { tx = (e.clientX - r.left) / r.width; ty = 1 - (e.clientY - r.top) / r.height; }
+    }, { passive: true });
+    document.addEventListener('pointerleave', () => { ts = 0; });
+    new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) kick(); }).observe(canvas);
+    new ResizeObserver(kick).observe(hero);
+    kick();
+  })();
 })();
 </script>
 </body>
