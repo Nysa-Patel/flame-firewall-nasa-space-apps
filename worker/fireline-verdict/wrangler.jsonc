@@ -2,6 +2,8 @@
 	"name": "fireline-verdict",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-01-01",
+	// Static Assets: serves ../../web (the FireLine front end) from the same deploy, so / is the UI and /verdict, /chat are the API on one origin.
+	"assets": { "directory": "../../web" },
 	"compatibility_flags": [
 		"nodejs_compat"
 	],

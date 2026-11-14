@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FireLine</title>
+<meta name="description" content="Rank candidate materials against NASA microgravity combustion tests for a chosen cabin atmosphere.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef1f4; --surface: #ffffff; --ink: #14202b; --ink-2: #51616f; --rule: #d3dbe2; --rule-strong: #aab6c2;
+    --flame: #1f5eea; --flame-tint: #e3ecff;
+    --pass: #157a4e; --pass-tint: #dff2e7; --caution: #9c6208; --caution-tint: #fbefd6; --fail: #bf3129; --fail-tint: #fbe3e0; --none: #66727f; --none-tint: #e6ebf0;
+    --chamber: #0a1320;
+    --flame-d: 120px; --flame-core: #eef4ff; --flame-mid: #5f8dff; --flame-edge: #1f4fd6;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body { margin: 0; color: var(--ink); background: var(--paper); font-family: Archivo, system-ui, sans-serif; font-size: 16px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1, h2, h3 { margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1; font-stretch: 78%; max-width: 12ch; }
+  h2 { font-size: 26px; line-height: 1.15; font-stretch: 88%; margin: 56px 0 14px; }
+  h3 { font-size: 18px; font-weight: 700; }
+  p { margin: 0; }
+  .lede { font-size: 18px; color: var(--ink-2); max-width: 52ch; margin-top: 14px; }
+  .quiet { color: var(--ink-2); }
+  .small { font-size: 14px; }
+  a { color: var(--flame); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; border-radius: 2px; }
+  .hidden { display: none !important; }
+
+  /* ---- hero: text + chamber viewport ---- */
+  .hero { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
+  .chamber-wrap { justify-self: end; text-align: center; width: 100%; max-width: 300px; }
+  .chamber { position: relative; width: 100%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #182538 0%, var(--chamber) 70%);
+    border: 10px solid #d7dee5; box-shadow: inset 0 0 0 2px #96a3b0, inset 0 10px 24px rgba(0,0,0,.6), 0 1px 0 #fff; display: grid; place-items: center; overflow: hidden; }
+  .chamber::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(160deg, rgba(255,255,255,.14), transparent 45%); pointer-events: none; }
+  .flame { width: var(--flame-d); height: var(--flame-d); border-radius: 50%; transition: width .5s ease, height .5s ease, filter .5s ease;
+    background: radial-gradient(circle at 50% 50%, var(--flame-core) 0%, var(--flame-mid) 30%, var(--flame-edge) 58%, transparent 72%);
+    filter: blur(2px) drop-shadow(0 0 24px var(--flame-mid)); }
+  .chamber-note { margin-top: 12px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+  .chamber-note b { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .flame { transition: none; } }
+
+  /* ---- scenario form ---- */
+  .scenario { margin-top: 28px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid var(--rule); }
+  .preset { position: relative; }
+  .preset input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .preset span { display: block; padding: 10px 14px 12px; min-height: 44px; cursor: pointer; color: var(--ink-2); margin-bottom: -2px; border-bottom: 2px solid transparent; font-weight: 600; }
+  .preset small { display: block; font-weight: 400; font-size: 13px; }
+  .preset input:checked + span { color: var(--ink); border-bottom-color: var(--flame); }
+  .preset input:focus-visible + span { outline: 2px solid var(--flame); outline-offset: -2px; }
+  .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+  .fields .wide { grid-column: 1 / -1; }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  label .quiet { font-weight: 400; }
+  input, textarea { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); font: inherit; min-height: 44px; }
+  textarea { resize: vertical; }
+  .conv { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .preset-note { margin-top: 14px; max-width: 70ch; color: var(--ink-2); font-size: 15px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-top: 20px; }
+  button { font: inherit; font-weight: 600; min-height: 44px; padding: 10px 20px; border-radius: 6px; border: 1px solid var(--flame); background: var(--flame); color: #fff; cursor: pointer; }
+  button.secondary { background: var(--surface); color: var(--ink); border-color: var(--rule-strong); }
+  button:disabled { opacity: .55; cursor: progress; }
+  details.settings { margin-top: 18px; font-size: 14px; color: var(--ink-2); }
+  details.settings summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; }
+  details.settings label { margin-top: 12px; }
+  details.settings input[type=url] { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; }
+  details.settings label.inline { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+  details.settings label.inline input { width: 20px; height: 20px; min-height: 0; margin: 0; }
+  .banner { margin-top: 20px; padding: 12px 16px; border-left: 4px solid var(--caution); background: var(--caution-tint); color: var(--ink); border-radius: 0 6px 6px 0; font-size: 15px; }
+  .status { margin-top: 16px; min-height: 1.5em; color: var(--ink-2); }
+  .status.error { color: var(--fail); font-weight: 600; }
+
+  /* ---- verdict list ---- */
+  .verdict-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  .verdict-head .quiet { font-size: 17px; }
+  .rank { display: grid; grid-template-columns: 150px 1fr 170px; gap: 8px 24px; padding: 22px 0; border-top: 1px solid var(--rule); }
+  .rank:last-child { border-bottom: 1px solid var(--rule); }
+  .word { font-size: 34px; line-height: 1; font-weight: 800; font-stretch: 72%; letter-spacing: -0.005em; }
+  .word.ok { color: var(--pass); } .word.warn { color: var(--caution); } .word.bad { color: var(--fail); } .word.none { color: var(--none); }
+  .rank .num { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+  .rank h3 { font-size: 22px; }
+  .rank .rec { margin-top: 6px; max-width: 72ch; }
+  .rank .cite { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 80ch; }
+  .rank .cite b { color: var(--ink); font-weight: 600; }
+  .conf { font-size: 14px; color: var(--ink-2); }
+  .conf .meter { display: flex; gap: 3px; margin: 6px 0 4px; }
+  .conf .meter i { flex: 1; height: 10px; background: var(--rule); border-radius: 2px; }
+  .conf .meter i.on { background: var(--flame); }
+  .sweep { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip { font-size: 13px; padding: 5px 10px; border-radius: 4px; background: var(--none-tint); color: var(--ink); white-space: nowrap; }
+  .chip b { font-weight: 700; }
+  .chip.ok { background: var(--pass-tint); } .chip.ok b { color: var(--pass); }
+  .chip.warn { background: var(--caution-tint); } .chip.warn b { color: var(--caution); }
+  .chip.bad { background: var(--fail-tint); } .chip.bad b { color: var(--fail); }
+  .chip.none b { color: var(--none); }
+  details.ev { margin-top: 12px; font-size: 14px; }
+  details.ev summary { cursor: pointer; color: var(--flame); min-height: 32px; display: inline-flex; align-items: center; }
+
+  /* ---- tables ---- */
+  .wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; white-space: nowrap; }
+  th { font-weight: 600; color: var(--ink-2); border-bottom-color: var(--rule-strong); }
+  th .quiet { font-weight: 400; }
+  td.cell { font-weight: 700; }
+  td.cell.ok { background: var(--pass-tint); color: var(--pass); } td.cell.warn { background: var(--caution-tint); color: var(--caution); }
+  td.cell.bad { background: var(--fail-tint); color: var(--fail); } td.cell.none { color: var(--none); font-weight: 400; }
+  td.cell .quiet { font-weight: 400; color: var(--ink-2); }
+  .intro { max-width: 72ch; color: var(--ink-2); margin-bottom: 14px; }
+
+  /* ---- method ---- */
+  .method { max-width: 72ch; }
+  .method p + p { margin-top: 10px; }
+  pre { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 13px; }
+  details.raw { margin-top: 14px; font-size: 14px; color: var(--ink-2); }
+  details.raw summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; }
+
+  /* ---- investigations ---- */
+  .inv-search { max-width: 520px; }
+  .inv-source { margin-top: 12px; max-width: 72ch; color: var(--ink-2); font-size: 14px; }
+  .inv { padding: 16px 0; border-top: 1px solid var(--rule); max-width: 80ch; }
+  .inv:last-child { border-bottom: 1px solid var(--rule); }
+  .inv h3 { display: inline; margin-right: 8px; }
+  .inv .meta { font-size: 14px; color: var(--ink-2); margin-top: 4px; }
+  .inv .objective { margin-top: 6px; font-size: 15px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; vertical-align: 2px; }
+  .tag.cited { background: var(--flame-tint); color: var(--flame); }
+  .tag.placeholder { background: var(--none-tint); color: var(--none); }
+
+  /* ---- Mission Control ---- */
+  .chat-row { display: flex; gap: 10px; flex-wrap: wrap; max-width: 720px; }
+  .chat-row input { flex: 1 1 260px; }
+  .reply { white-space: pre-wrap; margin-top: 14px; padding: 14px 16px; background: var(--surface); border-left: 4px solid var(--flame); border-radius: 0 6px 6px 0; max-width: 72ch; }
+
+  footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); max-width: 72ch; }
+
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; }
+    .chamber-wrap { justify-self: start; max-width: 220px; text-align: left; }
+    .fields { grid-template-columns: 1fr 1fr; }
+    .fields > div:first-child { grid-column: 1 / -1; }
+    .rank { grid-template-columns: 1fr; gap: 6px; }
+    .rank .num { margin-top: 0; }
+    .word { font-size: 30px; }
+    .conf { margin-top: 4px; }
+    .conf .meter { max-width: 180px; }
+    h2 { margin-top: 44px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <h1>Will it burn up there?</h1>
+      <p class="lede">Choose a cabin atmosphere and list the materials you're considering. FireLine ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
+    </div>
+    <div class="chamber-wrap" aria-hidden="true">
+      <div class="chamber"><div class="flame" id="flame"></div></div>
+      <p class="chamber-note" id="flameNote"></p>
+    </div>
+  </header>
+
+  <div id="mockBanner" class="banner hidden" role="status">Mock mode is on. Every number below is synthetic. Turn it off in Settings once the worker is reachable.</div>
+
+  <section class="scenario" aria-labelledby="scenario-h">
+    <h2 id="scenario-h">Mission atmosphere</h2>
+    <div class="presets" role="radiogroup" aria-label="Mission preset" id="presets"></div>
+    <form id="form">
+      <div class="fields">
+        <div>
+          <label for="o2">Oxygen <span class="quiet">(% by volume)</span></label>
+          <input id="o2" type="number" min="1" max="100" step="0.1" required>
+          <div class="conv" id="o2conv"></div>
+        </div>
+        <div>
+          <label for="p">Nominal pressure <span class="quiet">(psia)</span></label>
+          <input id="p" type="number" min="0.5" max="70" step="0.1" required>
+          <div class="conv" id="pconv"></div>
+        </div>
+        <div>
+          <label for="pmin">Depress floor <span class="quiet">(psia)</span></label>
+          <input id="pmin" type="number" min="0.5" max="70" step="0.1" required>
+          <div class="conv" id="pminconv"></div>
+        </div>
+        <div class="wide">
+          <label for="materials">Candidate materials <span class="quiet">(comma separated; matched against NASA test fuel names)</span></label>
+          <textarea id="materials" rows="2"></textarea>
+        </div>
+      </div>
+      <p class="preset-note" id="presetNote"></p>
+      <div class="actions">
+        <button id="go" type="submit">Rank materials</button>
+        <span class="small quiet">Checks each material at nominal pressure and at three steps down to the depress floor.</span>
+      </div>
+    </form>
+    <details class="settings">
+      <summary>Settings</summary>
+      <label for="api">Worker address</label>
+      <input id="api" type="url" spellcheck="false">
+      <label class="inline"><input id="mock" type="checkbox"> Mock mode: no network, synthetic data</label>
+      <p class="small" style="margin-top:8px">Defaults to this page's origin when served by the worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
+    </details>
+  </section>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <div id="results" class="hidden">
+    <div class="verdict-head" style="margin-top:56px"><h2 style="margin:0">Ranking</h2><span class="quiet" id="scenarioLabel"></span></div>
+    <section id="ranking" style="margin-top:14px"></section>
+
+    <h2>Across the operational range</h2>
+    <p class="intro" id="rangeIntro"></p>
+    <div class="wrap"><table id="matrix"></table></div>
+
+    <h2>How the verdicts are made</h2>
+    <div class="method">
+      <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
+      <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
+      <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
+      <p>This is FireLine's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
+      <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
+    </div>
+  </div>
+
+  <h2 id="inv-h">NASA investigations</h2>
+  <div class="inv-search">
+    <label for="invSearch">Search by title, id or objective</label>
+    <input id="invSearch" type="search" placeholder="Saffire, droplet, fabric">
+  </div>
+  <p class="inv-source" id="invSource"></p>
+  <div id="invList"></div>
+
+  <h2>Ask Mission Control</h2>
+  <p class="intro">Plain-English questions go to the worker's Gemini-backed assistant, which looks up the same test data.</p>
+  <form id="chatForm" class="chat-row">
+    <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen and 0.7 atm?" aria-label="Question for Mission Control">
+    <button type="submit" id="chatGo" class="secondary">Ask</button>
+  </form>
+  <div id="chatReply" class="reply hidden"></div>
+
+  <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const PSI_PER_ATM = 14.696;
+  const atm = (psi) => psi / PSI_PER_ATM;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const num = (x, d = 2) => (x == null || Number.isNaN(Number(x)) ? '—' : Number(x).toFixed(d).replace(/\.?0+$/, ''));
+  const pct = (f) => (f == null ? '—' : num(Number(f) * 100, 1) + '%');
+  const doiLink = (doi) => (doi ? `<a href="https://doi.org/${esc(doi)}" target="_blank" rel="noopener">${esc(doi)}</a>` : 'no DOI');
+
+  // ---------- presets (planning figures; edit freely) ----------
+  const PRESETS = {
+    iss:    { name: 'ISS cabin',          o2: 21,  p: 14.7, pmin: 10.2, note: 'Sea-level-equivalent cabin air. 10.2 psia is the reduced-pressure campout used before spacewalks, so the sweep covers a partial depress.' },
+    lunar:  { name: 'Lunar base or rover', o2: 30, p: 10.2, pmin: 8.2,  note: 'Reduced pressure with enriched oxygen to shorten spacewalk prebreathe. NASA\'s exploration atmosphere target is 8.2 psia at 34% oxygen; adjust the fields to test it.' },
+    suit:   { name: 'Spacesuit',          o2: 100, p: 4.3,  pmin: 3.5,  note: 'Pure oxygen at 4.3 psia, as in the current EMU suit. 3.5 psia is the emergency low-pressure contingency.' },
+    custom: { name: 'Custom',             o2: 30,  p: 10.3, pmin: 7,    note: 'Enter any atmosphere. Pressures are psia here; the worker is queried in atm.' },
+  };
+  // Only FLEX droplet fuels and the PSI-39 dodecane blend have both O2 and pressure recorded today; solids come back "No data" with closest research.
+  const DEFAULT_MATERIALS = 'heptane, methanol, dodecane, pmma, nomex, kapton';
+  const SWEEP_POINTS = 4;
+
+  // ---------- settings ----------
+  const params = new URLSearchParams(location.search);
+  const DEPLOYED = 'https://fireline-verdict.fireline-team.workers.dev';
+  // Same origin only when the worker itself is serving this page (workers.dev or wrangler dev on 8787).
+  // Anything else (file://, Live Server, GitHub Pages) talks to the deployed worker.
+  const servedByWorker = /\.workers\.dev$/.test(location.hostname) || location.port === '8787';
+  let savedApi = null, savedMock = null;
+  try { savedApi = localStorage.getItem('fireline.api'); savedMock = localStorage.getItem('fireline.mock'); } catch {}
+  $('api').value = params.get('api') || savedApi || (servedByWorker ? location.origin : DEPLOYED);
+  $('mock').checked = params.has('mock') ? params.get('mock') !== '0' : savedMock === '1';
+  const apiBase = () => $('api').value.trim().replace(/\/+$/, '');
+  const mockOn = () => $('mock').checked;
+  const syncMock = () => $('mockBanner').classList.toggle('hidden', !mockOn());
+  $('api').addEventListener('change', () => { try { localStorage.setItem('fireline.api', apiBase()); } catch {} });
+  $('mock').addEventListener('change', () => { try { localStorage.setItem('fireline.mock', mockOn() ? '1' : '0'); } catch {} syncMock(); loadInvestigations(); });
+  syncMock();
+
+  // ---------- the flame in the viewport reacts to oxygen ----------
+  function updateFlame(o2pct) {
+    const t = Math.max(0, Math.min(1, (o2pct - 15) / 85));           // 15% → 0, 100% → 1
+    const d = Math.round(88 + t * 120);                                 // sphere diameter in px
+    const mix = (a, b) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    const rgb = (c) => `rgb(${c.join(',')})`;
+    const root = document.documentElement.style;
+    root.setProperty('--flame-d', d + 'px');
+    root.setProperty('--flame-core', rgb(mix([238, 244, 255], [255, 250, 225])));
+    root.setProperty('--flame-mid', rgb(mix([95, 141, 255], [255, 196, 90])));
+    root.setProperty('--flame-edge', rgb(mix([31, 79, 214], [230, 110, 40])));
+    const note = o2pct >= 60 ? 'In oxygen this rich a flame burns hot, bright and fast. Almost nothing is safe.'
+      : o2pct >= 30 ? 'Enriched oxygen makes the sphere larger and brighter. Materials that self-extinguish in air may keep burning.'
+      : 'In cabin air a microgravity flame is a small, steady blue sphere: no flicker, because nothing rises.';
+    $('flameNote').innerHTML = `<b>${num(o2pct, 1)}% oxygen.</b> ${note}`;
+  }
+
+  // ---------- scenario picker ----------
+  $('presets').innerHTML = Object.entries(PRESETS).map(([k, v], i) => `
+    <label class="preset"><input type="radio" name="preset" value="${k}" ${i === 0 ? 'checked' : ''}>
+      <span>${esc(v.name)}<small>${v.o2}% oxygen, ${v.p} psia</small></span></label>`).join('');
+  function applyPreset(k) {
+    const v = PRESETS[k]; $('o2').value = v.o2; $('p').value = v.p; $('pmin').value = v.pmin; $('presetNote').textContent = v.note; updateConv();
+  }
+  document.querySelectorAll('input[name=preset]').forEach((r) => r.addEventListener('change', () => applyPreset(r.value)));
+  function updateConv() {
+    $('o2conv').textContent = `fraction ${num(Number($('o2').value) / 100, 3)}`;
+    $('pconv').textContent = `${num(atm(Number($('p').value)), 3)} atm`;
+    $('pminconv').textContent = `${num(atm(Number($('pmin').value)), 3)} atm`;
+    updateFlame(Number($('o2').value) || 0);
+  }
+  ['o2', 'p', 'pmin'].forEach((id) => $(id).addEventListener('input', () => { updateConv(); document.querySelector('input[name=preset][value=custom]').checked = true; $('presetNote').textContent = PRESETS.custom.note; }));
+  $('materials').value = DEFAULT_MATERIALS;
+  applyPreset('iss');
+
+  // ---------- API (real or mock) ----------
+  async function verdict(o2, p, material) {
+    if (mockOn()) return mockVerdict(o2, p, material);
+    const res = await fetch(apiBase() + '/verdict', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ o2_fraction: o2, pressure_atm: p, material }) });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error + (data.detail ? ': ' + data.detail : ''));
+    return data;
+  }
+  async function pool(tasks, n = 4) {
+    const out = new Array(tasks.length); let i = 0;
+    await Promise.all(Array.from({ length: Math.min(n, tasks.length) }, async () => { while (i < tasks.length) { const k = i++; out[k] = await tasks[k](); } }));
+    return out;
+  }
+
+  // ---------- verdict heuristic (explained on the page) ----------
+  const LEVELS = [{ key: 'ok', label: 'Pass' }, { key: 'warn', label: 'Caution' }, { key: 'bad', label: 'Fail' }, { key: 'none', label: 'No data' }];
+  function assess(r) {
+    if (!r.quantified) return { level: 3, confidence: 0, burnShare: null, flags: [] };
+    const n = r.nearest, flags = [];
+    const burnShare = n.n_tests ? 1 - (n.n_extinctions + n.n_disruptions) / n.n_tests : null;
+    let level = burnShare == null ? 3 : burnShare <= 1 / 3 ? 0 : burnShare <= 2 / 3 ? 1 : 2;
+    if (r.relation === 'extrapolation' && level === 0) { level = 1; flags.push('the scenario is outside the tested range'); }
+    if (r.tested_range && r.input.o2_fraction > r.tested_range.o2_fraction[1] + 1e-9 && level === 0) { level = 1; flags.push('oxygen is higher than any test of this material'); }
+    const relScore = { exact_bucket: 40, interpolation: 25, extrapolation: 5 }[r.relation] ?? 0;
+    const confidence = Math.max(5, Math.min(99, Math.round(50 * Math.min(n.n_tests, 20) / 20 + relScore - Math.min(15, 5 * (n.distance?.bucket_widths ?? 0)))));
+    return { level, confidence, burnShare, flags };
+  }
+  const recommend = (level, best) => [
+    'Acceptable for this atmosphere on the test record. Keep standard ignition-source controls.',
+    'Use only with mitigation: limit the quantity and exposed area, keep it clear of ignition sources, and confirm with a ground flammability test (NASA-STD-6001 Test 1) at these conditions.',
+    'Do not use at these conditions.' + (best ? ` ${best[0].toUpperCase() + best.slice(1)} ranks as a Pass.` : ''),
+    'No quantified NASA test near these conditions. Treat it as untested; the closest research is listed below.',
+  ][level];
+
+  // ---------- run analysis ----------
+  const investigationsSeen = new Map();
+  function noteInvestigation(id, title, doi, n) {
+    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true };
+    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0); investigationsSeen.set(id, cur);
+  }
+  function harvest(r) {
+    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests);
+    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests));
+    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests));
+  }
+
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const o2 = Number($('o2').value) / 100, pNom = Number($('p').value), pMin = Number($('pmin').value);
+    const materials = [...new Set($('materials').value.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean))];
+    if (!materials.length) return setStatus('Add at least one material to rank.', true);
+    if (pMin > pNom) return setStatus('The depress floor has to be at or below the nominal pressure.', true);
+    const pointsPsi = pMin === pNom ? [pNom] : Array.from({ length: SWEEP_POINTS }, (_, i) => pNom - (pNom - pMin) * i / (SWEEP_POINTS - 1));
+    const points = pointsPsi.map((psi) => ({ psi: Number(psi.toFixed(2)), atm: Number(atm(psi).toFixed(4)) }));
+    const preset = document.querySelector('input[name=preset]:checked').value;
+    $('go').disabled = true; $('results').classList.add('hidden');
+    setStatus(`Ranking ${materials.length} materials at ${points.length} pressures…`);
+    try {
+      const tasks = []; materials.forEach((m) => points.forEach((pt) => tasks.push(() => verdict(o2, pt.atm, m))));
+      const flat = await pool(tasks);
+      const rows = materials.map((m, i) => {
+        const perPoint = points.map((pt, j) => { const r = flat[i * points.length + j]; harvest(r); return { pt, r, a: assess(r) }; });
+        return { material: m, nominal: perPoint[0], perPoint, worst: Math.max(...perPoint.map((x) => x.a.level === 3 ? -1 : x.a.level)) };
+      });
+      rows.sort((x, y) => x.nominal.a.level - y.nominal.a.level || x.worst - y.worst || y.nominal.a.confidence - x.nominal.a.confidence);
+      render(rows, points, { o2, pNom, pMin, name: PRESETS[preset].name });
+      $('raw').textContent = JSON.stringify(flat, null, 2);
+      setStatus('');
+      renderInvestigations();
+    } catch (err) {
+      setStatus('The worker request failed: ' + err.message + (err.name === 'TypeError' ? `. Check that the worker is running at ${apiBase()}, or turn on mock mode in Settings.` : ''), true);
+    } finally { $('go').disabled = false; }
+  });
+  function setStatus(msg, isErr) { $('status').textContent = msg; $('status').className = 'status' + (isErr ? ' error' : ''); }
+
+  // ---------- rendering ----------
+  function rangeSummary(row, points) {
+    const L = (i) => LEVELS[row.perPoint[i].a.level].label;
+    const change = row.perPoint.findIndex((x, i) => i > 0 && x.a.level !== row.perPoint[0].a.level);
+    if (change < 0) return `${L(0)} across the whole range, ${points[0].psi} down to ${points[points.length - 1].psi} psia.`;
+    const p = row.perPoint[change].pt.psi;
+    return `${L(0)} at the nominal ${points[0].psi} psia, ${L(change)} if pressure drops to ${p} psia${change < points.length - 1 ? ' or below' : ''}.`;
+  }
+  const meter = (c) => `<span class="meter" aria-hidden="true">${[1, 2, 3, 4, 5].map((i) => `<i class="${c >= i * 20 - 10 ? 'on' : ''}"></i>`).join('')}</span>`;
+  function render(rows, points, s) {
+    $('scenarioLabel').textContent = `${s.name}, ${num(s.o2 * 100, 1)}% oxygen at ${s.pNom} psia`;
+    const best = rows.find((r) => r.nominal.a.level === 0)?.material;
+    $('ranking').innerHTML = rows.map((row, i) => {
+      const r = row.nominal.r, a = row.nominal.a, lv = LEVELS[a.level], n = r.nearest;
+      const cite = n ? `Nearest evidence: ${n.n_tests} tests of <b>${esc(n.fuel_material || 'an unnamed fuel')}</b> at ${pct(n.o2_bucket.range[0])} to ${pct(n.o2_bucket.range[1])} oxygen and ${num(n.pressure_bucket.range[0])} to ${num(n.pressure_bucket.range[1])} atm, from <b>${esc(n.investigation_title || n.investigation_id)}</b> (${esc(n.investigation_id)}, DOI ${doiLink(n.doi)}). ${n.n_extinctions} extinguished, ${n.n_disruptions} disrupted; average burn rate ${num(n.avg_burn_rate, 3)}. ${esc(r.relation.replace('_', ' '))}${a.flags.length ? ', and ' + esc(a.flags.join('; ')) : ''}.`
+        : (r.fallback?.investigations?.length ? `Closest research: ${r.fallback.investigations.map((x) => `<b>${esc(x.title || x.investigation_id)}</b> (${esc(x.investigation_id)}, DOI ${doiLink(x.doi)})`).join('; ')}.` : 'No investigation mentions this material.');
+      const sweep = row.perPoint.map((x) => `<span class="chip ${LEVELS[x.a.level].key}">${x.pt.psi} psia <b>${LEVELS[x.a.level].label}</b></span>`).join('');
+      const ev = r.evidence?.length ? `<details class="ev"><summary>Show the ${r.evidence.length} individual tests</summary><div class="wrap"><table>
+          <tr><th>Date</th><th>Oxygen</th><th>Pressure (atm)</th><th>Burn rate</th><th>Outcome</th><th>Source file</th><th>DOI</th></tr>
+          ${r.evidence.map((t) => `<tr><td>${esc(t.test_date ? String(t.test_date).slice(0, 10) : '—')}</td><td>${pct(t.o2_fraction)}</td><td>${num(t.pressure_atm)}</td><td>${num(t.burn_rate, 3)}</td><td>${esc(t.outcome || '—')}</td><td class="quiet">${esc(t.source_file || '—')}</td><td>${doiLink(t.doi)}</td></tr>`).join('')}
+        </table></div></details>` : '';
+      return `<article class="rank" aria-label="${esc(row.material)}: ${lv.label}">
+        <div><div class="word ${lv.key}">${lv.label}</div><div class="num">Rank ${i + 1}${a.burnShare != null ? `, burn share ${pct(a.burnShare)}` : ''}</div></div>
+        <div><h3>${esc(row.material)}</h3>
+          <p class="rec">${esc(recommend(a.level, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
+          <p class="cite">${cite}</p>
+          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${ev}</div>
+        <div class="conf">${a.level < 3 ? `Confidence ${a.confidence} of 99${meter(a.confidence)}` : 'No confidence score without data.'}</div></article>`;
+    }).join('');
+    $('rangeIntro').textContent = `Oxygen held at ${num(s.o2 * 100, 1)}% while pressure steps from the nominal ${s.pNom} psia down to the ${s.pMin} psia depress floor. Each cell is the verdict from the nearest tested bucket at that point, with its confidence.`;
+    $('matrix').innerHTML = `<tr><th>Material</th>${points.map((p) => `<th>${p.psi} psia <span class="quiet">(${num(p.atm)} atm)</span></th>`).join('')}</tr>` +
+      rows.map((row) => `<tr><td>${esc(row.material)}</td>${row.perPoint.map((x) => `<td class="cell ${LEVELS[x.a.level].key}">${LEVELS[x.a.level].label}${x.a.level < 3 ? ` <span class="quiet">${x.a.confidence}</span>` : ''}</td>`).join('')}</tr>`).join('');
+    $('results').classList.remove('hidden');
+  }
+
+  // ---------- investigation browser ----------
+  // Expects GET /investigations -> [{ accession, title, doi, objective, n_tests }] once the worker has it.
+  // Until then it shows investigations harvested from verdict responses, plus a placeholder list.
+  let invRows = [], invSource = '';
+  async function loadInvestigations() {
+    invRows = []; invSource = '';
+    if (!mockOn()) {
+      try {
+        const res = await fetch(apiBase() + '/investigations');
+        if (res.ok) { const d = await res.json(); if (Array.isArray(d)) { invRows = d; invSource = `${d.length} investigations from the worker.`; } }
+      } catch {}
+    }
+    if (!invRows.length) {
+      if (mockOn()) { invRows = MOCK_INVESTIGATIONS.map((x) => ({ ...x, placeholder: true })); invSource = 'Mock mode: a placeholder list of known PSI combustion investigations, without DOIs or test counts.'; }
+      else invSource = 'Investigations cited by the ranking above, with DOIs and test counts from the worker. The full catalogue appears once the worker has an investigations route.';
+    }
+    renderInvestigations();
+  }
+  function renderInvestigations() {
+    const q = $('invSearch').value.trim().toLowerCase();
+    const merged = new Map(invRows.map((x) => [x.accession, { ...x }]));
+    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests) }); } else merged.set(k, v); });
+    const list = [...merged.values()].filter((x) => !q || [x.accession, x.title, x.objective].some((f) => (f || '').toLowerCase().includes(q)))
+      .sort((a, b) => (b.seen ? 1 : 0) - (a.seen ? 1 : 0) || (b.n_tests || 0) - (a.n_tests || 0) || String(a.title).localeCompare(String(b.title)));
+    $('invSource').textContent = invSource;
+    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}
+      <p class="meta">${esc(x.accession)}. DOI ${doiLink(x.doi)}.${x.n_tests ? ` ${x.n_tests} tests.` : ''}</p>${x.objective ? `<p class="objective">${esc(x.objective)}</p>` : ''}</div>`).join('')
+      : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
+  }
+  $('invSearch').addEventListener('input', renderInvestigations);
+
+  // ---------- Mission Control chat ----------
+  $('chatForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = $('chatMsg').value.trim(); if (!message) return;
+    $('chatGo').disabled = true; $('chatReply').classList.remove('hidden'); $('chatReply').textContent = 'Asking…';
+    try {
+      let reply;
+      if (mockOn()) reply = 'Mock mode is on, so Mission Control is offline. It needs the worker\'s chat route, which runs through Gemini on Cloudflare AI Gateway. Turn mock mode off in Settings to ask for real.';
+      else {
+        const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message }) });
+        const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
+        reply = d.reply; if (d.verdict) harvest(d.verdict), renderInvestigations();
+      }
+      $('chatReply').textContent = reply;
+    } catch (err) { $('chatReply').textContent = 'Mission Control did not answer: ' + err.message; }
+    finally { $('chatGo').disabled = false; }
+  });
+
+  // ---------- mock data (synthetic, clearly labelled) ----------
+  const MOCK_INVESTIGATIONS = [
+    { accession: 'FLEX', title: 'Flame Extinguishment Experiment', objective: 'Droplet combustion of heptane and methanol in microgravity to study extinction limits and suppressant effectiveness.' },
+    { accession: 'FLEX-2', title: 'Flame Extinguishment Experiment 2', objective: 'Extends FLEX to multi-component fuels and larger droplets.' },
+    { accession: 'BASS', title: 'Burning and Suppression of Solids', objective: 'Flame spread over PMMA, cotton-fiberglass fabric and other solids in the Microgravity Science Glovebox.' },
+    { accession: 'BASS-II', title: 'Burning and Suppression of Solids II', objective: 'Continues BASS with varied oxygen, flow and sample geometry.' },
+    { accession: 'Saffire-I', title: 'Spacecraft Fire Experiment I', objective: 'Large-scale flame spread over SIBAL fabric aboard Cygnus after departure from ISS.' },
+    { accession: 'Saffire-III', title: 'Spacecraft Fire Experiment III', objective: 'Large sample flame spread in Cygnus at reduced pressure and elevated oxygen.' },
+    { accession: 'ACME', title: 'Advanced Combustion via Microgravity Experiments', objective: 'Gaseous flame structure, soot and extinction in the Combustion Integrated Rack.' },
+    { accession: 'SoFIE', title: 'Solid Fuel Ignition and Extinction', objective: 'Ignition and extinction of solid fuels at spacecraft-relevant pressures and oxygen concentrations.' },
+  ];
+  const MOCK_FUELS = { pmma: [0.21, 0.4, 0.5, 1.1, 'BASS'], cotton: [0.21, 0.34, 0.5, 1.1, 'Saffire-I'], nomex: [0.21, 0.4, 0.4, 1.1, 'Saffire-III'], polyethylene: [0.21, 0.34, 0.6, 1.1, 'BASS-II'],
+    heptane: [0.15, 0.3, 0.5, 1.1, 'FLEX'], methanol: [0.15, 0.3, 0.4, 1.1, 'FLEX'], ethanol: [0.18, 0.3, 0.5, 1.1, 'FLEX-2'], silicone: [0.21, 0.34, 0.5, 1.1, 'Saffire-III'] };
+  function mockVerdict(o2, p, material) {
+    const key = Object.keys(MOCK_FUELS).find((k) => material && k.includes(material) || material && material.includes(k));
+    const input = { o2_fraction: o2, pressure_atm: p, material: material || null };
+    const notes = ['MOCK DATA: synthetic numbers for UI development only.'];
+    if (!key) return { quantified: false, input, nearest: null, relation: null, tested_range: null, neighbors: [], evidence: [],
+      fallback: { reason: material ? 'material_not_in_tests_text_search_only' : 'no_quantified_match_and_no_material_given', investigations: material ? [{ investigation_id: 'SoFIE', title: 'Solid Fuel Ignition and Extinction', doi: null, objective: 'Ignition and extinction of solid fuels at spacecraft-relevant pressures.', approach: null, description: null, n_matching_tests: 0 }] : [] }, notes };
+    const [o2lo, o2hi, plo, phi, inv] = MOCK_FUELS[key];
+    const ob = Math.min(20, Math.max(1, Math.floor(o2 / 0.05) + 1)), pb = Math.min(20, Math.max(1, Math.floor(p / 0.1) + 1));
+    const o2c = (ob - 0.5) * 0.05, pc = (pb - 0.5) * 0.1;
+    const inside = o2 >= o2lo && o2 <= o2hi && p >= plo && p <= phi;
+    const nTests = 6 + ((key.length * 7 + ob * 3 + pb) % 9);
+    const burnProb = Math.max(0, Math.min(1, (o2 - o2lo) / (o2hi - o2lo + 0.15) * 0.9 + (p - plo) * 0.25));
+    const ext = Math.round(nTests * (1 - burnProb) * 0.8), dis = Math.round(nTests * (1 - burnProb) * 0.2);
+    const mk = (i, fuel) => ({ investigation_id: inv, investigation_title: MOCK_INVESTIGATIONS.find((x) => x.accession === inv)?.title, doi: null, fuel_material: fuel,
+      o2_bucket: { index: ob, range: [Number(((ob - 1) * 0.05).toFixed(3)), Number((ob * 0.05).toFixed(3))], center: o2c }, pressure_bucket: { index: pb, range: [Number(((pb - 1) * 0.1).toFixed(3)), Number((pb * 0.1).toFixed(3))], center: pc },
+      n_tests: nTests - i, avg_burn_rate: Number((0.05 + burnProb * 0.3).toFixed(3)), n_extinctions: Math.max(0, ext - i), n_disruptions: dis,
+      distance: { o2_fraction: Number((o2 - o2c).toFixed(3)), pressure_atm: Number((p - pc).toFixed(3)), bucket_widths: Number((Math.hypot((o2 - o2c) / 0.05, (p - pc) / 0.1) + i * 0.9).toFixed(2)) } });
+    const outcomes = ['extinction', 'disruptive extinction', 'FT', 'burned to completion', 'SE'];
+    return { quantified: true, input, nearest: mk(0, `${key} sample (mock)`), relation: inside ? (o2 >= o2lo && o2 <= o2hi ? 'exact_bucket' : 'interpolation') : 'extrapolation',
+      tested_range: { o2_fraction: [o2lo, o2hi], pressure_atm: [plo, phi], n_tests: nTests * 4 }, neighbors: [mk(1, `${key} rod (mock)`), mk(2, `${key} sheet (mock)`)],
+      evidence: Array.from({ length: Math.min(4, nTests) }, (_, i) => ({ test_id: String(i + 1), investigation_id: inv, investigation_title: '', doi: null, fuel_material: `${key} (mock)`, o2_fraction: Number((o2c + (i - 1.5) * 0.01).toFixed(3)), pressure_atm: Number((pc + (i - 1.5) * 0.02).toFixed(3)),
+        burn_rate: i % 2 ? null : Number((0.05 + burnProb * 0.3).toFixed(3)), outcome: outcomes[(i + ob) % outcomes.length], test_date: `201${(i + ob) % 10}-0${(i % 9) + 1}-1${i}`, source_file: 'mock.csv' })),
+      fallback: null, notes };
+  }
+
+  loadInvestigations();
+})();
+</script>
+</body>
+</html>
