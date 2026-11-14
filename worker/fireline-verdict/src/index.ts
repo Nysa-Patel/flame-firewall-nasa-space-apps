@@ -2,9 +2,10 @@
 // Job: given { o2_fraction, pressure_atm, material }, return FACTS from Tiger Data.
 // It never decides PASS/CAUTION/FAIL and never writes explanations. That is Person D's layer.
 import postgres from 'postgres';
+import { handleChat } from './chat';
 
-export interface Env { HYPERDRIVE: Hyperdrive }
-type Sql = ReturnType<typeof postgres>;
+export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string }
+export type Sql = ReturnType<typeof postgres>;
 
 // ---- how flammability_envelope buckets work (from its view definition) ----
 // o2_bucket       = width_bucket(o2_fraction,   0, 1, 20) -> bucket n covers [(n-1)*0.05, n*0.05)
@@ -203,6 +204,21 @@ export default {
       } finally { ctx.waitUntil(sql.end()); }
     }
 
-    return json({ error: 'not found', routes: ['GET /health', 'POST /verdict'] }, 404);
+    if (pathname === '/chat' && request.method === 'POST') {
+      let body: unknown;
+      try { body = await request.json(); } catch { return json({ error: 'body must be valid JSON' }, 400); }
+      const message = (body as any)?.message;
+      if (typeof message !== 'string' || !message.trim()) return json({ error: 'message (string) is required' }, 400);
+
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+      try {
+        return json(await handleChat(sql, env, message));
+      } catch (e) {
+        console.error(e);
+        return json({ error: 'chat failed', detail: String((e as Error).message) }, 500);
+      } finally { ctx.waitUntil(sql.end()); }
+    }
+
+    return json({ error: 'not found', routes: ['GET /health', 'POST /verdict', 'POST /chat'] }, 404);
   },
 };
