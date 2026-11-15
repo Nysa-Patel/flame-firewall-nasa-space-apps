@@ -120,6 +120,7 @@
   .seg .btn:hover { background: var(--grey); }
   .seg .btn[aria-pressed=true] { background: var(--ink); color: #fff; }
   body[data-view=charts] :is(#filterBtn, #rotateBtn, #resetBtn) { display: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   .charts { grid-area: stage; min-height: 0; overflow-y: auto; padding: 16px 16px 28px 0; }
   .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -270,12 +271,31 @@
     .vc-line { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { .scn-set.flash { animation: none; } }
+
+  /* ===== 2D plot with trend lines ===== */
+  .plot2d { position: absolute; inset: 0; display: none; }
+  body[data-view="2d"] .plot2d { display: block; }
+  body[data-view="2d"] :is(#scene, #labels) { visibility: hidden; pointer-events: none; }
+  body[data-view="2d"] :is(#rotateBtn, #resetBtn) { display: none; }
+  body[data-view="2d"] .count { top: auto; bottom: 14px; right: 18px; }
+  body[data-view="2d"] .ov { left: auto; right: 16px; top: 54px; width: min(320px, calc(100% - 32px)); }
+  #p2svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #p2svg text { font-family: "Space Grotesk", system-ui, sans-serif; }
+  .p2bar { position: absolute; left: 16px; top: 12px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .p2bar .sg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--card); border: 1px solid var(--line-dark); }
+  .p2bar button { min-height: 32px; padding: 3px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--on-dark); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .p2bar button:hover { background: var(--card-2); }
+  .p2bar button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
+  .p2sum { position: absolute; left: 16px; bottom: 62px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 360px); }
+  .p2sum .chip { background: var(--card); border: 1px solid var(--line-dark); color: var(--on-dark); font-size: 13px; }
+  .p2sum .chip i { display: inline-block; width: 18px; height: 3px; margin-right: 6px; vertical-align: 3px; border-radius: 2px; }
+  @media (max-width: 760px) { body[data-view="2d"] .ov { left: 8px; right: auto; top: 50px; } .p2sum { display: none; } }
 </style>
 </head>
 <body>
 <header class="bar">
   <a class="brand" href="index.html">Project Phenox</a>
-  <div class="seg" role="group" aria-label="View"><button class="btn" id="v3d" type="button" aria-pressed="true">3D model</button><button class="btn" id="vCharts" type="button" aria-pressed="false">Charts</button></div>
+  <div class="seg" role="group" aria-label="View"><button class="btn" id="v2d" type="button" aria-pressed="true">2D plot</button><button class="btn" id="v3d" type="button" aria-pressed="false">3D model</button><button class="btn" id="vCharts" type="button" aria-pressed="false">Charts</button></div>
   <span class="chip" id="source" role="status">Loading data…</span>
   <button class="btn" id="filterBtn" type="button" aria-expanded="false" aria-controls="filters">Filters</button>
   <button class="btn" id="tableBtn" type="button">Table<span class="full"> view</span></button>
@@ -302,6 +322,7 @@
 </aside>
 
 <main class="stage" id="stage">
+  <div class="plot2d" id="plot2d"><div class="p2bar" id="p2bar"></div><svg id="p2svg" role="img" aria-labelledby="p2title"></svg><p class="sr-only" id="p2title"></p></div>
   <canvas id="scene" tabindex="0" aria-label="3D model of the combustion tests. Arrow keys turn it, plus and minus zoom. Use Table view to reach every test from the keyboard."></canvas>
   <div id="labels" aria-hidden="true"></div>
   <p class="count" id="count" role="status"></p>
@@ -552,19 +573,28 @@ else { srcChip.textContent = 'Mock data · not from NASA'; srcChip.classList.add
 $('legendUnv').hidden = UNVERIFIED === 0;
 if (source === 'mock') $('legendUnv').lastChild.textContent = 'Outline: mock data';
 
-$('read').innerHTML = [
+const READ3D = [
   `Left to right is oxygen. Front to back is pressure. Height is burn rate${UNIT ? ' in ' + UNIT : ''}.`,
   `Floating points recorded all three (${int(F.length)} tests). Points on the floor recorded oxygen and pressure but no comparable burn rate (${int(WP.length - F.length)}).`,
   `${int(SHELF.length)} of the tests that recorded oxygen have no pressure on record, so they cannot be placed here. Open Table view to see them.`,
   'Points are nudged slightly so tests at the same condition do not hide each other.',
   MAIN_HEADER ? `Burn rate is the column NASA labels “${esc(MAIN_HEADER)}”${UNIT === 'mm²/s' ? '; its values match a droplet burning-rate constant in mm²/s' : ''}.` : '',
   'Rings mark planning atmospheres from the Phenox presets. They are not test results.',
-].filter(Boolean).map((t) => `<li>${t}</li>`).join('');
+].filter(Boolean);
+const READ2D = [
+  'Left to right is oxygen. Each dot is one test; the shape and colour show what happened.',
+  `Burn rate: the height is how fast the flame consumed its fuel${UNIT ? ' in ' + UNIT : ''}. Only the ${int(F.length)} tests with a comparable burn rate are drawn.`,
+  'Chance it goes out: dots sit at the top if the flame went out on its own and at the bottom if it kept burning. The line is the share that went out among nearby oxygen levels, with a shaded 95% range.',
+  'Trend lines are fitted to the tests currently shown, so the filters change them. A line is a pattern in past tests, not a prediction.',
+  'Dashed vertical lines mark planning atmospheres from the Phenox presets. They are not test results.',
+];
+function setReadText(v) { $('read').innerHTML = (v === '2d' ? READ2D : READ3D).map((t) => `<li>${t}</li>`).join(''); }
+setReadText('2d');
 
 const fl = $('findings');
 fl.innerHTML = FINDINGS.map((f, i) => `<li><button type="button" class="finding" aria-pressed="false" data-i="${i}"><span class="big">${esc(f.big)}</span><span class="t">${esc(f.title)}</span><span class="s">${esc(f.stat)}</span><span class="b">${esc(f.body)}</span></button></li>`).join('');
 function setFinding(i) {
-  if (document.body.dataset.view === 'charts') setView('3d');
+  if (document.body.dataset.view === 'charts') setView(lastStage);
   hideHl();
   st.finding = st.finding === i ? -1 : i;
   st.hi = st.finding >= 0 ? FINDINGS[st.finding].hi : null;
@@ -839,18 +869,23 @@ function hideHl() { $('hlbar').hidden = true; }
 function highlight3D(key, label) {
   const idx = HI[key]; if (!idx || !idx.length) return;
   st.finding = -1; st.hi = new Set(idx); fl.querySelectorAll('.finding').forEach((b) => b.setAttribute('aria-pressed', 'false'));
-  setView('3d'); view.paint(); view.fly(OVERVIEW); showHl(idx.length, label);
+  setView(lastStage); view.paint(); view.fly(OVERVIEW); showHl(idx.length, label);
 }
 $('hlClear').addEventListener('click', () => { st.hi = null; hideHl(); view.paint(); });
 
+let lastStage = '2d';
 function setView(v) {
+  if (v !== 'charts') lastStage = v;
   document.body.dataset.view = v; $('stage').hidden = v === 'charts'; $('charts').hidden = v !== 'charts'; ctip.hidden = true;
-  $('v3d').setAttribute('aria-pressed', String(v !== 'charts')); $('vCharts').setAttribute('aria-pressed', String(v === 'charts'));
+  $('v2d').setAttribute('aria-pressed', String(v === '2d')); $('v3d').setAttribute('aria-pressed', String(v === '3d')); $('vCharts').setAttribute('aria-pressed', String(v === 'charts'));
   if (v === 'charts') { $('filters').hidden = true; $('filterBtn').setAttribute('aria-expanded', 'false'); requestAnimationFrame(renderCharts); }
+  if (v === '2d') requestAnimationFrame(draw2d);
+  setReadText(v);
 }
+$('v2d').addEventListener('click', () => setView('2d'));
 $('v3d').addEventListener('click', () => setView('3d'));
 $('vCharts').addEventListener('click', () => setView('charts'));
-if (params.get('view') === 'charts') setView('charts');
+if (params.get('view') === 'charts') setView('charts'); else if (params.get('view') === '3d') setView('3d'); else setView('2d');
 
 // ---------- 3D ----------
 let THREE = null;
@@ -1165,7 +1200,7 @@ function run(interact, which) {
   const mk = ['A', 'B'].map((id) => { const r = res[id]; if (!r || r.o2 < X0 - 1e-9 || r.o2 > X1 + 1e-9 || r.atm > P_MAX) return null; return { x: sx(r.o2), z: sz(r.atm) }; });
   view.scenario(scState.cmp ? mk : [mk[0]]);
   if (!interact) return;
-  if (document.body.dataset.view === 'charts') setView('3d');
+  if (document.body.dataset.view === 'charts') setView(lastStage);
   const idx = new Set(); have.forEach((id) => res[id].near.forEach((p) => { if (p.pos) idx.add(p.i); }));
   st.finding = -1; fl.querySelectorAll('.finding').forEach((b) => b.setAttribute('aria-pressed', 'false'));
   st.hi = idx.size ? idx : null; view.paint();
@@ -1185,6 +1220,106 @@ if (params.has('o2')) SC.A.o2 = Number(params.get('o2')) / 100;
 if (params.has('p')) SC.A.psia = Number(params.get('p'));
 if (params.has('fuel')) SC.A.fuel = String(params.get('fuel')).toLowerCase();
 run(params.has('o2') || params.has('p'), 'A');
+
+// ---------- 2D plot with trend lines ----------
+// One view of the same rows: oxygen across, and either burn rate or the share that went out up the side.
+// Trend lines are least-squares fits (burn rate) or a moving share with a Wilson 95% band (chance it goes out), on the tests shown.
+const p2 = { y: 'burn', trend: true, byFuel: true };
+const svgNS = 'http://www.w3.org/2000/svg';
+function linFit(pts) {
+  const n = pts.length; if (n < 8) return null;
+  const mx = mean(pts.map((q) => q[0])), my = mean(pts.map((q) => q[1]));
+  let sxy = 0, sxx = 0, syy = 0; pts.forEach(([x, y]) => { sxy += (x - mx) * (y - my); sxx += (x - mx) ** 2; syy += (y - my) ** 2; });
+  if (!sxx) return null;
+  const slope = sxy / sxx; return { slope, icpt: my - slope * mx, r: syy ? sxy / Math.sqrt(sxx * syy) : 0, n, x0: Math.min(...pts.map((q) => q[0])), x1: Math.max(...pts.map((q) => q[0])) };
+}
+function wilsonCi(k, n) { const z = 1.96, ph = k / n, d = 1 + z * z / n, c = (ph + z * z / (2 * n)) / d, h = z * Math.sqrt(ph * (1 - ph) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; }
+function movingShare(rows) { // share that went out, by oxygen, over a 5-point window
+  const out = [];
+  for (let c = Math.ceil(X0 * 100); c <= Math.floor(X1 * 100); c += 1) {
+    const w = rows.filter((p) => Math.abs(p.o2 * 100 - c) <= 2.5); if (w.length < 8) continue;
+    const k = w.filter((p) => p.cls === 'out').length, [lo, hi] = wilsonCi(k, w.length); out.push({ x: c / 100, y: k / w.length, lo, hi, n: w.length });
+  }
+  return out;
+}
+function draw2d() {
+  const svg = $('p2svg'), st2 = $('stage'); if (!svg || document.body.dataset.view !== '2d') return;
+  const b = st2.getBoundingClientRect(), W = Math.max(300, Math.round(b.width)), H = Math.max(260, Math.round(b.height)), narrow = W < 760;
+  const ml = narrow ? 44 : 64, mr = narrow ? 14 : 352, mt = narrow ? 96 : 64, mb = narrow ? 70 : 118, pw = W - ml - mr, ph = H - mt - mb;
+  if (pw < 80 || ph < 80) return;
+  const mode = p2.y, ymax = mode === 'burn' ? B_MAX : 1;
+  const X = (o) => ml + (o - X0) / (X1 - X0) * pw, Y = (v) => mt + ph - v / ymax * ph;
+  const vis = (p) => passesAll(p);
+  const pts = mode === 'burn' ? F.filter(vis) : P.filter((p) => vis(p) && (p.cls === 'out' || p.cls === 'burn'));
+  const hi = st.hi; let g = '';
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  // grid + axes
+  const yt = mode === 'burn' ? Array.from({ length: Math.round(B_MAX / 0.2) + 1 }, (_, i) => +(i * 0.2).toFixed(1)).filter((v) => v <= B_MAX + 1e-9) : [0, 0.25, 0.5, 0.75, 1];
+  yt.forEach((v) => { g += `<line x1="${ml}" x2="${ml + pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(179,192,214,.18)"/><text x="${ml - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="#b3c0d6">${mode === 'burn' ? num(v, 1) : Math.round(v * 100) + '%'}</text>`; });
+  xTicks.forEach((t) => { g += `<line x1="${X(t)}" x2="${X(t)}" y1="${mt}" y2="${mt + ph}" stroke="rgba(179,192,214,.1)"/><text x="${X(t)}" y="${mt + ph + 18}" text-anchor="middle" font-size="12" fill="#b3c0d6">${Math.round(t * 100)}%</text>`; });
+  g += `<text x="${ml + pw / 2}" y="${mt + ph + 40}" text-anchor="middle" font-size="13" font-weight="600" fill="#f2f5fa">Oxygen in the air</text>`;
+  g += `<text transform="translate(16 ${mt + ph / 2}) rotate(-90)" text-anchor="middle" font-size="13" font-weight="600" fill="#f2f5fa">${mode === 'burn' ? 'Burn rate' + (UNIT ? ', ' + UNIT : '') : 'Share that went out on its own'}</text>`;
+  // mission atmospheres
+  if (st.missions) MISSIONS.forEach((m) => { if (m.o2 < X0 - 1e-9 || m.o2 > X1 + 1e-9) return; g += `<line x1="${X(m.o2)}" x2="${X(m.o2)}" y1="${mt}" y2="${mt + ph}" stroke="#f2f5fa" stroke-opacity=".55" stroke-dasharray="4 5"/><text x="${X(m.o2) + 5}" y="${mt + 14}" font-size="12" font-weight="600" fill="#f2f5fa">${esc(m.name)}</text>`; });
+  // trend lines (under the dots)
+  const sums = []; let tl = '';
+  const FUEL_LINES = [{ c: '#f2f5fa', dash: '', w: 2.6 }, { c: '#ffd166', dash: '', w: 2.6 }];
+  if (mode === 'burn') {
+    const all = linFit(pts.map((p) => [p.o2 * 100, p.burn]));
+    const fuelRows = [...pts.reduce((m, p) => m.set(p.fuelKey, (m.get(p.fuelKey) || 0) + 1), new Map())].filter(([k, n]) => k && n >= 12).sort((a, b) => b[1] - a[1]).slice(0, 2);
+    const draw = (f, c, dash, w, label) => { if (!f) return; const x0 = f.x0 / 100, x1 = f.x1 / 100, y0 = Math.min(ymax, Math.max(0, f.icpt + f.slope * f.x0)), y1 = Math.min(ymax, Math.max(0, f.icpt + f.slope * f.x1));
+      tl += `<line x1="${X(x0)}" y1="${Y(y0)}" x2="${X(x1)}" y2="${Y(y1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
+      sums.push(`<span class="chip"><i style="background:${c}"></i>${esc(label)}: ${f.slope >= 0 ? '+' : '−'}${num(Math.abs(f.slope) * 10, 2)} ${UNIT} per 10 points of oxygen · r ${num(f.r, 2)} · ${int(f.n)} tests</span>`); };
+    if (p2.trend) {
+      if (p2.byFuel && fuelRows.length) fuelRows.forEach(([k], i) => draw(linFit(pts.filter((p) => p.fuelKey === k).map((p) => [p.o2 * 100, p.burn])), FUEL_LINES[i].c, FUEL_LINES[i].dash, FUEL_LINES[i].w, cap1(k)));
+      draw(all, '#9cc4ff', '6 5', 2.2, 'All tests shown');
+    }
+  } else if (p2.trend) {
+    const mk = (rows) => movingShare(rows), all = mk(pts);
+    if (all.length > 1) {
+      const area = all.map((q, i) => `${i ? 'L' : 'M'}${X(q.x)},${Y(q.hi)}`).join(' ') + ' ' + all.slice().reverse().map((q) => `L${X(q.x)},${Y(q.lo)}`).join(' ') + ' Z';
+      tl += `<path d="${area}" fill="#9cc4ff" fill-opacity=".16"/><polyline points="${all.map((q) => `${X(q.x)},${Y(q.y)}`).join(' ')}" fill="none" stroke="#f2f5fa" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const lo = all[0], hi2 = all[all.length - 1]; sums.push(`<span class="chip"><i style="background:#f2f5fa"></i>${Math.round(lo.y * 100)}% went out near ${Math.round(lo.x * 100)}% oxygen, ${Math.round(hi2.y * 100)}% near ${Math.round(hi2.x * 100)}% · ${int(pts.length)} conclusive tests</span>`);
+    }
+    if (p2.byFuel) [...pts.reduce((m, p) => m.set(p.fuelKey, (m.get(p.fuelKey) || 0) + 1), new Map())].filter(([k, n]) => k && n >= 40).sort((a, b) => b[1] - a[1]).slice(0, 2).forEach(([k], i) => {
+      const f = mk(pts.filter((p) => p.fuelKey === k)); if (f.length > 1) { tl += `<polyline points="${f.map((q) => `${X(q.x)},${Y(q.y)}`).join(' ')}" fill="none" stroke="${FUEL_LINES[i].c === '#f2f5fa' ? '#ffd166' : '#ff9ad5'}" stroke-width="2" stroke-dasharray="${i ? '2 5' : '7 5'}" stroke-linecap="round"/>`; sums.push(`<span class="chip"><i style="background:${i ? '#ff9ad5' : '#ffd166'}"></i>${esc(cap1(k))}</span>`); }
+    });
+  }
+  // dots
+  let dots = '';
+  pts.forEach((p) => {
+    const jx = jit(p.i, 1) * 0.006 * (X1 - X0) * 10, x = X(Math.min(X1, Math.max(X0, p.o2 + jx)));
+    const y = Y(Math.min(ymax, Math.max(0, mode === 'burn' ? p.burn : (p.cls === 'out' ? 0.97 : 0.03) + jit(p.i, 2) * 0.05)));
+    const lit = !hi || hi.has(p.i), col = CLS_COLOR[p.cls], op = lit ? (mode === 'burn' ? 0.88 : 0.55) : 0.1, sel = p.i === st.sel;
+    const stroke = p.verified ? '' : ` stroke="#f2f5fa" stroke-width="1.2" fill-opacity=".25"`;
+    const tip = `${p.fuel || 'Fuel not recorded'}, ${pct(p.o2)} oxygen${p.p != null ? ', ' + num(p.p * PSI_PER_ATM, 1) + ' psia' : ''}: ${CLS_LABEL[p.cls]}${mode === 'burn' ? ', burn rate ' + burnText(p) : ''}`;
+    const sh = p.cls === 'burn' ? `<rect x="${x - 3.4}" y="${y - 3.4}" width="6.8" height="6.8" fill="${col}" fill-opacity="${op}"${stroke}` : p.cls === 'disrupt' ? `<path d="M${x},${y - 4.6} L${x + 4.6},${y} L${x},${y + 4.6} L${x - 4.6},${y} Z" fill="${col}" fill-opacity="${op}"${stroke}` : `<circle cx="${x}" cy="${y}" r="${p.cls === 'unknown' ? 2.4 : 3.4}" fill="${col}" fill-opacity="${op}"${stroke}`;
+    dots += `<g class="p2d" data-i="${p.i}" data-tip="${esc(tip)}" style="cursor:pointer">${sh}/>${sel ? `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="2"/>` : ''}<circle cx="${x}" cy="${y}" r="9" fill="transparent"/></g>`;
+  });
+  if (!pts.length) dots = `<text x="${ml + pw / 2}" y="${mt + ph / 2}" text-anchor="middle" font-size="15" fill="#b3c0d6">No tests match the filters.</text>`;
+  svg.innerHTML = g + tl + dots;
+  $('p2title').textContent = `${mode === 'burn' ? 'Burn rate' : 'Share that went out'} against oxygen for ${int(pts.length)} tests, with trend lines.`;
+  // controls + summary
+  $('p2bar').innerHTML = `<div class="sg" role="group" aria-label="What to plot"><button type="button" data-y="burn" aria-pressed="${mode === 'burn'}">Burn rate</button><button type="button" data-y="out" aria-pressed="${mode === 'out'}">Chance it goes out</button></div><div class="sg" role="group" aria-label="Trend lines"><button type="button" data-t="1" aria-pressed="${p2.trend}">Trend lines</button><button type="button" data-f="1" aria-pressed="${p2.byFuel}">By fuel</button></div>`;
+  let sm = $('p2sum'); if (!sm) { sm = document.createElement('div'); sm.id = 'p2sum'; sm.className = 'p2sum'; $('plot2d').append(sm); }
+  sm.innerHTML = sums.join('');
+}
+const cap1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+$('plot2d').addEventListener('click', (e) => {
+  const bt = e.target.closest('#p2bar button');
+  if (bt) { if (bt.dataset.y) p2.y = bt.dataset.y; else if (bt.dataset.t) p2.trend = !p2.trend; else if (bt.dataset.f) p2.byFuel = !p2.byFuel; draw2d(); return; }
+  const d = e.target.closest('.p2d'); if (d) select(Number(d.dataset.i), false);
+});
+$('plot2d').addEventListener('pointermove', (e) => {
+  const d = e.target.closest('.p2d'), tp = $('tip');
+  if (!d) { tp.hidden = true; return; }
+  const r = $('stage').getBoundingClientRect(); tp.textContent = d.dataset.tip; tp.hidden = false;
+  tp.style.transform = `translate(${Math.min(r.width - 280, e.clientX - r.left + 14)}px, ${Math.max(8, e.clientY - r.top - 40)}px)`;
+});
+$('plot2d').addEventListener('pointerleave', () => { $('tip').hidden = true; });
+new ResizeObserver(() => draw2d()).observe($('stage'));
+const paint3d = view.paint; view.paint = () => { paint3d(); if (document.body.dataset.view === '2d') draw2d(); };
+updateCount(); draw2d();
 </script>
 </body>
 </html>
