@@ -127,134 +127,64 @@
   .orb { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
   /* "Project" sits small above the wordmark (15 Nov 2026: the period was dropped and "Project" added) */
   .kicker { font-size: clamp(18px, 2.2vw, 28px); font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: var(--accent); margin: 0 0 .2em .3em; }
-  /* hero below the wordmark: words on the left, the flame lab (porthole + controls) on the right */
-  .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 34px; }
+  /* hero below the wordmark: words on the left, the flame lab card on the right, so the fire-dust ribbon runs through its chamber */
+  .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 580px); gap: 40px; align-items: start; margin-top: 34px; }
   .hero-copy .lede { max-width: 64ch; }
   .hero-copy .accent-dot { width: auto; height: auto; min-height: 48px; border-radius: 999px; padding: 12px 24px; display: inline-grid; margin-top: 24px; }
-  /* the flame lab is its own section (15 Nov 2026, moved out of the hero): a title block, a mode switch, then engine, controls and
-     telemetry side by side */
-  .lab { background: var(--paper); border: 1px solid var(--line); border-radius: 28px; padding: 30px 30px 34px; margin-top: 28px; box-shadow: 0 24px 60px rgba(11, 27, 51, .08); }
-  .lab-head { margin-bottom: 26px; }
-  .lab-kicker { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
-  .lab-head h2 { font-size: clamp(30px, 4vw, 46px); font-weight: 600; letter-spacing: -.02em; line-height: 1.08; margin: 0 0 10px; }
-  .lab-sub { font-size: 15px; color: var(--ink-2); max-width: 78ch; line-height: 1.5; margin: 0 0 18px; }
-  .lab-modes { display: flex; flex-wrap: wrap; gap: 6px; }
-  .lab-modes legend { width: 100%; }
-  .lab-modes label { position: relative; margin: 0; font-size: 14px; }
-  .lab-modes input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .lab-modes span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-weight: 600; background: var(--grey); }
-  .lab-modes input:checked + span { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .lab-modes input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 3px; }
-  .lab-grid { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) minmax(240px, 340px); gap: 30px; align-items: start; }
-  .lab-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
-  .lab-tele { background: var(--grey); border-radius: 20px; padding: 16px 18px; }
-  .lab-tele h3, .lab-out h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
-  .lab-tele h3 .quiet { font-weight: 400; }
-  .lab-tele dl { margin: 0; display: grid; gap: 9px; font-size: 13px; }
-  .lab-tele dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }
-  .lab-tele dt { color: var(--ink-2); }
-  .lab-tele dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .lab-tele i { grid-column: 1 / -1; display: block; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
-  .lab-tele i b { display: block; height: 100%; width: calc(var(--v, 0) * 100%); border-radius: 3px; background: var(--bar, var(--ink)); transition: width .4s ease; }
-  .lab-out { background: var(--grey); border-radius: 20px; padding: 16px 18px; font-size: 13px; color: var(--ink-2); }
-  .lab-out p { margin: 0 0 8px; }
-  .lab-out b { color: var(--ink); }
-  .lab-out .wrap { margin: 0; }
-  .lab-out table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .lab-out th, .lab-out td { text-align: left; padding: 5px 6px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .lab-out th { font-weight: 700; color: var(--ink); }
-  .lab-out td.num, .lab-out th.num { text-align: right; font-variant-numeric: tabular-nums; padding-right: 0; padding-left: 6px; white-space: nowrap; }
-  .lab-out tr.now td { color: var(--ink); font-weight: 600; }
-  .lab-word { display: inline-flex; align-items: center; gap: .35em; white-space: nowrap; }
-  .lab-word::before { content: ''; width: .55em; height: .55em; border-radius: 50%; background: var(--d, var(--accent)); }
-  /* oxygen limit strip: the lab's flame-out boundary and NASA's lowest kept-burning and highest went-out oxygen for this fuel */
-  .lab-strip { position: relative; height: 72px; margin: 14px 0 4px; } .lab-strip .pin.nasa { top: 28px; height: 14px; }
-  .lab-strip .axis { position: absolute; left: 0; right: 0; top: 30px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--none), var(--caution) 50%, var(--accent)); opacity: .3; }
-  .lab-strip .lit { position: absolute; top: 30px; height: 8px; border-radius: 4px; background: var(--accent); }
-  .lab-strip .pin { position: absolute; top: 24px; width: 2px; height: 20px; translate: -50% 0; background: var(--ink); }
-  .lab-strip .pin::after { content: attr(data-l); position: absolute; top: 22px; left: 0; font-size: 11px; white-space: nowrap; color: var(--ink-2); }
-  .lab-strip .pin.top::after { top: auto; bottom: 22px; }
-  .lab-strip .pin.nasa { background: var(--r-out); } .lab-strip .pin.nasa.burn { background: var(--r-burn); }
-  .lab-strip .tick { position: absolute; top: 60px; font-size: 11px; color: var(--ink-2); translate: -50% 0; }
-  .lab-view { display: flex; flex-direction: column; align-items: center; container-type: inline-size; min-width: 0; }
-  .lab .orb .orbit { inset: -9%; width: 118%; height: 118%; }
-  .lab-state { margin-top: 58px; font-size: 14px; color: var(--ink-2); text-align: center; max-width: 34ch; min-height: 5.2em; }
-  .lab-state b { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
-  .lab-state b::before { content: ''; display: inline-block; width: .6em; height: .6em; margin-right: .4em; border-radius: 50%; background: var(--lab-dot, var(--pass)); vertical-align: .05em; }
+  @media (max-width: 1100px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } }
+  /* the flame lab (back in the hero since 15 Nov 2026, cut down to gravity, fuel, oxygen and pressure): chamber beside four controls */
+  .lab { background: var(--paper); border: 1px solid var(--line); border-radius: 28px; padding: 22px 24px 24px; box-shadow: 0 24px 60px rgba(11, 27, 51, .08); min-width: 0; }
+  .lab-h { font-size: 22px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 4px; }
+  .lab-sub { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; margin: 0 0 18px; }
+  .lab-grid { display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); gap: 26px; align-items: start; }
+  .lab-view { position: relative; padding-bottom: 46px; min-width: 0; }
   .lab-controls { display: grid; gap: 16px; align-content: start; min-width: 0; }
-    .lab fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .lab fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .lab legend { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding: 0; }
-  .lab-seg, .lab-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .lab-seg legend, .lab-chips legend { width: 100%; }
-  .lab-seg label, .lab-chips label { position: relative; margin: 0; font-size: 14px; }
-  .lab-seg input, .lab-chips input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .lab-seg span, .lab-chips span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-weight: 600; background: var(--paper); }
-  .lab-seg span { min-width: 150px; justify-content: center; }
-  .lab-seg input:checked + span, .lab-chips input:checked + span { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .lab-seg input:focus-visible + span, .lab-chips input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 3px; }
-  .lab-pair, .lab-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .lab-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lab-seg legend { width: 100%; }
+  .lab-seg label { position: relative; margin: 0; font-size: 14px; flex: 1 1 120px; }
+  .lab-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .lab-seg span { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-weight: 600; background: var(--paper); }
+  .lab-seg input:checked + span { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .lab-seg input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .lab-sliders { display: grid; gap: 6px; }
   .lab select { width: 100%; min-height: 42px; padding: 0 12px; border-radius: 14px; border: 1px solid #b4bfcf; background: #f8fafc; color: var(--ink); font: inherit; }
   .lab-sliders label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
   .lab-sliders output { font-weight: 400; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .lab input[type=range] { width: 100%; min-height: 40px; padding: 0; border: 0; background: transparent; accent-color: var(--accent); }
   .lab input[type=range]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
-  /* the flame lab's engine (15 Nov 2026, replaced the round porthole): an SVG rocket engine with the flame window (.chamber) in its
-     combustion chamber and an exhaust glow under the nozzle that the lab script tints */
-  .lab .orb.engine { aspect-ratio: 200 / 300; }
-  .engine-art { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 18px 26px rgba(11, 27, 51, .28)); }
-  .eg-pipe { fill: none; stroke: var(--steel-3); stroke-width: 5; stroke-linecap: round; }
-  .eg-band { fill: var(--steel-4); opacity: .55; }
+  .lab-state { margin: 14px 0 0; font-size: 14px; color: var(--ink-2); min-height: 4.4em; }
+  .lab-state b { display: block; margin-bottom: 2px; font-size: 16px; color: var(--ink); }
+  .lab-state b::before { content: ''; display: inline-block; width: .6em; height: .6em; margin-right: .4em; border-radius: 50%; background: var(--lab-dot, var(--pass)); vertical-align: .05em; }
+  .lab-data { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+  .lab-data b { color: var(--ink); }
+  .lab-check { margin-top: 14px; min-height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .lab-check:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  /* the chamber: a plain SVG pressure vessel (domed lid, dished base, bolted flanges) with the flame window (.chamber) and the NASA
+     burn-rate meter in the slot under it. Positions are the SVG's window and slot as shares of its viewBox (30 22 140 244) */
+  .lab .orb.rig { aspect-ratio: 140 / 244; }
+  .rig-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 14px 20px rgba(11, 27, 51, .25)); }
   .eg-frame { fill: var(--steel-4); }
   .eg-bolt { fill: var(--steel-2); stroke: var(--steel-4); stroke-width: .6; }
-  .eg-tube { fill: none; stroke: var(--steel-4); stroke-width: .8; opacity: .5; }
-  .eg-exit { fill: var(--plume-c, #5f8dff); opacity: calc(var(--plume, .4) * .9); }
-  .eg-strut { fill: none; stroke: var(--steel-3); stroke-width: 2.4; stroke-linecap: round; }
-  .eg-pipe.thin { stroke-width: 2; }
-  .eg-pipe.frost { stroke: var(--frost); stroke-width: 6.5; stroke-dasharray: 1.5 3.5; opacity: .75; }
-  .eg-flange { fill: var(--steel-2); stroke: var(--steel-4); stroke-width: .6; }
-  .eg-weld { fill: none; stroke: var(--steel-4); stroke-width: .9; stroke-dasharray: 1.2 1.6; opacity: .7; }
-  .eg-rivets { fill: var(--steel-4); opacity: .8; }
   .eg-stencil { font: 700 5px 'Space Grotesk', system-ui, sans-serif; letter-spacing: .08em; fill: var(--steel-4); opacity: .85; }
-  .eg-needle { stroke: var(--ink); stroke-width: 1.1; stroke-linecap: round; transform: rotate(calc(-130deg + var(--lab-pg, .7) * 260deg)); transition: transform .5s ease; }
-  .eg-valve { transform: rotate(calc(var(--lab-valve, 0) * 180deg)); transition: transform .6s ease; }
-  .orb.engine .chamber { position: absolute; left: 50%; top: 27.4%; width: 46%; height: auto; aspect-ratio: 1; translate: -50% 0; border-radius: 20px;
+  .orb.rig .chamber { position: absolute; left: 50%; top: 24.59%; width: 65.71%; height: auto; aspect-ratio: 1; translate: -50% 0; border-radius: 20px;
     box-shadow: 0 0 0 2px var(--steel-4), inset 0 6px 16px rgba(0, 0, 0, .65); }
-  .orb.engine .chamber::after { border-radius: 20px; }
-  /* exhaust plume: length from the nearest NASA tests' burn rate, steadiness from the share that kept burning (lab script sets the vars) */
-  .orb.engine { margin-bottom: 52cqi; }
-  .plume { position: absolute; left: 50%; top: 97%; width: 64%; height: calc((.25 + .75 * var(--pl-len, .5)) * 44%); translate: -50% 0; pointer-events: none;
-    transform-origin: 50% 0; transform: skewX(calc(var(--pl-lean, 0) * -28deg)); opacity: var(--pl-on, 1); filter: blur(1.4px);
-    transition: height .5s ease, opacity .4s ease, transform .5s ease; }
-  .plume i { position: absolute; display: block; transform-origin: 50% 0; }
-  .pl-outer { inset: 0; clip-path: polygon(2% 0, 98% 0, 70% 55%, 54% 100%, 46% 100%, 30% 55%);
-    -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--plume-c, #5f8dff) 70%, #fff) 0%, var(--plume-c, #5f8dff) 22%, color-mix(in srgb, var(--plume-c, #5f8dff) 55%, transparent) 62%, transparent 100%);
-    animation: pl-flick var(--pl-speed, .16s) ease-in-out infinite alternate; }
-  .pl-core { left: 26%; right: 26%; top: 0; height: 64%; clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%);
-    background: linear-gradient(to bottom, #fff 0%, var(--plume-core, #cfe0ff) 45%, transparent 100%); animation: pl-flick calc(var(--pl-speed, .16s) * .7) ease-in-out infinite alternate-reverse; }
-  .pl-dia { left: 36%; right: 36%; top: 8%; bottom: 22%; opacity: var(--pl-dia, 0);
-    background: radial-gradient(ellipse 50% 7% at 50% 14%, #fff, transparent), radial-gradient(ellipse 42% 6% at 50% 40%, #fff, transparent), radial-gradient(ellipse 34% 5% at 50% 66%, #ffffffaa, transparent); }
-  @keyframes pl-flick { to { transform: scale(calc(1 - var(--pl-jit, .05)), calc(1 + var(--pl-jit, .05) * 1.8)); } }
-  .plume.sputter { animation: pl-sputter 1.6s steps(1) infinite; }
+  .orb.rig .chamber::after { border-radius: 20px; }
+  /* NASA burn-rate meter: fill from the nearest tests' average burn rate, flicker when their record is split */
+  .burn-meter { position: absolute; left: 18.57%; top: 74.59%; width: 62.86%; height: 4.1%; border-radius: 3px; overflow: hidden; pointer-events: none; }
+  .burn-meter i { display: block; height: 100%; width: calc(var(--pl-len, .5) * 100%); opacity: var(--pl-on, 1); border-radius: 3px;
+    background: linear-gradient(90deg, var(--meter-c, #5f8dff), color-mix(in srgb, var(--meter-c, #5f8dff) 45%, #fff)); box-shadow: 0 0 8px var(--meter-c, #5f8dff);
+    transition: width .5s ease, opacity .4s ease; }
+  .burn-meter.sputter i { animation: pl-sputter 1.6s steps(1) infinite; }
   @keyframes pl-sputter { 0%, 100% { opacity: var(--pl-on, 1); } 18% { opacity: .25; } 24% { opacity: var(--pl-on, 1); } 61% { opacity: .4; } 66% { opacity: var(--pl-on, 1); } }
-  @media (prefers-reduced-motion: reduce) { .plume i, .plume.sputter { animation: none; } .plume { transition: none; } }
-  .lab-data { margin-top: 10px; font-size: 13px; color: var(--ink-2); text-align: center; max-width: 36ch; }
-  .lab-data b { color: var(--ink); }
-  .lab-check { margin-top: 12px; min-height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
-  .lab-check:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-  .orb.engine .orb-hit { border-radius: 24px; }
-  .orb.engine .orb-hit:focus-visible { border-radius: 24px; }
-  .lab .orb.engine .orb-hint { top: calc(100% + 50cqi); }
-  .lab-state { margin-top: 52px; }
-  @media (max-width: 1180px) { .lab-grid { grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); } .lab-side { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 900px) { .lab-side { grid-template-columns: 1fr; } }
-  @media (max-width: 680px) {
+  @media (prefers-reduced-motion: reduce) { .burn-meter.sputter i { animation: none; } .burn-meter i { transition: none; } }
+  .orb.rig .orb-hit, .orb.rig .orb-hit:focus-visible { border-radius: 24px; }
+  .lab .orb-hint { white-space: nowrap; }
+  @media (max-width: 560px) {
     .lab { padding: 18px; }
-    .lab-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-    .lab-modes label { flex: 1 1 45%; } .lab-modes span { width: 100%; justify-content: center; padding: 0 10px; }
-    .lab-view .orb { width: min(58vw, 230px); }
-    .lab-pair, .lab-sliders { grid-template-columns: minmax(0, 1fr); }
-    .lab-seg label { flex: 1; } .lab-seg span { min-width: 0; width: 100%; }
+    .lab-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .lab-view .orb { width: min(48vw, 180px); margin: 0 auto; }
   }
   /* flat steel chamber: brushed-steel ring with machined grooves, a ribbed rim and bolts; sun upper left */
   .housing { position: relative; width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center;
@@ -442,7 +372,7 @@
   .dark .feature[data-feature]::after { background: var(--on-dark); color: var(--char); }
   .dark .feature + .feature, .dark #results + .feature, .dark .feature + section.feature { margin-top: 40px; }
   .atmo .atmo-step { color: var(--accent); }
-  :root { --frost: #dbeeff; --temper-1: #6d5aa8; --temper-2: #4f79b8; --temper-3: #c8a54e; }
+
   @media (max-width: 760px) { .dark .feature { padding: 34px 18px 22px; border-radius: 22px; } .feature[data-feature]::after { left: 18px; } }
   .results-head { text-align: center; margin-bottom: 26px; }
   .results-head h2 { margin-bottom: 10px; }
@@ -801,170 +731,78 @@
         <p class="flame-note" id="flameNote"></p>
         <a class="accent-dot" href="viz.html">Visualize the data</a>
       </div>
-    </div>
-    <div class="facts" aria-label="What the data covers">
-      <div><b>2,954</b><span>NASA combustion tests</span></div>
-      <div><b>26</b><span>investigations, from FLEX to Saffire</span></div>
-      <div><b>361</b><span>tests with oxygen and pressure on record</span></div>
-    </div>
-  </section>
-
-  <section class="lab feature f-lab" data-feature="Flame lab" aria-labelledby="lab-h">
-    <div class="lab-head">
-      <p class="lab-kicker">Interactive illustration</p>
-      <h2 id="lab-h">Flame lab</h2>
-      <p class="lab-sub">Light a fuel in the cabin of your choice and watch the flame answer to gravity, oxygen, pressure and airflow. The flame, its words and the telemetry are an illustration from combustion rules of thumb, not a reading from the NASA data. The exhaust plume and every count beside it come from NASA's nearest tests.</p>
-      <fieldset class="lab-modes">
-        <legend>Mode</legend>
-        <label><input type="radio" name="labMode" value="explore" checked><span>Explore</span></label>
-        <label><input type="radio" name="labMode" value="limit"><span>Find the oxygen limit</span></label>
-        <label><input type="radio" name="labMode" value="compare"><span>Compare fuels</span></label>
-        <label><input type="radio" name="labMode" value="depress"><span>Depress drill</span></label>
-      </fieldset>
-    </div>
-    <div class="lab-grid">
-      <div class="lab-view">
-        <div class="orb engine">
-          <svg class="engine-art" viewBox="0 0 200 300" aria-hidden="true">
-            <defs>
-              <linearGradient id="egSteel" x1="0" x2="1">
-                <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".16" style="stop-color: var(--steel-3)"/>
-                <stop offset=".36" style="stop-color: var(--steel-1)"/><stop offset=".5" style="stop-color: var(--steel-2)"/>
-                <stop offset=".8" style="stop-color: var(--steel-3)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
-              </linearGradient>
-              <linearGradient id="egDark" x1="0" x2="1">
-                <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".45" style="stop-color: var(--steel-2)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
-              </linearGradient>
-              <linearGradient id="egDome" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" style="stop-color: var(--steel-1)"/><stop offset=".5" style="stop-color: var(--steel-3)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
-              </linearGradient>
-              <!-- heat tempering on the nozzle: straw, then blue, then violet where it ran hottest near the throat -->
-              <linearGradient id="egTemper" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" style="stop-color: var(--temper-1)"/><stop offset=".4" style="stop-color: var(--temper-2)"/><stop offset=".75" style="stop-color: var(--temper-3)"/><stop offset="1" style="stop-color: var(--temper-3); stop-opacity: 0"/>
-              </linearGradient>
-              <linearGradient id="egSpec" x1="0" x2="1"><stop offset=".3" style="stop-color: #fff; stop-opacity: 0"/><stop offset=".42" style="stop-color: #fff; stop-opacity: .5"/><stop offset=".5" style="stop-color: #fff; stop-opacity: 0"/></linearGradient>
-              <pattern id="egTubes" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M3 0 V6" class="eg-tube"/></pattern>
-              <filter id="egShade" x="-20%" y="-10%" width="140%" height="130%"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dy="6" result="s"/><feComponentTransfer><feFuncA type="linear" slope=".3"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            </defs>
-            <g filter="url(#egShade)">
-              <!-- thrust struts out to the mount -->
-              <path class="eg-strut" d="M44 100 L6 60 M156 100 L194 60 M44 170 L6 60 M156 170 L194 60"/>
-              <circle class="eg-bolt" cx="6" cy="60" r="3.2"/><circle class="eg-bolt" cx="194" cy="60" r="3.2"/>
-              <!-- feed lines: oxidizer (left, cryogenic, frosted) and fuel (right, with its valve) -->
-              <path class="eg-pipe" d="M62 30 C 24 40, 20 84, 40 108"/><path class="eg-pipe frost" d="M62 30 C 24 40, 20 84, 40 108"/>
-              <path class="eg-pipe" d="M138 30 C 176 40, 180 84, 160 108"/>
-              <rect class="eg-flange" x="22" y="56" width="12" height="5" rx="1" transform="rotate(-62 28 58)"/><rect class="eg-flange" x="166" y="56" width="12" height="5" rx="1" transform="rotate(62 172 58)"/>
-              <g class="eg-valve" style="transform-origin: 172px 78px">
-                <circle cx="172" cy="78" r="7.5" fill="url(#egDome)" stroke="var(--steel-4)" stroke-width=".8"/>
-                <path d="M172 71 V85 M165 78 H179 M167 73 L177 83 M177 73 L167 83" stroke="var(--steel-4)" stroke-width="1.1"/>
-                <circle cx="172" cy="78" r="2" fill="var(--steel-4)"/>
-              </g>
-              <!-- turbopump head and gimbal -->
-              <path d="M62 30 C 62 6, 138 6, 138 30 Z" fill="url(#egDome)"/>
-              <ellipse cx="100" cy="30" rx="40" ry="6" fill="url(#egDark)"/>
-              <rect x="88" y="4" width="24" height="10" rx="3" fill="url(#egDark)"/><circle cx="100" cy="4" r="4" fill="var(--steel-3)" stroke="var(--steel-4)" stroke-width=".8"/>
-              <circle class="eg-bolt" cx="72" cy="30" r="1.8"/><circle class="eg-bolt" cx="86" cy="32" r="1.8"/><circle class="eg-bolt" cx="100" cy="33" r="1.8"/><circle class="eg-bolt" cx="114" cy="32" r="1.8"/><circle class="eg-bolt" cx="128" cy="30" r="1.8"/>
-              <!-- injector dome and mounting plate -->
-              <rect x="46" y="36" width="108" height="12" rx="3" fill="url(#egDark)"/>
-              <circle class="eg-bolt" cx="56" cy="42" r="2.2"/><circle class="eg-bolt" cx="78" cy="42" r="2.2"/><circle class="eg-bolt" cx="100" cy="42" r="2.2"/><circle class="eg-bolt" cx="122" cy="42" r="2.2"/><circle class="eg-bolt" cx="144" cy="42" r="2.2"/>
-              <path d="M52 48 H148 L162 70 H38 Z" fill="url(#egSteel)"/>
-              <!-- combustion chamber: steel cylinder with weld seams, cooling bands, a stencil and a pressure gauge; the window (.chamber) sits over it -->
-              <rect x="38" y="70" width="124" height="136" rx="8" fill="url(#egSteel)"/>
-              <rect x="38" y="70" width="124" height="136" rx="8" fill="url(#egSpec)"/>
-              <rect class="eg-band" x="38" y="76" width="124" height="5"/><rect class="eg-band" x="38" y="192" width="124" height="5"/>
-              <path class="eg-weld" d="M38 110 H162 M38 150 H162"/>
-              <rect class="eg-frame" x="49" y="82" width="102" height="106" rx="16"/>
-              <circle class="eg-bolt" cx="55" cy="88" r="2"/><circle class="eg-bolt" cx="145" cy="88" r="2"/><circle class="eg-bolt" cx="55" cy="182" r="2"/><circle class="eg-bolt" cx="145" cy="182" r="2"/>
-              <rect class="eg-rivets" x="41" y="100" width="2" height="2"/><rect class="eg-rivets" x="41" y="120" width="2" height="2"/><rect class="eg-rivets" x="41" y="140" width="2" height="2"/><rect class="eg-rivets" x="41" y="160" width="2" height="2"/>
-              <rect class="eg-rivets" x="157" y="100" width="2" height="2"/><rect class="eg-rivets" x="157" y="120" width="2" height="2"/><rect class="eg-rivets" x="157" y="140" width="2" height="2"/><rect class="eg-rivets" x="157" y="160" width="2" height="2"/>
-              <text class="eg-stencil" x="100" y="203" text-anchor="middle">PHX-1 · TEST ARTICLE</text>
-              <path class="eg-pipe thin" d="M38 134 H30"/>
-              <g class="eg-gauge">
-                <circle cx="30" cy="134" r="9" fill="var(--paper)" stroke="var(--steel-4)" stroke-width="1.2"/>
-                <path d="M24 139 A7 7 0 1 1 36 139" fill="none" stroke="var(--steel-3)" stroke-width="1"/>
-                <path d="M33.5 128.5 A7 7 0 0 1 36 139" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
-                <line class="eg-needle" x1="30" y1="134" x2="30" y2="128" style="transform-origin: 30px 134px"/>
-                <circle cx="30" cy="134" r="1.2" fill="var(--ink)"/>
-              </g>
-              <!-- throat and bell nozzle: heat-tempered near the throat, regenerative cooling tubes down the bell -->
-              <path d="M38 206 H162 L134 226 H66 Z" fill="url(#egDark)"/>
-              <path d="M66 226 H134 C 140 250, 160 274, 184 292 H16 C 40 274, 60 250, 66 226 Z" fill="url(#egSteel)"/>
-              <path d="M66 226 H134 C 140 250, 160 274, 184 292 H16 C 40 274, 60 250, 66 226 Z" fill="url(#egTubes)" opacity=".6"/>
-              <path d="M66 226 H134 C 137 238, 142 250, 150 262 H50 C 58 250, 63 238, 66 226 Z" fill="url(#egTemper)" opacity=".7"/>
-              <path class="eg-weld" d="M60 246 H140 M48 266 H152"/>
-              <ellipse cx="100" cy="292" rx="84" ry="6" fill="url(#egDark)"/>
-              <ellipse class="eg-exit" cx="100" cy="292" rx="78" ry="4"/>
-            </g>
-          </svg>
-          <div class="chamber"><div id="flame"></div></div>
-          <span class="plume" aria-hidden="true"><i class="pl-outer"></i><i class="pl-core"></i><i class="pl-dia"></i></span>
-          <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
-          <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
-        </div>
-        <p class="lab-state" id="labState" role="status" aria-live="polite"></p>
-        <p class="lab-data" id="labData">Loading NASA tests…</p>
-        <button type="button" class="lab-check" id="labCheck">Check this in the NASA data</button>
-      </div>
-      <div class="lab-controls">
-          <fieldset class="lab-seg">
-            <legend>Gravity</legend>
-            <label><input type="radio" name="labG" value="0" checked><span>Microgravity</span></label>
-            <label><input type="radio" name="labG" value="1"><span>Normal gravity</span></label>
-          </fieldset>
-          <fieldset class="lab-chips">
-            <legend>Mission</legend>
-            <label><input type="radio" name="labMission" value="iss" checked><span>ISS</span></label>
-            <label><input type="radio" name="labMission" value="moon"><span>Moon base</span></label>
-            <label><input type="radio" name="labMission" value="mars"><span>Mars habitat</span></label>
-            <label><input type="radio" name="labMission" value="suit"><span>Spacesuit</span></label>
-            <label><input type="radio" name="labMission" value="orion"><span>Orion, campout</span></label>
-            <label><input type="radio" name="labMission" value="apollo"><span>Apollo cabin</span></label>
-            <label><input type="radio" name="labMission" value="airliner"><span>Airliner cabin</span></label>
-            <label><input type="radio" name="labMission" value="earth"><span>Earth lab</span></label>
-          </fieldset>
-          <div class="lab-pair">
+      <div class="lab f-lab" role="group" aria-labelledby="lab-h">
+        <h2 id="lab-h" class="lab-h">Flame lab</h2>
+        <p class="lab-sub">Light a fuel in a sealed test chamber and change the conditions. The flame is an illustration from combustion rules of thumb, not a reading; the meter under the window comes from NASA's nearest tests.</p>
+        <div class="lab-grid">
+          <div class="lab-view">
+            <div class="orb rig">
+              <svg class="rig-art" viewBox="30 22 140 244" aria-hidden="true">
+                <defs>
+                  <linearGradient id="egSteel" x1="0" x2="1">
+                    <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".16" style="stop-color: var(--steel-3)"/>
+                    <stop offset=".36" style="stop-color: var(--steel-1)"/><stop offset=".5" style="stop-color: var(--steel-2)"/>
+                    <stop offset=".8" style="stop-color: var(--steel-3)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
+                  </linearGradient>
+                  <linearGradient id="egDark" x1="0" x2="1">
+                    <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".45" style="stop-color: var(--steel-2)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
+                  </linearGradient>
+                  <linearGradient id="egDome" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" style="stop-color: var(--steel-1)"/><stop offset=".5" style="stop-color: var(--steel-3)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
+                  </linearGradient>
+                  <linearGradient id="egSpec" x1="0" x2="1"><stop offset=".3" style="stop-color: #fff; stop-opacity: 0"/><stop offset=".42" style="stop-color: #fff; stop-opacity: .5"/><stop offset=".5" style="stop-color: #fff; stop-opacity: 0"/></linearGradient>
+                </defs>
+                <!-- a plain pressure vessel: domed lid and dished base bolted to a steel cylinder, a viewing window, and the NASA burn-rate meter slot -->
+                <path d="M40 58 C 40 26, 160 26, 160 58 Z" fill="url(#egDome)"/>
+                <path d="M40 240 C 40 262, 160 262, 160 240 Z" fill="url(#egDark)"/>
+                <rect x="40" y="56" width="120" height="186" rx="6" fill="url(#egSteel)"/>
+                <rect x="40" y="56" width="120" height="186" rx="6" fill="url(#egSpec)"/>
+                <rect x="34" y="52" width="132" height="10" rx="3" fill="url(#egDark)"/>
+                <rect x="34" y="234" width="132" height="10" rx="3" fill="url(#egDark)"/>
+                <circle class="eg-bolt" cx="44" cy="57" r="2"/><circle class="eg-bolt" cx="72" cy="57" r="2"/><circle class="eg-bolt" cx="100" cy="57" r="2"/><circle class="eg-bolt" cx="128" cy="57" r="2"/><circle class="eg-bolt" cx="156" cy="57" r="2"/>
+                <circle class="eg-bolt" cx="44" cy="239" r="2"/><circle class="eg-bolt" cx="72" cy="239" r="2"/><circle class="eg-bolt" cx="100" cy="239" r="2"/><circle class="eg-bolt" cx="128" cy="239" r="2"/><circle class="eg-bolt" cx="156" cy="239" r="2"/>
+                <rect class="eg-frame" x="48" y="76" width="104" height="104" rx="16"/>
+                <circle class="eg-bolt" cx="54" cy="82" r="2"/><circle class="eg-bolt" cx="146" cy="82" r="2"/><circle class="eg-bolt" cx="54" cy="174" r="2"/><circle class="eg-bolt" cx="146" cy="174" r="2"/>
+                <text class="eg-stencil" x="100" y="193" text-anchor="middle">PHX-1 · COMBUSTION CHAMBER</text>
+                <rect x="54" y="202" width="92" height="14" rx="4" fill="var(--ink)"/>
+                <text class="eg-stencil" x="100" y="226" text-anchor="middle">NASA BURN RATE</text>
+              </svg>
+              <div class="chamber"><div id="flame"></div></div>
+              <span class="burn-meter" aria-hidden="true"><i></i></span>
+              <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
+              <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
+            </div>
+          </div>
+          <div class="lab-controls">
+            <fieldset class="lab-seg">
+              <legend>Gravity</legend>
+              <label><input type="radio" name="labG" value="0" checked><span>Microgravity</span></label>
+              <label><input type="radio" name="labG" value="1"><span>Normal gravity</span></label>
+            </fieldset>
             <div>
               <label for="labFuel">Fuel</label>
               <select id="labFuel">
                 <option value="heptane">Heptane</option>
                 <option value="methanol">Methanol</option>
                 <option value="dodecane">Dodecane</option>
-                <option value="ethylene">Ethylene gas</option>
-                <option value="ethane">Ethane gas</option>
-                <option value="propane">Propane gas</option>
-                <option value="butane">Butane gas</option>
                 <option value="pmma">PMMA acrylic</option>
-                <option value="cotton">Cotton</option>
-                <option value="nomex">Nomex</option>
-                <option value="silicone">Silicone</option>
               </select>
             </div>
-            <div>
-              <label for="labWeather">Air and weather</label>
-              <select id="labWeather">
-                <option value="still">Still air</option>
-                <option value="vent">Ventilation</option>
-                <option value="windy">Windy</option>
-                <option value="sunny">Sunny</option>
-                <option value="cold">Clear and cold</option>
-                <option value="dust">Dust storm</option>
-              </select>
+            <div class="lab-sliders">
+              <div><label for="labO2">Oxygen <output id="labO2v" for="labO2"></output></label><input id="labO2" type="range" min="10" max="100" step="1" value="21"></div>
+              <div><label for="labP">Pressure <output id="labPv" for="labP"></output></label><input id="labP" type="range" min="2" max="20" step="0.1" value="14.7"></div>
             </div>
           </div>
-          <div class="lab-sliders">
-            <div><label for="labO2">Oxygen <output id="labO2v" for="labO2"></output></label><input id="labO2" type="range" min="10" max="100" step="1" value="21"></div>
-            <div><label for="labP">Pressure <output id="labPv" for="labP"></output></label><input id="labP" type="range" min="2" max="20" step="0.1" value="14.7"></div>
-            <div><label for="labFlow">Airflow <output id="labFlowv" for="labFlow"></output></label><input id="labFlow" type="range" min="0" max="50" step="1" value="0"></div>
-            <div><label for="labGrav">Gravity <output id="labGravv" for="labGrav"></output></label><input id="labGrav" type="range" min="0" max="1" step="0.01" value="0"></div>
-          </div>
-      </div>
-      <div class="lab-side">
-        <div class="lab-tele" aria-labelledby="tele-h">
-          <h3 id="tele-h">Telemetry <span class="quiet">(rules of thumb)</span></h3>
-          <dl id="labTele"></dl>
         </div>
-        <div class="lab-out" id="labOut" aria-live="polite"></div>
+        <p class="lab-state" id="labState" role="status" aria-live="polite"></p>
+        <p class="lab-data" id="labData">Loading NASA tests…</p>
+        <button type="button" class="lab-check" id="labCheck">Check this in the NASA data</button>
       </div>
+    </div>
+    <div class="facts" aria-label="What the data covers">
+      <div><b>2,954</b><span>NASA combustion tests</span></div>
+      <div><b>26</b><span>investigations, from FLEX to Saffire</span></div>
+      <div><b>361</b><span>tests with oxygen and pressure on record</span></div>
     </div>
   </section>
 
@@ -1756,10 +1594,11 @@
 })();
 </script>
 <script>
-// ---- Flame lab (hero porthole): an interactive illustration of how a flame responds to gravity, oxygen, pressure, airflow, fuel and
-// surroundings. Rules of thumb from combustion physics, not the NASA data and not a reading; it never touches the ranking form's values
-// or the app's state. It publishes window.phenoxLab (the target the decoration script's flame shader eases toward) and drives the CSS
-// #flame fallback itself. It follows the form's oxygen and pressure when the user changes them there. ----
+// ---- Flame lab (in the hero): an interactive illustration of how a flame responds to gravity, oxygen, pressure and fuel. Rules of thumb
+// from combustion physics, not the NASA data and not a reading; it never touches the ranking form's values or the app's state. It
+// publishes window.phenoxLab (the target the decoration script's flame shader and hero ribbon ease toward) and drives the CSS #flame
+// fallback itself. It follows the form's oxygen and pressure when the user changes them there. The burn-rate meter under the window is
+// the one part drawn from NASA's tests. ----
 (() => {
   const $ = (id) => document.getElementById(id);
   if (!$('labO2')) return;
@@ -1768,49 +1607,24 @@
     heptane:  { name: 'heptane',  limit: 13, soot: .55, re: /heptane/i },
     methanol: { name: 'methanol', limit: 15, soot: .05, re: /methanol/i },
     dodecane: { name: 'dodecane', limit: 14, soot: .7, re: /dodecane|c12h26/i },
-    ethylene: { name: 'ethylene', limit: 12, soot: .8, re: /ethylene|c2h4/i },
     pmma:     { name: 'PMMA',     limit: 17, soot: .5, re: /pmma|\brod\b/i },
-    ethane:   { name: 'ethane',   limit: 12, soot: .6, re: /ethane|c2h6/i },
-    propane:  { name: 'propane',  limit: 12, soot: .65, re: /propane|c3h8/i },
-    butane:   { name: 'butane',   limit: 12, soot: .7, re: /butane|c4h10/i },
-    cotton:   { name: 'cotton',   limit: 18, soot: .35, re: /cotton|sibal/i },
-    nomex:    { name: 'Nomex',    limit: 28, soot: .3, re: /nomex/i },
-    silicone: { name: 'silicone', limit: 24, soot: .4, re: /silicone/i },
   };
-  // missions: gravity (g), oxygen (%), pressure (psia), air. Mars habitat figures are the page's placeholders.
-  const MISSIONS = {
-    iss:   { g: 0,    o2: 21,  p: 14.7, air: 'vent' },
-    moon:  { g: .165, o2: 30,  p: 10.2, air: 'still' },
-    mars:  { g: .38,  o2: 34,  p: 8.2,  air: 'still' },
-    suit:  { g: 0,    o2: 100, p: 4.3,  air: 'still' },
-    orion:    { g: 0, o2: 26.5, p: 10.2, air: 'vent' },     // Orion's reduced-pressure campout before a spacewalk
-    apollo:   { g: 0, o2: 100,  p: 5,    air: 'still' },    // the Apollo cabin in flight
-    airliner: { g: 1, o2: 21,   p: 10.9, air: 'vent' },     // a cabin held at 8,000 ft
-    earth: { g: 1,    o2: 21,  p: 14.7, air: 'still' },
-  };
-  // air and weather: airflow it sets (cm/s, null keeps the slider), warmth (-1 cold to 1 warm), dust
-  const AIR = {
-    still: { flow: 0,    heat: 0,   dust: 0, say: '' },
-    vent:  { flow: 10,   heat: 0,   dust: 0, say: '' },
-    windy: { flow: 35,   heat: 0,   dust: 0, say: '' },
-    sunny: { flow: null, heat: .8,  dust: 0, say: 'Warm surroundings make it a little bigger and brighter.' },
-    cold:  { flow: null, heat: -.8, dust: 0, say: 'Cold surroundings pull heat away, so it shrinks.' },
-    dust:  { flow: 25,   heat: 0,   dust: 1, say: 'Blowing dust dims and reddens the view.' },
-  };
-  const ui = { o2: $('labO2'), p: $('labP'), flow: $('labFlow'), g: $('labGrav'), fuel: $('labFuel'), air: $('labWeather') };
+  const ui = { o2: $('labO2'), p: $('labP'), fuel: $('labFuel') };
+  // flow, heat and haze stay at 0: the shader still reads them, the lab no longer sets them
   const state = window.phenoxLab = { o2: .07, g: 0, flow: 0, press: .74, soot: .55, heat: 0, haze: 0, alive: 1 };
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
-  const gName = (g) => g < .02 ? 'Microgravity' : g > .98 ? 'Earth gravity' : Math.abs(g - .165) < .03 ? 'Moon gravity' : Math.abs(g - .38) < .03 ? 'Mars gravity' : 'Partial gravity';
+  const gravity = () => Number(document.querySelector('input[name="labG"]:checked')?.value || 0);
 
-  // ---- the NASA tests behind the plume: the same test table the ranking uses (window.phenoxPoints, read only) and the same outcome
-  // classes. For the lab's fuel, oxygen and pressure it takes the nearest tested conditions (in the worker's bucket widths, 5 points of
-  // oxygen and 0.1 atm) and everything within one width of them; more than 2 widths away counts as no nearby tests, as in the ranking.
+  // ---- the NASA tests behind the burn-rate meter: the same test table the ranking uses (window.phenoxPoints, read only) and the same
+  // outcome classes. For the lab's fuel, oxygen and pressure it takes the nearest tested conditions (in the worker's bucket widths, 5
+  // points of oxygen and 0.1 atm) and everything within one width of them; more than 2 widths away counts as no nearby tests, as in the
+  // ranking.
   let PTS = window.phenoxPoints || null;
   document.addEventListener('phenox:points', (e) => { PTS = e.detail; update(); });
   function nasa(fuel, o2pct, psia) {
     if (!PTS) return null;
-    // fuels whose tests never recorded pressure (PMMA, ethylene, cotton/SIBAL and others) are matched on oxygen alone
+    // fuels whose tests never recorded pressure (PMMA and others) are matched on oxygen alone
     const atm = psia / 14.696, mine = PTS.rows.filter((t) => fuel.re.test(t.fuel)), withP = mine.filter((t) => t.p != null);
     const usesP = withP.length > 0, all = usesP ? withP : mine;
     if (!all.length) return { none: true, all: 0 };
@@ -1826,149 +1640,54 @@
       o2: [Math.min(...o2s), Math.max(...o2s)], p: ps && [Math.min(...ps), Math.max(...ps)], exact: dmin < .5 };
   }
 
-  function limitFor(fuel, p, g, flow, air) {
+  // how close the flame is to going out: oxygen above the fuel's limit, made harder by thin air and by starving in still microgravity air
+  function limitFor(fuel, p, g) {
     let limit = fuel.limit;
     if (p < 5) limit += (5 - p) * .8;
-    if (g < .02 && flow < 2) limit += 2;
-    if (flow > 30) limit += (flow - 30) * .35;
-    limit -= air.heat * 1.5;
+    if (g < .02) limit += 2;
     return limit;
   }
-  const wordFor = (margin) => margin < -2 ? 'Flame out' : margin < 2 ? 'Barely burning' : 'Burning';
-  const dotFor = (margin) => margin < -2 ? 'var(--none)' : margin < 2 ? 'var(--caution)' : 'var(--accent)';
-  const wordTag = (margin) => `<span class="lab-word" style="--d:${dotFor(margin)}">${wordFor(margin)}</span>`;
   function update() {
-    const o2 = Number(ui.o2.value), p = Number(ui.p.value), flow = Number(ui.flow.value), g = Number(ui.g.value);
-    const fuel = FUELS[ui.fuel.value], air = AIR[ui.air.value];
+    const o2 = Number(ui.o2.value), p = Number(ui.p.value), g = gravity(), fuel = FUELS[ui.fuel.value];
     $('labO2v').textContent = `${fmt(o2)}%`;
     $('labPv').textContent = `${fmt(p, 1)} psia`;
-    $('labFlowv').textContent = flow ? `${fmt(flow)} cm/s` : 'none';
-    $('labGravv').textContent = `${fmt(g, 2)} g`;
-    document.querySelectorAll('input[name="labG"]').forEach((r) => { r.checked = (r.value === '0' && g < .02) || (r.value === '1' && g > .98); });
-    // how close the flame is to going out: oxygen above the fuel's limit, made harder by thin air, by starving in still microgravity
-    // air, and by wind strong enough to blow it off
-    const limit = limitFor(fuel, p, g, flow, air);
-    const margin = o2 - limit, alive = clamp((margin + 2) / 4);
-    Object.assign(state, { o2: clamp((o2 - 15) / 85), g, flow: flow / 50, press: clamp(p / 20), soot: fuel.soot, heat: air.heat, haze: air.dust, alive });
+    const limit = limitFor(fuel, p, g), margin = o2 - limit, alive = clamp((margin + 2) / 4);
+    Object.assign(state, { o2: clamp((o2 - 15) / 85), g, press: clamp(p / 20), soot: fuel.soot, alive });
     // the words
-    const word = wordFor(margin), dot = dotFor(margin);
+    const word = margin < -2 ? 'Flame out' : margin < 2 ? 'Barely burning' : 'Burning';
+    const dot = margin < -2 ? 'var(--none)' : margin < 2 ? 'var(--caution)' : 'var(--accent)';
     const shape = g < .02 ? 'With no rising hot air, the flame is a slow sphere fed only by oxygen drifting in.'
-      : g < .6 ? 'Weak gravity lets hot gas rise slowly, so the flame is a tall, lazy dome.'
       : 'Hot gas rises and pulls in fresh air, so the flame is a flickering teardrop.';
-    const wind = flow > 30 ? 'Strong wind stretches it downstream and can blow it out.'
-      : flow > 5 ? 'The air current leans the flame and feeds it fresh oxygen.'
-      : g < .02 && o2 < 50 ? 'In still air it slowly smothers itself in its own exhaust.' : '';
     const out = margin < -2 ? `${fmt(o2)}% oxygen is not enough to keep ${fuel.name} burning here.` : '';
     const soot = margin >= -2 && fuel.soot > .5 && g > .1 ? `Sooty ${fuel.name} glows yellow.` : '';
     const st = $('labState');
     st.style.setProperty('--lab-dot', dot);
-    st.innerHTML = `<b>${word} · ${gName(g)}</b>${[out || shape, wind, soot, air.say].filter(Boolean).slice(0, 3).join(' ')}`;
+    st.innerHTML = `<b>${word} · ${g < .02 ? 'Microgravity' : 'Earth gravity'}</b>${[out || shape, soot].filter(Boolean).join(' ')}`;
     fallback();
-    // exhaust plume. With nearby NASA tests: length from their average burn rate (against the fastest burn on record for this fuel),
-    // steadiness from the share of conclusive tests that kept burning. Without them it follows the rules of thumb above.
-    const d = nasa(fuel, o2, p), orb = document.querySelector('.orb.engine'), plume = orb?.querySelector('.plume');
+    // burn-rate meter. With nearby NASA tests: fill from their average burn rate (against the fastest burn on record for this fuel); it
+    // flickers when the share of conclusive tests that kept burning is low. Without them it follows the rules of thumb.
+    const d = nasa(fuel, o2, p), orb = document.querySelector('.orb.rig'), meter = orb?.querySelector('.burn-meter');
     const conclusive = d && d.n ? d.out + d.burn : 0, share = conclusive ? d.burn / conclusive : null;
     const drive = d && d.n ? (d.rateN ?? share ?? .5) : .3 + .5 * state.o2;
-    const len = clamp((.3 + .7 * drive) * (.6 + .4 * state.o2) * (1 + air.heat * .1)) * alive;
-    const steady = share ?? alive;
+    const len = clamp((.3 + .7 * drive) * (.6 + .4 * state.o2)) * alive;
     if (orb) {
       const warm = state.o2 > .2 || fuel.soot * (.3 + .7 * g) > .45;
-      orb.style.setProperty('--plume-c', warm ? '#ff9a3c' : '#5f8dff');
-      orb.style.setProperty('--plume-core', warm ? '#ffe2a8' : '#cfe0ff');
+      orb.style.setProperty('--meter-c', warm ? '#ff9a3c' : '#5f8dff');
       orb.style.setProperty('--pl-len', len.toFixed(3));
       orb.style.setProperty('--pl-on', alive > .05 ? String(.55 + .45 * alive) : '0');
-      orb.style.setProperty('--pl-lean', (state.flow * 1.2).toFixed(3));
-      orb.style.setProperty('--pl-jit', (.03 + (1 - steady) * .12 + state.flow * .05).toFixed(3));
-      orb.style.setProperty('--pl-speed', `${(.12 + (1 - g) * .14).toFixed(2)}s`);
-      orb.style.setProperty('--pl-dia', String(len > .6 && p > 8 ? ((len - .6) * 2).toFixed(2) : 0));
-      plume?.classList.toggle('sputter', alive > .05 && (alive < .6 || (share != null && share < .34)));
-      orb.style.setProperty('--lab-pg', clamp(p / 20).toFixed(3));          // chamber pressure gauge needle
-      orb.style.setProperty('--lab-valve', clamp(flow / 50).toFixed(3));    // fuel valve turns with airflow
+      meter?.classList.toggle('sputter', alive > .05 && (alive < .6 || (share != null && share < .34)));
     }
-    telemetry({ o2, p, flow, g, fuel, air, limit, margin, alive, d, share });
-    modes({ o2, p, flow, g, fuel, air, d, limit });
     const pct = (v) => `${Math.round(v * 100)}%`;
     $('labData').innerHTML = !PTS ? 'NASA tests are still loading.'
-      : d.none ? `NASA has no tests of ${fuel.name} with oxygen on record, so the plume follows the rules of thumb.`
-      : d.far ? `No NASA tests of ${fuel.name} near ${fmt(o2)}% oxygen${d.usesP ? ` and ${fmt(p, 1)} psia` : ''} (${d.all} tests elsewhere), so the plume follows the rules of thumb.`
+      : d.none ? `NASA has no tests of ${fuel.name} with oxygen on record, so the burn-rate meter follows the rules of thumb.`
+      : d.far ? `No NASA tests of ${fuel.name} near ${fmt(o2)}% oxygen${d.usesP ? ` and ${fmt(p, 1)} psia` : ''} (${d.all} tests elsewhere), so the burn-rate meter follows the rules of thumb.`
       : `<b>NASA data:</b> ${d.n} ${fuel.name} test${d.n === 1 ? '' : 's'} ${d.exact ? 'at' : 'nearest to'} these conditions (${fmt(d.o2[0])}${d.o2[1] - d.o2[0] >= 1 ? `–${fmt(d.o2[1])}` : ''}% oxygen, ${d.p ? `${fmt(d.p[0] * 14.696, 1)}${d.p[1] - d.p[0] >= .01 ? `–${fmt(d.p[1] * 14.696, 1)}` : ''} psia` : 'pressure not recorded'}, in microgravity): `
         + (conclusive ? `${d.out} went out, ${d.burn} kept burning (${pct(share)}).` : 'none with a clear outcome.')
-        + (d.rateN != null ? ` Burn rate ${pct(d.rateN)} of this fuel's fastest on record sets the plume length.` : '');
+        + (d.rateN != null ? ` Burn rate ${pct(d.rateN)} of this fuel's fastest on record fills the burn-rate meter.` : '');
     document.dispatchEvent(new CustomEvent('phenox:lab', { detail: state }));
   }
 
-  // ---- telemetry: six readouts from the same rules of thumb, with a bar each. Illustrative, labelled so on the page ----
-  function telemetry(t) {
-    const el = $('labTele'); if (!el) return;
-    const size = (80 + state.o2 * 110) * (1.15 - state.press * .3) * (.3 + .7 * t.alive) / 190;
-    const rows = [
-      ['Oxygen margin', `${t.margin >= 0 ? '+' : ''}${fmt(t.margin, 1)} pts`, clamp((t.margin + 5) / 30), t.margin < -2 ? 'var(--none)' : t.margin < 2 ? 'var(--caution)' : 'var(--accent)'],
-      ['Flame-out oxygen', `${fmt(t.limit, 1)}%`, clamp(t.limit / 60), 'var(--ink)'],
-      ['Flame size', `${Math.round(size * 100)}%`, clamp(size), 'var(--ink)'],
-      ['Convection', t.g < .02 ? 'none' : `${Math.round(t.g * 100)}%`, clamp(t.g), 'var(--ink)'],
-      ['Soot glow', `${Math.round(t.fuel.soot * (.3 + .7 * t.g) * t.alive * 100)}%`, clamp(t.fuel.soot * (.3 + .7 * t.g) * t.alive), 'var(--caution)'],
-      ['Blow-off risk', t.flow <= 20 ? 'low' : `${Math.round(clamp((t.flow - 20) / 30) * 100)}%`, clamp((t.flow - 20) / 30), 'var(--accent)'],
-      ['NASA tests behind the plume', t.d && t.d.n ? `${t.d.n}` : '0', t.d && t.d.n ? clamp(t.d.n / 60) : 0, 'var(--r-out)'],
-    ];
-    el.innerHTML = rows.map(([k, v, w, c]) => `<div><dt>${k}</dt><dd>${v}</dd><i style="--v:${w.toFixed(3)};--bar:${c}"><b></b></i></div>`).join('');
-  }
-
-  // ---- modes. Explore lists the nearest NASA tests; the others sweep the rules of thumb and set NASA's own counts beside them ----
-  let mode = 'explore';
-  document.querySelectorAll('input[name="labMode"]').forEach((r) => r.addEventListener('change', () => { if (r.checked) { mode = r.value; update(); } }));
-  const row = (cells, cls = '') => `<tr${cls ? ` class="${cls}"` : ''}>${cells.map((c, i) => `<td${i ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`;
-  const head = (cells) => `<tr>${cells.map((c, i) => `<th${i ? ' class="num"' : ''}>${c}</th>`).join('')}</tr>`;
-  const nasaCells = (d) => {
-    if (!d || d.none || d.far || !d.n) return ['—', '—'];
-    const c = d.out + d.burn; return [`${d.n}`, c ? `${Math.round(d.burn / c * 100)}% of ${c}` : 'none clear'];
-  };
-  function modes(t) {
-    const el = $('labOut'); if (!el) return;
-    const psia = (atm) => atm * 14.696;
-    if (mode === 'explore') {
-      let list = '';
-      if (PTS) {
-        const atm = t.p / 14.696, mine = PTS.rows.filter((r) => t.fuel.re.test(r.fuel) && Number.isFinite(r.o2));
-        const dist = (r) => r.p == null ? Math.abs(r.o2 - t.o2 / 100) / .05 + 1 : Math.hypot((r.o2 - t.o2 / 100) / .05, (r.p - atm) / .1);
-        const near = mine.map((r) => [dist(r), r]).sort((a, b) => a[0] - b[0]).slice(0, 6);
-        const outcome = { out: 'went out', burn: 'kept burning', disrupt: 'broke apart', unknown: 'not recorded' };
-        list = near.length ? `<div class="wrap"><table><thead>${head(['Nearest NASA tests', 'O₂', 'psia', 'Result'])}</thead><tbody>${near.map(([, r]) => row([`<b>${r.id}</b> <span class="quiet">${r.inv}</span>`, `${fmt(r.o2 * 100)}%`, r.p == null ? '—' : fmt(psia(r.p), 1), outcome[r.cls] || r.cls])).join('')}</tbody></table></div>`
-          : `<p>NASA has no ${t.fuel.name} tests with oxygen on record.</p>`;
-      }
-      el.innerHTML = `<h3>Explore</h3><p>Move anything on the left; the flame, the words and the telemetry follow. Pick a mode above to sweep oxygen or pressure, or to line the fuels up.</p>${list}`;
-    } else if (mode === 'limit') {
-      // the rules of thumb say where this fuel goes out; NASA's tests of it say the lowest oxygen that still kept burning and the highest that went out
-      const lim = t.limit, o2 = t.o2;
-      let lowBurn = null, highOut = null, nTests = 0;
-      if (PTS) {
-        const atm = t.p / 14.696, mine = PTS.rows.filter((r) => t.fuel.re.test(r.fuel) && Number.isFinite(r.o2) && (r.p == null || Math.abs(r.p - atm) <= .2));
-        nTests = mine.length;
-        mine.forEach((r) => { if (r.cls === 'burn') lowBurn = lowBurn == null ? r.o2 : Math.min(lowBurn, r.o2); if (r.cls === 'out') highOut = highOut == null ? r.o2 : Math.max(highOut, r.o2); });
-      }
-      const x = (v) => `${clamp((v - 10) / 90) * 100}%`;
-      const pins = [`<span class="pin top" style="left:${x(lim)}" data-l="rule of thumb ${fmt(lim, 1)}%"></span>`,
-        lowBurn != null ? `<span class="pin nasa burn" style="left:${x(lowBurn * 100)}" title="NASA: kept burning at ${fmt(lowBurn * 100)}%"></span>` : '',
-        highOut != null ? `<span class="pin nasa" style="left:${x(highOut * 100)}" title="NASA: went out at ${fmt(highOut * 100)}%"></span>` : ''].join('');
-      el.innerHTML = `<h3>Find the oxygen limit</h3><p>With ${t.fuel.name} at ${fmt(t.p, 1)} psia, ${gName(t.g).toLowerCase()} and ${t.flow ? `${fmt(t.flow)} cm/s of airflow` : 'still air'}, the rules of thumb put flame-out at <b>${fmt(lim, 1)}% oxygen</b>; you are at ${fmt(o2)}%, so it is <b>${wordFor(o2 - lim).toLowerCase()}</b>.</p>
-        <div class="lab-strip"><span class="axis"></span><span class="lit" style="left:${x(lim)};right:0"></span>${pins}<span class="tick" style="left:0">10%</span><span class="tick" style="left:50%">55%</span><span class="tick" style="left:100%">100%</span></div>
-        <p>${!PTS ? 'NASA tests are still loading.' : !nTests ? `NASA has no ${t.fuel.name} tests near ${fmt(t.p, 1)} psia.` : `Across ${nTests} NASA ${t.fuel.name} tests near this pressure${lowBurn != null ? `, the lowest oxygen at which one kept burning was <b>${fmt(lowBurn * 100)}%</b>` : ''}${highOut != null ? `${lowBurn != null ? ' and' : ','} the highest at which one went out was <b>${fmt(highOut * 100)}%</b>` : ''}. Those are single tests, not a limit; on the strip they are the <span class="lab-word" style="--d:var(--r-burn)">orange</span> and <span class="lab-word" style="--d:var(--r-out)">blue</span> pins.`}</p>`;
-    } else if (mode === 'compare') {
-      const rows = Object.values(FUELS).map((fu) => {
-        const m = t.o2 - limitFor(fu, t.p, t.g, t.flow, t.air), d = nasa(fu, t.o2, t.p);
-        return { fu, m, d };
-      }).sort((a, b) => b.m - a.m);
-      el.innerHTML = `<h3>Compare fuels</h3><p>Every fuel at ${fmt(t.o2)}% oxygen, ${fmt(t.p, 1)} psia and ${gName(t.g).toLowerCase()}: the rules of thumb on the left, NASA's nearest tests and how many kept burning on the right.</p>
-        <div class="wrap"><table><thead>${head(['Fuel', 'Rule of thumb', 'Tests', 'Kept burning'])}</thead><tbody>${rows.map(({ fu, m, d }) => row([fu.name, wordTag(m), ...nasaCells(d)], fu === t.fuel ? 'now' : '')).join('')}</tbody></table></div>`;
-    } else if (mode === 'depress') {
-      const floor = Math.max(2, Math.round(t.p * .3 * 10) / 10), steps = 6;
-      const ps = Array.from({ length: steps }, (_, i) => Math.round((t.p - (t.p - floor) * i / (steps - 1)) * 10) / 10);
-      const Name = t.fuel.name[0].toUpperCase() + t.fuel.name.slice(1);
-      el.innerHTML = `<h3>Depress drill</h3><p>${Name} at ${fmt(t.o2)}% oxygen as the cabin bleeds down from ${fmt(t.p, 1)} to ${fmt(floor, 1)} psia. The oxygen share stays put, so the air gets thinner and the flame starves.</p>
-        <div class="wrap"><table><thead>${head(['psia', 'Rule of thumb', 'Tests', 'Kept burning'])}</thead><tbody>${ps.map((p, i) => row([fmt(p, 1), wordTag(t.o2 - limitFor(t.fuel, p, t.g, t.flow, t.air)), ...nasaCells(nasa(t.fuel, t.o2, p))], i === 0 ? 'now' : '')).join('')}</tbody></table></div>`;
-    }
-  }
-
-  // CSS porthole flame, used only when the shader cannot run: stretch it up with gravity, lean it with airflow, tint it with soot
+  // CSS porthole flame, used only when the shader cannot run: stretch it up with gravity, tint it with soot
   function fallback() {
     const f = $('flame'); if (!f) return;
     const s = state, t = s.o2, lum = s.soot * (.35 + .65 * s.g) * s.alive;
@@ -1980,20 +1699,12 @@
     f.style.setProperty('--flame-mid', tint(mix([95, 141, 255], [255, 196, 90], t), [255, 205, 100]));
     f.style.setProperty('--flame-edge', tint(mix([31, 79, 214], [230, 110, 40], t), [240, 140, 40]));
     f.style.transformOrigin = '50% 85%';
-    f.style.transform = `translateX(${Math.round(s.flow * 24)}px) skewX(${-Math.round(s.flow * 18)}deg) scale(${1 - s.g * .25}, ${1 + s.g * .7})`;
+    f.style.transform = `scale(${1 - s.g * .25}, ${1 + s.g * .7})`;
     f.style.opacity = String(.25 + .75 * s.alive);
   }
 
-  function mission(k) {
-    const m = MISSIONS[k]; if (!m) return;
-    ui.o2.value = m.o2; ui.p.value = m.p; ui.g.value = m.g; ui.air.value = m.air;
-    const a = AIR[m.air]; if (a.flow != null) ui.flow.value = a.flow;
-    update();
-  }
-  document.querySelectorAll('input[name="labMission"]').forEach((r) => r.addEventListener('change', () => r.checked && mission(r.value)));
-  document.querySelectorAll('input[name="labG"]').forEach((r) => r.addEventListener('change', () => { if (r.checked) { ui.g.value = r.value; update(); } }));
-  ui.air.addEventListener('change', () => { const a = AIR[ui.air.value]; if (a.flow != null) ui.flow.value = a.flow; update(); });
-  [ui.o2, ui.p, ui.flow, ui.g].forEach((el) => el.addEventListener('input', update));
+  document.querySelectorAll('input[name="labG"]').forEach((r) => r.addEventListener('change', update));
+  [ui.o2, ui.p].forEach((el) => el.addEventListener('input', update));
   ui.fuel.addEventListener('change', update);
   // follow the ranking form's oxygen and pressure when the user changes them there (read only; the lab writes to the form only when the user presses "Check this in the NASA data")
   const follow = () => {
@@ -2015,7 +1726,7 @@
     $('scenario-h')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     $('go')?.focus({ preventScroll: true });
   });
-  mission('iss');
+  follow();
 })();
 </script>
 <script>
@@ -2215,15 +1926,15 @@
     new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(canvas);
   }).catch(() => {});
 
-  // ---- Hero background: a ribbon of fire-dust. One flowing, twisting sheet made of fine stippled dots runs across the hero through a
-  // hot spot right of the headline ("the chamber" below means that spot): dense where the sheet faces you, thin at the twists, with loose dust around it. It swells, twists faster and thickens with
+  // ---- Hero background: a ribbon of fire-dust. One flowing, twisting sheet made of fine stippled dots runs across the hero through the
+  // flame lab's chamber window: dense where the sheet faces you, thin at the twists, with loose dust around it. It swells, twists faster and thickens with
   // oxygen, takes the flame's colour near the chamber (blue in cabin air, orange in rich oxygen) and gold further out, flickers with the
   // flame. It follows the flame lab's fire (window.phenoxLab, read only): heat rings breathe out of the
   // porthole and push the grain, the flicker keeps the flame's pace (steady in microgravity, quick with gravity or wind), airflow
   // carries the hot part downstream, gravity lifts it, and when the flame goes out the dust by the chamber cools to ash. ----
   libs.then(async ([THREE]) => {
-    // the hot spot sits in the hero itself (beside the headline), not on the chamber, since the Flame lab is its own section below
-    const hero = document.querySelector('.hero'), head = hero.querySelector('h1') || hero, canvas = document.createElement('canvas');
+    // the hot spot is the flame lab's chamber window, which sits in the hero beside the headline
+    const hero = document.querySelector('.hero'), orb = document.querySelector('.chamber') || hero, canvas = document.createElement('canvas');
     const T = THREE.TSL, r = await gpu(THREE, canvas, true), scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const res = T.uniform(new THREE.Vector2(1, 1)), src = T.uniform(new THREE.Vector2()), heat = T.uniform(0);
     // the chamber's fire, read from the same window.phenoxLab the porthole shader follows (read only): alive, gravity, airflow
@@ -2274,9 +1985,9 @@
     function fit() {
       const hh = Math.round(hero.getBoundingClientRect().bottom + scrollY + 40);
       if (canvas.style.height !== hh + 'px') canvas.style.height = hh + 'px';
-      const c = canvas.getBoundingClientRect(), h = head.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
+      const c = canvas.getBoundingClientRect(), o = orb.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
       r.setPixelRatio(dpr); r.setSize(c.width, c.height, false); res.value.set(c.width * dpr, c.height * dpr);
-      src.value.set(c.width * (c.width > 900 ? .78 : .7) * dpr, (c.bottom - h.bottom) * dpr);
+      src.value.set((o.left + o.width / 2 - c.left) * dpr, (c.bottom - o.top - o.height / 2) * dpr);
     }
     const draw = (dt) => {
       const e = reduce() ? 1 : 1 - Math.exp(-dt * 3), w = lab() || { alive: 1, g: 0, flow: 0 };
