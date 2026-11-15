@@ -18,6 +18,10 @@ Will a material burn in a given spacecraft atmosphere? Answered from real NASA P
   - Result colors (blue went out, orange kept burning, green droplet broke apart, grey not recorded) are test results, not verdicts, so they deliberately do not reuse the pass/caution/fail colors. Each also has its own shape.
   - If the data is reloaded, regenerate `web/points.json` from the `/points` response.
 
+- `web/flammability.html` — the 3D flammability map of one fuel, opened in a new tab from the "See this fuel's flammability map in 3D" link on a quantified ranking card (`?material=&o2=&p=`, oxygen in percent, pressure in atm). One static file, plain WebGL, no libraries. Left to right is oxygen, front to back is pressure, and each block is one tested bucket (the worker's own: 5 points of oxygen by 0.1 atm, up to 2 atm). Block height is the share of that bucket's tests that kept burning, or the average burn rate; block colour is pass, caution or fail by the ranking's thresholds. Pins mark the mission presets and the scenario handed over. Same data order as `viz.html` (`GET /points`, then `web/points.json`, then a labeled mock).
+  - It uses the ranking's burn rule on purpose (only outcomes containing "extinct" or "disrupt" count as not burning), so a block and a verdict never disagree. If `assess()` or the envelope view changes, change `buildFuel()` and the page's "How to read this" text with it.
+  - The table under the model is the keyboard route and the no-WebGL fallback; keep every number in the model present there.
+
 ## Rules for the front end
 
 - Keep it a single `web/index.html` unless there is a strong reason not to. Touch as few files as possible.
