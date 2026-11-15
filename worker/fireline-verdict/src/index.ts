@@ -3,8 +3,9 @@
 // It never decides PASS/CAUTION/FAIL and never writes explanations. That is Person D's layer.
 import postgres from 'postgres';
 import { handleChat } from './chat';
+import { importCsv } from './import';
 
-export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string }
+export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string; UPLOAD_KEY?: string }
 export type Sql = ReturnType<typeof postgres>;
 
 // ---- how flammability_envelope buckets work (from its view definition) ----
@@ -219,6 +220,30 @@ export default {
       } finally { ctx.waitUntil(sql.end()); }
     }
 
-    return json({ error: 'not found', routes: ['GET /health', 'POST /verdict', 'POST /chat'] }, 404);
+    if (pathname === '/import' && request.method === 'POST') {
+      if (env.UPLOAD_KEY && request.headers.get('x-upload-key') !== env.UPLOAD_KEY) {
+        return json({ error: 'missing or wrong x-upload-key header' }, 401);
+      }
+      let body: unknown;
+      try { body = await request.json(); } catch { return json({ error: 'body must be valid JSON' }, 400); }
+      const b = body as any;
+      const csvText = typeof b?.csv === 'string' ? b.csv : null;
+      const title = typeof b?.title === 'string' ? b.title.trim() : '';
+      if (!csvText) return json({ error: 'csv (string, the raw CSV text) is required' }, 400);
+      if (!title) return json({ error: 'title is required (what this dataset is / who it is from)' }, 400);
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'dataset';
+      const investigationId = `USER-${slug}-${Date.now().toString(36)}`;
+      const sourceFile = typeof b?.source_file === 'string' ? b.source_file : 'upload.csv';
+
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+      try {
+        return json(await importCsv(sql, { investigationId, title, csvText, sourceFile }));
+      } catch (e) {
+        console.error(e);
+        return json({ error: 'import failed', detail: String((e as Error).message) }, 500);
+      } finally { ctx.waitUntil(sql.end()); }
+    }
+
+    return json({ error: 'not found', routes: ['GET /health', 'POST /verdict', 'POST /chat', 'POST /import'] }, 404);
   },
 };
