@@ -226,6 +226,25 @@
   .chat-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .chat-row input { flex: 1 1 260px; border-radius: 999px; padding-inline: 20px; }
   .reply { white-space: pre-wrap; margin-top: 14px; padding: 16px 18px; background: var(--card); border-radius: 20px; max-width: 72ch; }
+  .mission-widget { position: fixed; z-index: 20; right: 24px; bottom: 24px; }
+  .mission-launch { display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(11, 31, 63, .28); }
+  .mission-launch::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #45d2c3; box-shadow: 0 0 0 4px rgba(69, 210, 195, .18); }
+  .mission-panel { position: absolute; right: 0; bottom: 66px; display: flex; flex-direction: column; width: min(390px, calc(100vw - 32px)); height: min(560px, calc(100dvh - 110px)); padding: 20px; color: var(--on-dark); background: var(--char); border: 1px solid var(--line-dark); border-radius: 22px; box-shadow: 0 20px 60px rgba(11, 31, 63, .3); }
+  .mission-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+  .mission-head h2 { font-size: 20px; }
+  .mission-head p, .mission-phone { color: var(--on-dark-2); font-size: 13px; }
+  .mission-close { min-height: 34px; width: 34px; padding: 0; background: transparent; color: var(--on-dark); border-color: var(--line-dark); font-size: 20px; }
+  .mission-panel .chat-row { flex: 0 0 auto; flex-wrap: nowrap; margin-top: 16px; }
+  .mission-panel .chat-row input { min-width: 0; border-radius: 14px; padding-inline: 12px; background: var(--card); border: 1px solid #3d5a8c; color: var(--on-dark); }
+  .mission-panel .chat-row input::placeholder { color: #93a4c0; }
+  .mission-panel .chat-row button { padding-inline: 16px; }
+  .mission-messages { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; margin-top: 16px; }
+  .mission-message { max-width: 88%; padding: 10px 12px; border-radius: 15px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+  .mission-message.user { align-self: flex-end; background: var(--sky); color: var(--char); border-bottom-right-radius: 5px; }
+  .mission-message.assistant { align-self: flex-start; background: var(--card); color: var(--on-dark); border-bottom-left-radius: 5px; }
+  .mission-message.pending { color: var(--on-dark-2); }
+  .mission-phone { margin-top: 12px; }
+  @media (max-width: 520px) { .mission-widget { right: 16px; bottom: 16px; } .mission-panel { bottom: 62px; } }
   footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line-dark); font-size: 14px; color: var(--on-dark-2); max-width: 72ch; }
 
   @media (max-width: 900px) {
@@ -492,16 +511,17 @@
       </div>
       <div id="importResult" class="reply hidden"></div>
     </section>
-    <section>
-
-      <h2 id="chat-h">Ask Mission Control</h2>
-      <p class="intro">Plain-English questions go to the worker's Gemini-backed assistant, which looks up the same test data.</p>
-      <form id="chatForm" class="chat-row">
-        <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen and 0.7 atm?" aria-label="Question for Mission Control">
-        <button type="submit" id="chatGo" class="secondary">Ask</button>
-      </form>
-      <div id="chatReply" class="reply hidden"></div>
-      <p class="intro" style="margin-top:14px">Prefer to talk it through? Call <a href="tel:+13312914794">+1 (331) 291-4794</a> and ask out loud — the same Gemini-backed Mission Control answers by voice.</p>
+    <section class="mission-widget" aria-label="Mission Control chat">
+      <div id="missionPanel" class="mission-panel hidden" aria-labelledby="chat-h">
+        <div class="mission-head"><div><h2 id="chat-h">Ask Mission Control</h2><p>Ask about materials, oxygen, pressure, or the NASA test data.</p></div><button type="button" id="chatClose" class="mission-close" aria-label="Close chat">×</button></div>
+        <div id="chatMessages" class="mission-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <p class="mission-phone">Prefer to talk? <a href="tel:+13312914794">Call Mission Control</a>.</p>
+        <form id="chatForm" class="chat-row">
+          <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen?" aria-label="Question for Mission Control">
+          <button type="submit" id="chatGo">Ask</button>
+        </form>
+      </div>
+      <button type="button" id="chatToggle" class="mission-launch" aria-expanded="false" aria-controls="missionPanel">Ask Mission Control</button>
     </section>
     <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
@@ -786,20 +806,51 @@
   });
 
   // ---------- Mission Control chat ----------
+  const missionPanel = $('missionPanel');
+  const chatHistory = [];
+  function appendChatMessage(role, text, extraClass = '') {
+    const bubble = document.createElement('div');
+    bubble.className = `mission-message ${role}${extraClass ? ` ${extraClass}` : ''}`;
+    bubble.textContent = text;
+    $('chatMessages').append(bubble);
+    $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+    return bubble;
+  }
+  function setChatOpen(open) {
+    missionPanel.classList.toggle('hidden', !open);
+    $('chatToggle').setAttribute('aria-expanded', String(open));
+    if (open) $('chatMsg').focus();
+  }
+  $('chatToggle').addEventListener('click', () => setChatOpen(missionPanel.classList.contains('hidden')));
+  $('chatClose').addEventListener('click', () => { setChatOpen(false); $('chatToggle').focus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !missionPanel.classList.contains('hidden')) { setChatOpen(false); $('chatToggle').focus(); } });
   $('chatForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = $('chatMsg').value.trim(); if (!message) return;
-    $('chatGo').disabled = true; $('chatReply').classList.remove('hidden'); $('chatReply').textContent = 'Asking…';
+    $('chatGo').disabled = true;
+    $('chatMsg').value = '';
+    appendChatMessage('user', message);
+    const pending = appendChatMessage('assistant', 'Asking Mission Control…', 'pending');
     try {
       let reply;
       if (mockOn()) reply = 'Mock mode is on, so Mission Control is offline. It needs the worker\'s chat route, which runs through Gemini on Cloudflare AI Gateway. Turn mock mode off in Settings to ask for real.';
       else {
-        const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message }) });
+        const transcript = chatHistory.map((turn) => `${turn.role === 'user' ? 'User' : 'Mission Control'}: ${turn.content}`).join('\n');
+        const contextualMessage = transcript
+          ? `Conversation so far:\n${transcript}\n\nUser: ${message}\nMission Control:`
+          : message;
+        const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: contextualMessage }) });
         const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
         reply = d.reply; if (d.verdict) harvest(d.verdict), renderInvestigations();
       }
-      $('chatReply').textContent = reply;
-    } catch (err) { $('chatReply').textContent = 'Mission Control did not answer: ' + err.message; }
+      pending.textContent = reply;
+      pending.classList.remove('pending');
+      chatHistory.push({ role: 'user', content: message }, { role: 'assistant', content: reply });
+    } catch (err) {
+      pending.textContent = 'Mission Control did not answer: ' + err.message;
+      pending.classList.remove('pending');
+      pending.classList.add('error');
+    }
     finally { $('chatGo').disabled = false; }
   });
 
