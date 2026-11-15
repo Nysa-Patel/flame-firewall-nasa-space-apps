@@ -131,7 +131,22 @@ spoken aloud or read as plain text — no markdown, bullets, or symbols:
    verified evidence.
 Never invent numbers not present in the JSON. Never pad with disclaimers beyond what the data supports.`;
 
+// Ask the chosen model; if it fails (quota, outage, missing key), ask the other one once and say so in the reply.
 export async function handleChat(sql: Sql, env: ChatEnv, message: string, model: ChatModel = 'grok') {
+  try {
+    return await runChat(sql, env, message, model);
+  } catch (first) {
+    const other: ChatModel = model === 'grok' ? 'gemini' : 'grok';
+    try {
+      const r = await runChat(sql, env, message, other);
+      return { ...r, requested_model: model, fallback_reason: String((first as Error).message).slice(0, 200) };
+    } catch {
+      throw first;
+    }
+  }
+}
+
+async function runChat(sql: Sql, env: ChatEnv, message: string, model: ChatModel) {
   const extractedRaw = await callModel(model, env, EXTRACT_PROMPT, message, true);
   let extracted: { kind?: 'lookup' | 'general'; o2_fraction: number | null; pressure_atm: number | null; material: string | null };
   try {
