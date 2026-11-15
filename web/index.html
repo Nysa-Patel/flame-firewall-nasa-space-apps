@@ -627,6 +627,10 @@
   .env-toggle button { background: transparent; border-color: transparent; color: var(--on-dark-2); padding: 8px 18px; min-height: 40px; font-weight: 600; }
   .env-toggle button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
   .env-toggle button:hover:not(:disabled) { box-shadow: none; }
+  .env-note { margin-top: 10px; font-size: 13px; color: var(--on-dark-2); }
+  .env-toggle button { white-space: nowrap; }
+  @media (max-width: 420px) { .env-toggle button { padding: 8px 12px; } }
+  .env-rerank { margin-top: 10px; }
   /* navy section: actions are white pills, never red */
   a.env-open { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 22px; border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 700; font-size: 15px; text-decoration: none; }
   @media (prefers-reduced-motion: no-preference) {
@@ -941,6 +945,11 @@
           <div class="env-view" id="envView"><svg class="env-svg" id="envSvg" viewBox="0 0 200 200" role="img"></svg></div>
           <p class="env-caption" id="envCaption"></p>
           <div class="env-controls">
+            <div class="env-toggle" role="group" aria-label="Place">
+              <button type="button" class="env-place" data-place="iss" aria-pressed="true">Earth orbit</button>
+              <button type="button" class="env-place" data-place="lunar" aria-pressed="false">Moon</button>
+              <button type="button" class="env-place" data-place="mars" aria-pressed="false">Mars</button>
+            </div>
             <div class="env-toggle" role="group" aria-label="Camera view">
               <button type="button" id="envClose" aria-pressed="true"></button>
               <button type="button" id="envWide" aria-pressed="false"></button>
@@ -2336,6 +2345,13 @@
   const ISS = { where: 'Low Earth orbit', body: 'Earth', fill: 'var(--env-earth)', node: 'ISS', trail: 'ISS_trail',
     asset: 'scene/solarsystem/planets/earth/satellites/misc/iss', eyes: { close: EYES + 'sc_iss', wide: EYES + 'earth' },
     close: 'Station', wide: 'Orbit', closeText: 'the International Space Station' };
+  // what the panel says the camera is showing, and the gravity there (a fact about the place, not about the tests)
+  const SHOWN = {
+    iss: { close: 'International Space Station', wide: 'Earth and the station\'s orbit', g: 'Microgravity' },
+    suit: { close: 'International Space Station', wide: 'Earth and the station\'s orbit', g: 'Microgravity' },
+    lunar: { close: 'Lunar south pole (reference site)', wide: 'The whole Moon', g: '0.165 g' },
+    mars: { close: 'Jezero crater (reference site)', wide: 'The whole planet Mars', g: '0.38 g' },
+  };
   const VIEWS = {
     iss: ISS,
     suit: { ...ISS, where: 'Spacewalk, low Earth orbit' },
@@ -2355,9 +2371,47 @@
     let ws;
     try { ws = new WebSocket(`ws://${HOST}:4682/websocket`); } catch { return setStatus('failed'); }
     socket = ws;
-    ws.onopen = () => { if (socket !== ws) return; setStatus('connected'); runLua(PREPARE); sendView(); };
-    ws.onclose = () => { if (socket !== ws) return; socket = null; setStatus(status === 'connected' ? 'idle' : 'failed'); };
+    ws.onopen = () => { if (socket !== ws) return; setStatus('connected'); runLua(PREPARE); sendView(); watchAnchor(); };
+    ws.onmessage = (e) => { if (socket === ws) onAnswer(e.data); };
+    ws.onclose = () => { if (socket !== ws) return; socket = null; clearInterval(poll); anchor = ''; setStatus(status === 'connected' ? 'idle' : 'failed'); };
     ws.onerror = () => ws.close();
+  }
+  // ---- follow OpenSpace's camera: what it is orbiting (its anchor). Subscribed once on connect; if the server never answers the
+  // subscription (older builds), it is asked again every 2 seconds instead. Only while connected, and only after the user pressed Connect.
+  const ANCHOR = 'NavigationHandler.OrbitalNavigator.Anchor';
+  let anchorTopic = -1, pollTopic = -1, poll = 0, heard = false, anchor = '';
+  function watchAnchor() {
+    heard = false; anchorTopic = topic++;
+    socket.send(JSON.stringify({ topic: anchorTopic, type: 'subscribe', payload: { event: 'start_subscription', property: ANCHOR } }));
+    clearInterval(poll);
+    setTimeout(() => {
+      if (heard || !socket) return;
+      poll = setInterval(() => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) return clearInterval(poll);
+        pollTopic = topic++;
+        socket.send(JSON.stringify({ topic: pollTopic, type: 'luascript', payload: { script: `return openspace.propertyValue('${ANCHOR}')`, return: true } }));
+      }, 2000);
+    }, 3000);
+  }
+  // the first plain string anywhere in an answer: the anchor's name
+  const firstString = (v) => typeof v === 'string' ? v : v && typeof v === 'object' ? Object.values(v).map(firstString).find(Boolean) || '' : '';
+  function onAnswer(raw) {
+    let m; try { m = JSON.parse(raw); } catch { return; }
+    if (m.topic !== anchorTopic && m.topic !== pollTopic) return;
+    const p = m.payload ?? {}, name = firstString(p.Value ?? p.value ?? p);
+    if (!name || !/^[A-Za-z0-9_ .\-]{1,60}$/.test(name)) return;
+    heard = true;
+    if (name === anchor) return;
+    anchor = name; followAnchor(name);
+  }
+  // OpenSpace flew somewhere: switch the page's place and camera to match, without flying OpenSpace again
+  function followAnchor(name) {
+    const to = /^ISS/i.test(name) ? ['iss', 'close'] : /^Earth/i.test(name) ? ['iss', 'wide'] : /^Moon/i.test(name) ? ['lunar', 'wide']
+      : /^Mars/i.test(name) ? ['mars', 'wide'] : null;
+    if (!to) { drawStage(); drawSpecs(); return; }
+    const [k, m] = to, sameEarth = k === 'iss' && key === 'suit';
+    mode = m;
+    if (k !== key && !sameEarth) choosePlace(k, { quiet: true }); else { drawStage(); drawSpecs(); }
   }
   function runLua(script) {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
@@ -2392,13 +2446,15 @@ ${move}`;
     $('envStatus').innerHTML = '<i aria-hidden="true"></i>' + STATUS[next];
     $('envConnect').classList.toggle('hidden', next === 'connected' || next === 'connecting');
     $('envConnect').textContent = next === 'failed' ? 'Try OpenSpace again' : 'Connect OpenSpace';
-    drawStage();
+    drawStage(); if ($('envSpecs')) drawSpecs();
   }
   function drawStage() {
     const v = VIEWS[key];
     $('envWhere').textContent = VIEWS[checked()?.value] ? v.where : `Custom atmosphere, still showing ${v.body}`;
     $('envTitle').textContent = presetName();
     $('envClose').textContent = v.close; $('envWide').textContent = v.wide;
+    const placeKey = key === 'suit' ? 'iss' : key;
+    document.querySelectorAll('.env-place').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.place === placeKey)));
     $('envClose').setAttribute('aria-pressed', mode === 'close'); $('envWide').setAttribute('aria-pressed', mode === 'wide');
     const target = mode === 'close' ? v.closeText : `the whole ${v.body === 'Earth' ? 'Earth with the station\'s orbit' : v.body}`;
     $('envOpen').href = v.eyes[mode];
@@ -2408,7 +2464,7 @@ ${move}`;
     if (frame) { frame.title = `NASA's Eyes on the Solar System, 3D view of ${v.body}`; if (frame.getAttribute('src') !== eyesUrl()) frame.src = eyesUrl(); }
     $('envCaption').textContent = status === 'connected' ? `The OpenSpace window is showing ${target}.`
       : status === 'failed' ? `OpenSpace did not answer on this computer. Start it and try again, or open ${target} in 3D in a new tab.`
-      : frame ? `Live 3D from NASA's Eyes, showing ${target}. Drag to look around.`
+      : frame ? `Live 3D from NASA's Eyes, showing ${target}. Drag to look around; if you fly somewhere else inside NASA's viewer, Phenox can't see where you went, so press a place button to come back.`
       : `Open ${target} in 3D in a new tab. If OpenSpace is running on this computer, connect it and it follows your mission choice.`;
     const lat = v.site ? v.site.lat * Math.PI / 180 : 0;
     const x = (100 + 29 * Math.cos(lat)).toFixed(1), y = (100 - 58 * Math.sin(lat)).toFixed(1);
@@ -2425,10 +2481,26 @@ ${move}`;
     if (frame || !navigator.onLine) return;
     frame = document.createElement('iframe');
     frame.allow = 'fullscreen'; frame.referrerPolicy = 'no-referrer';
-    $('envView').appendChild(frame); drawStage();
+    $('envView').appendChild(frame); drawStage(); drawSpecs();
   }
   if ('IntersectionObserver' in window) new IntersectionObserver((entries, io) => { if (entries.some((e) => e.isIntersecting)) { io.disconnect(); loadFrame(); } }, { rootMargin: '200px' }).observe($('envView'));
-  function setMode(next) { mode = next; drawStage(); sendView(); }
+  function setMode(next) { mode = next; drawStage(); drawSpecs(); sendView(); }
+  // A place button picks the matching mission preset in the form, on the user's click only, the same as clicking that preset card,
+  // so the atmosphere, the panel and the 3D view all change together. Pressing the place already shown resets NASA's viewer to it.
+  let quietMove = false;
+  function choosePlace(k, { quiet = false } = {}) {
+    const current = key === 'suit' ? 'iss' : key;
+    if (k === current) {
+      if (!quiet && frame) { frame.src = 'about:blank'; requestAnimationFrame(() => { frame.src = eyesUrl(); }); }
+      if (!quiet) { mode = 'close'; drawStage(); drawSpecs(); sendView(); }
+      return;
+    }
+    const radio = document.querySelector(`input[name=preset][value="${k}"]`); if (!radio) return;
+    quietMove = quiet;
+    radio.click();   // fires the form's own change handlers: the preset, the lab, the investigations and this block
+    quietMove = false;
+  }
+  document.querySelectorAll('.env-place').forEach((b) => b.addEventListener('click', () => choosePlace(b.dataset.place)));
   $('envClose').addEventListener('click', () => setMode('close'));
   $('envWide').addEventListener('click', () => setMode('wide'));
   $('envConnect').addEventListener('click', connect);
@@ -2438,14 +2510,26 @@ ${move}`;
   function drawSpecs() {
     const o2 = parseFloat($('o2').value), p = parseFloat($('p').value), pmin = parseFloat($('pmin').value);
     const row = (k, val) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`;
-    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Location shown', VIEWS[key].body) + row('Oxygen', `${show(o2, 1)}% by volume`)
-      + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
+    const where = SHOWN[key] || SHOWN.iss, src = status === 'connected' ? 'OpenSpace' : frame ? 'NASA\'s Eyes' : 'Schematic';
+    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Location shown', where[mode]) + row('Camera', mode === 'close' ? 'Close up' : 'Wide')
+      + row('Gravity there', where.g) + row('Oxygen', `${show(o2, 1)}% by volume`)
+      + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`)
+      + row('3D view', src);
+    const odd = status === 'connected' && anchor && !/^(ISS|Earth|Moon|Mars)/i.test(anchor);
+    const note = $('envNote') || Object.assign(document.createElement('p'), { id: 'envNote', className: 'env-note' });
+    if (!note.isConnected) $('envSpecs').after(note);
+    note.textContent = odd ? `OpenSpace is looking at ${anchor}, which is not one of Phenox's mission places, so the panel still shows ${presetName()}.` : '';
   }
-  function clearVerdict() {
-    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see Phenox\'s readings for this atmosphere.</p>';
+  let ranked = false;
+  function clearVerdict(changed = false) {
+    $('envVerdict').innerHTML = ranked && changed
+      ? '<p class="small quiet">The atmosphere changed, so the earlier readings no longer apply.</p><button type="button" class="secondary env-rerank" id="envRerank">Rank materials for this place</button>'
+      : '<p class="small quiet">Rank materials to see Phenox\'s readings for this atmosphere.</p>';
+    $('envRerank')?.addEventListener('click', () => $('go')?.click());
     $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each reading will be listed here.</p>';
   }
   document.addEventListener('fireline:ranked', (e) => {
+    ranked = true;
     const items = e.detail.items;
     $('envVerdict').innerHTML = `<p class="small quiet" style="margin-bottom:6px">At ${esc(e.detail.scenario.pNom)} psia nominal. The count is how many conclusive tests went out.</p><ul class="env-list">`
       + items.map((it) => `<li><span>${esc(it.material)}</span><span>${it.count ? `<span class="quiet">${esc(it.count)}</span> ` : ''}<span class="chip ${it.level.key}"><b>${it.level.label}</b></span></span></li>`).join('') + '</ul>';
@@ -2460,11 +2544,11 @@ ${move}`;
   // Preset changed: move the camera. "Custom" keeps the current place.
   $('presets').addEventListener('change', () => {
     const k = checked()?.value;
-    if (VIEWS[k]) { key = k; mode = 'close'; sendView(); }
-    drawStage(); drawSpecs(); clearVerdict();
+    if (VIEWS[k]) { key = k; if (!quietMove) { mode = 'close'; sendView(); } }
+    drawStage(); drawSpecs(); clearVerdict(true);
   });
   // Numbers edited by hand: the page switches itself to Custom, so only the panel updates.
-  $('form').addEventListener('input', (e) => { if (['o2', 'p', 'pmin'].includes(e.target.id)) { drawStage(); drawSpecs(); clearVerdict(); } });
+  $('form').addEventListener('input', (e) => { if (['o2', 'p', 'pmin'].includes(e.target.id)) { drawStage(); drawSpecs(); clearVerdict(true); } });
 
   key = VIEWS[checked()?.value] ? checked().value : 'iss';
   setStatus('idle'); drawSpecs(); clearVerdict();
