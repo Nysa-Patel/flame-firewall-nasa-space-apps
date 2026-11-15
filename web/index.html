@@ -127,6 +127,7 @@
     background: radial-gradient(circle at 50% 46%, #1e2a3e 0%, #0a0f18 70%); box-shadow: 0 30px 60px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .12); }
   .orb svg { position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; }
   .hero-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 30px; }
+  .dot-group { display: flex; gap: 14px; }
   .hero h1 { font-size: clamp(30px, 3.6vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -.035em; }
   .lede { margin-top: 14px; max-width: 30rem; font-size: 17px; color: var(--ink-2); }
   .flame-note { margin-top: 10px; font-size: 14px; color: var(--ink-2); max-width: 52ch; }
@@ -257,6 +258,7 @@
       transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); }
     .hero-row { grid-template-columns: 1fr; }
     .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }
+    .dot-group { flex-wrap: wrap; }
     .panel { padding: 20px; border-radius: 22px; }
     .dark { border-radius: 26px 26px 0 0; padding-top: 40px; }
     .rank { padding: 18px; }
@@ -441,7 +443,10 @@
         <p class="lede">Choose a cabin atmosphere and list the materials you're considering. FireLine ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
         <p class="flame-note" id="flameNote"></p>
       </div>
-      <a class="accent-dot" href="#method">How it works</a>
+      <div class="dot-group">
+        <a class="accent-dot" href="#env-h">View in 3D</a>
+        <a class="accent-dot" href="#method">How it works</a>
+      </div>
     </div>
     <div class="facts" aria-label="What the data covers">
       <div><b>2,954</b><span>NASA combustion tests</span></div>
