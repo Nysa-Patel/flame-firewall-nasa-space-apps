@@ -515,6 +515,45 @@
   .env-ev span { display: block; color: var(--on-dark-2); }
   @media (max-width: 900px) { .env { grid-template-columns: 1fr; } .env-stage { min-height: 400px; } }
 
+  /* ===== test results: how each flame ended. These are results, not readings, so they use their own colours (the same as the
+     3D page) and always sit in the same order: went out, broke apart, kept burning, not recorded ===== */
+  :root { --r-out: #3987e5; --r-disrupt: #199e70; --r-burn: #d95926; --r-unknown: #8a97ad; }
+  #map-h { --i: var(--i-flask); } #inv-h { --i: var(--i-stack-2); }
+  #results:not(.hidden) + .block { margin-top: 56px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .obar { display: flex; gap: 2px; height: 10px; min-width: 40px; border-radius: 4px; overflow: hidden; }
+  .obar i { min-width: 3px; background: var(--r-unknown); }
+  .obar .o-out { background: var(--r-out); } .obar .o-disrupt { background: var(--r-disrupt); } .obar .o-burn { background: var(--r-burn); }
+  .rank .obar { max-width: 260px; margin: 2px 0 4px; }
+  .read { color: var(--on-dark); } .read b { font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 14px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--on-dark-2); }
+  .legend li { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; background: var(--r-unknown); }
+  .legend .o-out { background: var(--r-out); } .legend .o-disrupt { background: var(--r-disrupt); } .legend .o-burn { background: var(--r-burn); }
+  .results-tools { margin-top: 16px; }
+  .maps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .map { background: var(--card); border-radius: 24px; padding: 20px 22px; min-width: 0; }
+  .map h3 { font-size: 22px; font-weight: 600; letter-spacing: -.01em; text-transform: capitalize; }
+  .map p { font-size: 14px; color: var(--on-dark-2); margin: 4px 0 12px; }
+  .heat { width: auto; font-size: 13px; border-collapse: separate; border-spacing: 3px; }
+  .heat th { padding: 4px 8px; font-weight: 600; color: var(--on-dark-2); text-align: center; }
+  .heat th[scope=row] { text-align: right; }
+  .heat td { position: relative; padding: 6px; min-width: 62px; height: 40px; border-radius: 8px; background: var(--card-2); text-align: center; vertical-align: middle; color: var(--on-dark); }
+  .heat td.gap { background: transparent; box-shadow: inset 0 0 0 1px var(--line-dark); color: var(--on-dark-2); }
+  .heat td b { display: block; font-weight: 600; line-height: 1.2; margin-top: 4px; }
+  .heat td.at { outline: 2px solid var(--on-dark); outline-offset: 1px; }
+  .heat td.dep { outline: 2px dashed var(--on-dark-2); outline-offset: 1px; }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 22px; background: var(--card); margin-bottom: 14px; }
+  .seg button { background: transparent; border-color: transparent; color: var(--on-dark-2); padding: 8px 16px; min-height: 40px; font-weight: 600; }
+  .seg button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
+  .seg button:hover:not(:disabled) { box-shadow: none; }
+  .inv .why { margin-top: 8px; font-size: 15px; color: var(--on-dark); }
+  .inv-more { margin-top: 16px; }
+  .picks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink-2); }
+  .picks button { min-height: 40px; padding: 6px 14px; font-size: 14px; font-weight: 600; background: var(--paper); color: var(--ink); border-color: var(--line); }
+  .picks button small { font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+  @media (max-width: 900px) { .maps { grid-template-columns: minmax(0, 1fr); } }
+
   /* First visit walkthrough */
   .tour-scrim { position: fixed; z-index: 10000; background: rgba(5, 15, 32, .76); pointer-events: auto; }
   .tour-ring { position: fixed; z-index: 10001; border: 2px solid #ff684d; border-radius: 12px; box-shadow: 0 0 0 4px rgba(255, 104, 77, .2); pointer-events: none; transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
@@ -545,7 +584,7 @@
 <div class="shell">
   <header class="topbar">
     <div class="brand">Project Phenox</div>
-    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
+    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#inv-h">Investigations</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
@@ -571,8 +610,8 @@
     </div>
     <div class="hero-row">
       <div>
-        <h1 id="hero-h">Will it burn up there?</h1>
-        <p class="lede">Choose a cabin atmosphere and list the materials you're considering. Phenox ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
+        <h1 id="hero-h">How does it burn up there?</h1>
+        <p class="lede">Choose a cabin atmosphere and the fuels or materials you're weighing. Phenox finds the nearest NASA microgravity tests, shows whether those flames went out or kept burning, and ranks the investigations that matter for your mission.</p>
         <p class="flame-note" id="flameNote"></p>
       </div>
       <a class="accent-dot" href="viz.html">Launch clear analysis</a>
@@ -609,6 +648,7 @@
           <div class="wide">
             <label for="materials">Candidate materials <span class="quiet">(comma separated; matched against NASA test fuel names)</span></label>
             <textarea id="materials" rows="2"></textarea>
+            <div class="picks hidden" id="fuelPicks" role="group" aria-label="Fuels with oxygen and pressure on record"></div>
           </div>
         </div>
         <p class="preset-note" id="presetNote"></p>
@@ -633,8 +673,16 @@
   <div class="shell">
     <div id="results" class="hidden">
       <div class="block">
-        <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
+        <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span>
+          <ul class="legend" aria-label="How each test ended"><li><i class="o-out"></i>Went out on its own</li><li><i class="o-disrupt"></i>Droplet broke apart</li><li><i class="o-burn"></i>Kept burning</li><li><i></i>Result not recorded</li></ul>
+          <div class="results-tools"><button type="button" id="csv" class="secondary">Download the evidence as CSV</button></div>
+        </div>
         <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
+      </div>
+      <div class="block" id="mapBlock">
+        <h2 id="map-h">Where NASA tested each fuel</h2>
+        <p class="intro">Columns are oxygen, rows are pressure. Each filled cell is a set of conditions NASA actually tested: the bar shows how those tests ended and the number is how many there were. Empty cells were never tested, and pressures with no tests at all are left out. The solid outline is your nominal atmosphere and the dashed outline runs down to the depress floor.</p>
+        <div class="maps" id="maps"></div>
       </div>
       <div class="block">
         <h2 id="range-h">Across the operational range</h2>
@@ -642,15 +690,25 @@
       <div class="wrap matrix-wrap"><table id="matrix" aria-labelledby="range-h"></table></div>
       </div>
       <div class="block">
-        <h2 id="method">How the verdicts are made</h2>
+        <h2 id="method">How the readings are made</h2>
       <div class="method">
-        <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
-        <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
-        <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
-        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
+        <p>Every test here was lit on purpose, so the question is never whether the fuel can burn. It is how the flame ended. For each material and pressure, the worker returns the nearest oxygen-and-pressure bucket NASA tested. Phenox counts how the tests in it ended: the flame went out on its own, it kept burning until the fuel was gone, the droplet broke apart, or no result was recorded.</p>
+        <p>Only the first two are conclusive. Goes out means at least two thirds of the conclusive tests went out on their own. Mixed means at least one third. Keeps burning means fewer. Goes out is lowered to Mixed when the scenario sits outside the range tested for that material, or when its oxygen is higher than any test of it.</p>
+        <p>No data means one of three things: nothing was tested, the nearest bucket is more than two bucket widths away, or none of its tests has a conclusive result. Phenox does not read across a gap that wide.</p>
+        <p>Beside each share is its 95% range (a Wilson interval): with few tests it is wide, and that width is the honest measure of how much the record supports the reading.</p>
+        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification, and Goes out never means safe to fly. All of the evidence is from microgravity; there are no partial-gravity tests in NASA's repository yet.</p>
         <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
       </div>
       </div>
+    </div>
+    <div class="block" id="invBlock">
+      <h2 id="inv-h">Investigations for this atmosphere</h2>
+      <p class="intro" id="invIntro">Loading NASA's investigations…</p>
+      <div class="seg" role="group" aria-label="Filter by fire safety area" id="invFocus"></div>
+      <div class="inv-search"><label for="invQ">Search investigations <span class="quiet">(title, number or fuel)</span></label><input id="invQ" type="search" autocomplete="off"></div>
+      <p class="inv-source" id="invCount" role="status"></p>
+      <div class="inv-list" id="invList"></div>
+      <button type="button" id="invMore" class="secondary inv-more hidden"></button>
     </div>
     <div class="block env-block">
       <h2 id="env-h">Mission environment</h2>
@@ -674,7 +732,7 @@
         </div>
         <aside class="env-panel" aria-label="Mission summary">
           <div><h3>Mission specifications</h3><dl id="envSpecs"></dl></div>
-          <div><h3>Material verdicts</h3><div id="envVerdict"></div></div>
+          <div><h3>Material readings</h3><div id="envVerdict"></div></div>
           <div><h3>Supporting evidence</h3><div id="envEvidence"></div></div>
         </aside>
       </div>
@@ -709,7 +767,7 @@
         <a class="mission-call" href="tel:+13312914794"><span class="mission-call-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="mission-call-tx"><b>Call Mission Control</b><small>(331) 291-4794 · ask out loud</small></span></a>
         <div id="chatMessages" class="mission-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
         <form id="chatForm" class="chat-row">
-          <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen?" aria-label="Question for Mission Control">
+          <input id="chatMsg" type="text" placeholder="How does heptane burn in this atmosphere?" aria-label="Question for Mission Control">
           <button type="submit" id="chatGo">Ask</button>
         </form>
       </div>
@@ -744,8 +802,8 @@
   // ---------- presets (planning figures; edit freely) ----------
   const PRESETS = {
     iss:    { name: 'ISS cabin',          o2: 21,  p: 14.7, pmin: 10.2, note: 'Sea-level-equivalent cabin air. 10.2 psia is the reduced-pressure campout used before spacewalks, so the sweep covers a partial depress.' },
-    lunar:  { name: 'Lunar base or rover', o2: 30, p: 10.2, pmin: 8.2,  note: 'Reduced pressure with enriched oxygen to shorten spacewalk prebreathe. NASA\'s exploration atmosphere target is 8.2 psia at 34% oxygen; adjust the fields to test it.' },
-    mars:   { name: 'Mars habitat',       o2: 34,  p: 8.2,  pmin: 7,    note: 'NASA\'s exploration atmosphere target of 8.2 psia at 34% oxygen, applied to a surface habitat. The 7 psia depress floor is a placeholder planning figure; set your own.' },
+    lunar:  { name: 'Lunar base or rover', o2: 30, p: 10.2, pmin: 8.2,  note: 'Reduced pressure with enriched oxygen to shorten spacewalk prebreathe. NASA\'s exploration atmosphere target is 8.2 psia at 34% oxygen; adjust the fields to test it. All of the evidence is from microgravity: no lunar-gravity tests exist in NASA\'s repository yet.' },
+    mars:   { name: 'Mars habitat',       o2: 34,  p: 8.2,  pmin: 7,    note: 'NASA\'s exploration atmosphere target of 8.2 psia at 34% oxygen, applied to a surface habitat. The 7 psia depress floor is a placeholder planning figure; set your own. All of the evidence is from microgravity: no Mars-gravity tests exist in NASA\'s repository yet.' },
     suit:   { name: 'Spacesuit',          o2: 100, p: 4.3,  pmin: 3.5,  note: 'Pure oxygen at 4.3 psia, as in the current EMU suit. 3.5 psia is the emergency low-pressure contingency.' },
     custom: { name: 'Custom',             o2: 30,  p: 10.3, pmin: 7,    note: 'Enter any atmosphere. Pressures are psia here; the worker is queried in atm.' },
   };
@@ -841,24 +899,72 @@
   }
 
   // ---------- verdict heuristic (explained on the page) ----------
-  const LEVELS = [{ key: 'ok', label: 'Pass' }, { key: 'warn', label: 'Caution' }, { key: 'bad', label: 'Fail' }, { key: 'none', label: 'No data' }];
+  // Every test was ignited on purpose, so the reading is about how the flame ended, never about whether the fuel is safe.
+  const LEVELS = [{ key: 'ok', label: 'Goes out' }, { key: 'warn', label: 'Mixed' }, { key: 'bad', label: 'Keeps burning' }, { key: 'none', label: 'No data' }];
+  const MAX_DIST = 2;   // bucket widths; further than this Phenox does not read across
+  const CLS = ['out', 'disrupt', 'burn', 'unknown'];
+  const CLS_TEXT = { out: 'went out', disrupt: 'broke apart', burn: 'kept burning', unknown: 'not recorded' };
+  // same classes as the 3D page: SE and Extinction went out, FT and Completion kept burning
+  function classify(o) {
+    const s = String(o ?? '').trim().toLowerCase();
+    if (!s || s === '-') return 'unknown';
+    if (s.startsWith('disrupt')) return 'disrupt';
+    if (s === 'se' || s.includes('extinct') || s.includes('self-ext') || s.includes('self ext')) return 'out';
+    if (s === 'ft' || s.includes('complet') || s.includes('flow term')) return 'burn';
+    return 'unknown';
+  }
+  const unitOf = (h) => (!h ? '' : /mg\s*\/\s*s/i.test(h) ? 'mg/s' : (/;\s*mm\s*$/i.test(h) || /mm\^?2\s*\/\s*s/i.test(h)) ? 'mm²/s' : '');
+  const o2Bucket = (o2) => Math.floor(o2 * 20) + 1, pBucket = (p) => Math.floor(p * 10) + 1;   // the worker's 5% and 0.1 atm buckets
+  function wilson(k, n) {   // 95% interval for a share of k out of n
+    const z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+    return [Math.max(0, c - h), Math.min(1, c + h)];
+  }
+
+  // ---------- the test table: every test that recorded oxygen. Live /points, then the bundled snapshot of the same query ----------
+  let POINTS = null;
+  const pointsReady = (async () => {
+    const get = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(r.status); const d = await r.json(); if (!Array.isArray(d.rows) || !Array.isArray(d.columns)) throw new Error('shape'); return d; };
+    let d = null, source = 'live';
+    try { if (mockOn()) throw 0; d = await get(apiBase() + '/points'); } catch { try { d = await get('points.json'); source = 'snapshot'; } catch {} }
+    if (!d) return null;
+    const c = Object.fromEntries(d.columns.map((k, i) => [k, i]));
+    const rows = d.rows.map((r) => ({ id: r[c.test_id], inv: r[c.investigation_id], fuel: r[c.fuel_material] || '', o2: Number(r[c.o2_fraction]), p: r[c.pressure_atm] == null ? null : Number(r[c.pressure_atm]),
+      burn: r[c.burn_rate], bh: r[c.burn_header] || null, outcome: r[c.outcome], date: r[c.test_date], cls: classify(r[c.outcome]) }));
+    return (POINTS = { rows, investigations: d.investigations || {}, source });
+  })();
+  const count = (list) => { const c = { out: 0, disrupt: 0, burn: 0, unknown: 0 }; list.forEach((t) => c[t.cls]++); return c; };
+  // How the tests in the nearest bucket ended. Counted from the test table when it holds the whole bucket, otherwise from the tests the worker sent.
+  function tally(r) {
+    const n = r.nearest; let src = null;
+    if (POINTS) {
+      const m = POINTS.rows.filter((t) => t.p != null && t.inv === n.investigation_id && t.fuel === (n.fuel_material || '') && o2Bucket(t.o2) === n.o2_bucket.index && pBucket(t.p) === n.pressure_bucket.index);
+      if (m.length === n.n_tests) src = m;
+    }
+    const whole = !!src || (r.evidence || []).length >= n.n_tests;
+    if (!src) src = (r.evidence || []).map((t) => ({ cls: classify(t.outcome), bh: null }));
+    const units = [...new Set(src.map((t) => unitOf(t.bh)).filter(Boolean))];
+    return { ...count(src), n: src.length, whole, unit: units.length === 1 ? units[0] : '' };
+  }
   function assess(r) {
-    if (!r.quantified) return { level: 3, confidence: 0, burnShare: null, flags: [] };
-    const n = r.nearest, flags = [];
-    const burnShare = n.n_tests ? 1 - (n.n_extinctions + n.n_disruptions) / n.n_tests : null;
-    let level = burnShare == null ? 3 : burnShare <= 1 / 3 ? 0 : burnShare <= 2 / 3 ? 1 : 2;
+    if (!r.quantified) return { level: 3, flags: [], conclusive: 0 };
+    const n = r.nearest, t = tally(r), flags = [], dist = n.distance?.bucket_widths ?? 0;
+    const conclusive = t.out + t.burn, share = conclusive ? t.out / conclusive : null;
+    const why = dist > MAX_DIST ? 'far' : !conclusive ? 'inconclusive' : null;
+    let level = why ? 3 : share >= 2 / 3 ? 0 : share >= 1 / 3 ? 1 : 2;
     if (r.relation === 'extrapolation' && level === 0) { level = 1; flags.push('the scenario is outside the tested range'); }
     if (r.tested_range && r.input.o2_fraction > r.tested_range.o2_fraction[1] + 1e-9 && level === 0) { level = 1; flags.push('oxygen is higher than any test of this material'); }
-    const relScore = { exact_bucket: 40, interpolation: 25, extrapolation: 5 }[r.relation] ?? 0;
-    const confidence = Math.max(5, Math.min(99, Math.round(50 * Math.min(n.n_tests, 20) / 20 + relScore - Math.min(15, 5 * (n.distance?.bucket_widths ?? 0)))));
-    return { level, confidence, burnShare, flags };
+    return { level, why, t, conclusive, share, ci: conclusive ? wilson(t.out, conclusive) : null, flags, dist };
   }
-  const recommend = (level, best) => [
-    'Acceptable for this atmosphere on the test record. Keep standard ignition-source controls.',
-    'Use only with mitigation: limit the quantity and exposed area, keep it clear of ignition sources, and confirm with a ground flammability test (NASA-STD-6001 Test 1) at these conditions.',
-    'Do not use at these conditions.' + (best ? ` ${best[0].toUpperCase() + best.slice(1)} ranks as a Pass.` : ''),
-    'No quantified NASA test near these conditions. Treat it as untested; the closest research is listed below.',
-  ][level];
+  const short = (a) => (a.level < 3 ? `${a.t.out} of ${a.conclusive}` : '');   // "9 of 15" went out, for chips and tables
+  const recommend = (a, best) => a.level < 3 ? [
+    'In the nearest tests the flame went out on its own. That describes a flame that was already lit; it is not a clearance to fly the material, so keep the usual ignition-source controls.',
+    'The record is split: some flames went out and some burned to the end. Treat it as able to sustain a fire here and confirm with a ground flammability test (NASA-STD-6001 Test 1) at these conditions.',
+    'Flames kept burning until the fuel was gone. Expect a sustained fire at these conditions.' + (best ? ` ${best[0].toUpperCase() + best.slice(1)} went out more often.` : ''),
+  ][a.level]
+    : a.why === 'far' ? `The nearest tests are ${num(a.dist, 1)} bucket widths from this atmosphere, too far to read across. Treat it as untested here.`
+    : a.why === 'inconclusive' ? 'The nearest tests do not say how the flame ended: droplets broke apart or no result was recorded. Treat it as untested here.'
+    : 'No NASA test of this material records both oxygen and pressure. Treat it as untested; the closest research is listed below.';
+  const obar = (t) => `<span class="obar" role="img" aria-label="${CLS.map((k) => `${t[k]} ${CLS_TEXT[k]}`).join(', ')}">${CLS.map((k) => (t[k] ? `<i class="o-${k}" style="flex:${t[k]}"></i>` : '')).join('')}</span>`;
 
   // ---------- run analysis ----------
   $('form').addEventListener('submit', async (e) => {
@@ -874,12 +980,12 @@
     setStatus(`Ranking ${materials.length} materials at ${points.length} pressures…`);
     try {
       const tasks = []; materials.forEach((m) => points.forEach((pt) => tasks.push(() => verdict(o2, pt.atm, m))));
-      const flat = await pool(tasks);
+      const [flat] = await Promise.all([pool(tasks), pointsReady]);
       const rows = materials.map((m, i) => {
         const perPoint = points.map((pt, j) => { const r = flat[i * points.length + j]; return { pt, r, a: assess(r) }; });
         return { material: m, nominal: perPoint[0], perPoint, worst: Math.max(...perPoint.map((x) => x.a.level === 3 ? -1 : x.a.level)) };
       });
-      rows.sort((x, y) => x.nominal.a.level - y.nominal.a.level || x.worst - y.worst || y.nominal.a.confidence - x.nominal.a.confidence);
+      rows.sort((x, y) => x.nominal.a.level - y.nominal.a.level || x.worst - y.worst || y.nominal.a.conclusive - x.nominal.a.conclusive);
       await withTransition(() => render(rows, points, { o2, pNom, pMin, name: PRESETS[preset].name }));
       $('raw').textContent = JSON.stringify(flat, null, 2);
       setStatus('');
@@ -897,15 +1003,20 @@
     const p = row.perPoint[change].pt.psi;
     return `${L(0)} at the nominal ${points[0].psi} psia, ${L(change)} if pressure drops to ${p} psia${change < points.length - 1 ? ' or below' : ''}.`;
   }
-  const meter = (c) => `<span class="meter" aria-hidden="true">${[1, 2, 3, 4, 5].map((i) => `<i class="${c >= i * 20 - 10 ? 'on' : ''}"></i>`).join('')}</span>`;
+  let lastRun = null;
   function render(rows, points, s) {
+    lastRun = { rows, points, s };
     $('scenarioLabel').textContent = `${s.name}, ${num(s.o2 * 100, 1)}% oxygen at ${s.pNom} psia`;
     const best = rows.find((r) => r.nominal.a.level === 0)?.material;
     const usedNames = new Map();
     const vtName = (m) => { const b = 'rank-' + slug(m); const n = (usedNames.get(b) || 0) + 1; usedNames.set(b, n); return n > 1 ? `${b}-${n}` : b; };
     $('ranking').innerHTML = rows.map((row, i) => {
       const r = row.nominal.r, a = row.nominal.a, lv = LEVELS[a.level], n = r.nearest;
-      const cite = n ? `Nearest evidence: ${n.n_tests} tests of <b>${esc(n.fuel_material || 'an unnamed fuel')}</b> at ${pct(n.o2_bucket.range[0])} to ${pct(n.o2_bucket.range[1])} oxygen and ${num(n.pressure_bucket.range[0])} to ${num(n.pressure_bucket.range[1])} atm, from <b>${esc(n.investigation_title || n.investigation_id)}</b> (${esc(n.investigation_id)}, DOI ${doiLink(n.doi)}). ${n.n_extinctions} extinguished, ${n.n_disruptions} disrupted; average burn rate ${num(n.avg_burn_rate, 3)}. ${esc(r.relation.replace('_', ' '))}${a.flags.length ? ', and ' + esc(a.flags.join('; ')) : ''}.`
+      const t = a.t, rest = t ? [t.disrupt && `${t.disrupt} broke apart`, t.unknown && `${t.unknown} had no result recorded`].filter(Boolean).join(' and ') : '';
+      const read = !t || a.why === 'far' ? '' : `<p class="read">${a.conclusive
+        ? `<b>${t.out} of ${a.conclusive}</b> conclusive tests went out on their own (${pct(a.share)}). With this many tests the true share could be anywhere from ${pct(a.ci[0])} to ${pct(a.ci[1])}.`
+        : 'No conclusive result in the nearest tests.'}${rest ? ` ${rest[0].toUpperCase() + rest.slice(1)}, so ${t.disrupt + t.unknown === 1 ? 'it is' : 'they are'} left out.` : ''}${t.whole ? '' : ` Counted from the ${t.n} tests the worker returned, not the whole set of ${n.n_tests}.`}</p>${obar(t)}`;
+      const cite = n ? `Nearest evidence: ${n.n_tests} tests of <b>${esc(n.fuel_material || 'an unnamed fuel')}</b> at ${pct(n.o2_bucket.range[0])} to ${pct(n.o2_bucket.range[1])} oxygen and ${num(n.pressure_bucket.range[0])} to ${num(n.pressure_bucket.range[1])} atm, from <b>${esc(n.investigation_title || n.investigation_id)}</b> (${esc(n.investigation_id)}, DOI ${doiLink(n.doi)})${n.verified === false ? ' <span class="tag placeholder">Community upload, not reviewed</span>' : ''}. ${n.avg_burn_rate == null ? 'No burn rate recorded' : `Average burn rate ${num(n.avg_burn_rate, 3)}${t.unit ? ' ' + t.unit : ' (unit varies by investigation)'}`}. ${esc(r.relation[0].toUpperCase() + r.relation.slice(1).replace('_', ' '))}${a.flags.length ? ', and ' + esc(a.flags.join('; ')) : ''}.`
         : (r.fallback?.investigations?.length ? `Closest research: ${r.fallback.investigations.map((x) => `<b>${esc(x.title || x.investigation_id)}</b> (${esc(x.investigation_id)}, DOI ${doiLink(x.doi)})`).join('; ')}.` : 'No investigation mentions this material.');
       const sweep = row.perPoint.map((x) => `<span class="chip ${LEVELS[x.a.level].key}">${x.pt.psi} psia <b>${LEVELS[x.a.level].label}</b></span>`).join('');
       const ev = r.evidence?.length ? `<details class="ev"><summary>Show the ${r.evidence.length} individual tests</summary><div class="wrap"><table>
@@ -913,19 +1024,151 @@
           ${r.evidence.map((t) => `<tr><td>${esc(t.test_date ? String(t.test_date).slice(0, 10) : '—')}</td><td>${pct(t.o2_fraction)}</td><td>${num(t.pressure_atm)}</td><td>${num(t.burn_rate, 3)}</td><td>${esc(t.outcome || '—')}</td><td class="quiet">${esc(t.source_file || '—')}</td><td>${doiLink(t.doi)}</td></tr>`).join('')}
         </table></div></details>` : '';
       return `<article class="rank" style="view-transition-name:${vtName(row.material)}" aria-label="${esc(row.material)}: ${lv.label}">
-        <div><div class="word ${lv.key}">${lv.label}</div><div class="num">Rank ${i + 1}${a.burnShare != null ? `, burn share ${pct(a.burnShare)}` : ''}</div></div>
+        <div><div class="word ${lv.key}">${lv.label}</div><div class="num">Rank ${i + 1}</div></div>
         <div><h3>${esc(row.material)}</h3>
-          <p class="rec">${esc(recommend(a.level, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
+          <p class="rec">${esc(recommend(a, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
+          ${read}
           <p class="cite">${cite}</p>
-          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${n ? `<p class="cite"><a href="flammability.html?material=${encodeURIComponent(n.fuel_material || row.material)}&o2=${num(s.o2 * 100, 1)}&p=${row.nominal.pt.atm}" target="_blank" rel="noopener">See this fuel's flammability map in 3D</a></p>` : ''}${ev}</div>
-        <div class="conf">${a.level < 3 ? `Confidence ${a.confidence} of 99${meter(a.confidence)}` : 'No confidence score without data.'}</div></article>`;
+          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${n ? `<p class="cite"><a href="flammability.html?material=${encodeURIComponent(n.fuel_material || row.material)}&o2=${num(s.o2 * 100, 1)}&p=${row.nominal.pt.atm}" target="_blank" rel="noopener">See this fuel's flammability map in 3D</a></p>` : ''}${ev}</div></article>`;
     }).join('');
-    $('rangeIntro').textContent = `Oxygen held at ${num(s.o2 * 100, 1)}% while pressure steps from the nominal ${s.pNom} psia down to the ${s.pMin} psia depress floor. Each cell is the verdict from the nearest tested bucket at that point, with its confidence.`;
+    renderMaps(rows, points, s);
+    $('rangeIntro').textContent = `Oxygen held at ${num(s.o2 * 100, 1)}% while pressure steps from the nominal ${s.pNom} psia down to the ${s.pMin} psia depress floor. Each cell is the reading from the nearest tested bucket at that point, with how many of its conclusive tests went out.`;
     $('matrix').innerHTML = `<tr><th>Material</th>${points.map((p) => `<th>${p.psi} psia <span class="quiet">(${num(p.atm)} atm)</span></th>`).join('')}</tr>` +
-      rows.map((row) => `<tr><td>${esc(row.material)}</td>${row.perPoint.map((x) => `<td class="cell ${LEVELS[x.a.level].key}">${LEVELS[x.a.level].label}${x.a.level < 3 ? ` <span class="quiet">${x.a.confidence}</span>` : ''}</td>`).join('')}</tr>`).join('');
+      rows.map((row) => `<tr><td>${esc(row.material)}</td>${row.perPoint.map((x) => `<td class="cell ${LEVELS[x.a.level].key}">${LEVELS[x.a.level].label}${x.a.level < 3 ? ` <span class="quiet">${short(x.a)}</span>` : ''}</td>`).join('')}</tr>`).join('');
     $('results').classList.remove('hidden');
-    document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], confidence: row.nominal.a.confidence, nearest: row.nominal.r.nearest })) } }));
+    document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], count: short(row.nominal.a), nearest: row.nominal.r.nearest })) } }));
   }
+
+  // ---------- tested envelope: one oxygen x pressure table per ranked fuel, with the mission drawn on it ----------
+  const matching = (term) => (POINTS ? POINTS.rows.filter((t) => t.fuel.toLowerCase().includes(term)) : []);   // same substring match as the worker
+  function renderMaps(rows, points, s) {
+    const maps = rows.map((row) => {
+      const tests = matching(row.material).filter((t) => t.p != null && t.o2 >= 0 && t.o2 <= 1);
+      if (!tests.length) return '';
+      const cells = new Map();
+      tests.forEach((t) => { const k = o2Bucket(t.o2) + ':' + pBucket(t.p); cells.set(k, [...(cells.get(k) || []), t]); });
+      const obs = tests.map((t) => o2Bucket(t.o2)), pbs = tests.map((t) => pBucket(t.p));
+      const mO = o2Bucket(s.o2), mP = points.map((pt) => pBucket(pt.atm)), near = (v, lo, hi) => v >= lo - 2 && v <= hi + 2;
+      let o0 = Math.min(...obs), o1 = Math.max(...obs), p0 = Math.min(...pbs), p1 = Math.max(...pbs);
+      const onChart = near(mO, o0, o1) && near(mP[0], p0, p1);
+      if (onChart) { o0 = Math.min(o0, mO); o1 = Math.max(o1, mO); p0 = Math.min(p0, ...mP.filter((b) => near(b, p0, p1))); p1 = Math.max(p1, mP[0]); }
+      const pLo = Math.min(...mP), names = [...new Set(tests.map((t) => t.fuel))];
+      let html = '<tr><th scope="col">atm</th>';
+      for (let o = o0; o <= o1; o++) html += `<th scope="col">${(o - 1) * 5} to ${o * 5}%</th>`;
+      html += '</tr>';
+      for (let p = p1; p >= p0; p--) {
+        if (!pbs.includes(p) && !(onChart && p <= mP[0] && p >= pLo)) continue;   // pressures nobody tested are left out
+        html += `<tr><th scope="row">${num((p - 1) / 10, 1)} to ${num(p / 10, 1)}</th>`;
+        for (let o = o0; o <= o1; o++) {
+          const list = cells.get(o + ':' + p), mark = !onChart || o !== mO ? '' : p === mP[0] ? ' at' : p < mP[0] && p >= pLo ? ' dep' : '';
+          const where = `${(o - 1) * 5} to ${o * 5}% oxygen, ${num((p - 1) / 10, 1)} to ${num(p / 10, 1)} atm`, you = mark === ' at' ? ' Your nominal atmosphere.' : mark ? ' Inside your depress range.' : '';
+          if (!list) { html += `<td class="gap${mark}" title="${where}: not tested.${you}"><span aria-hidden="true">–</span><span class="sr">Not tested.${you}</span></td>`; continue; }
+          const c = count(list), tip = `${where}: ${list.length} tests. ${CLS.filter((k) => c[k]).map((k) => `${c[k]} ${CLS_TEXT[k]}`).join(', ')}.${you}`;
+          html += `<td class="${mark.trim()}" title="${esc(tip)}">${obar(c)}<b>${list.length}</b>${you ? `<span class="sr">${you}</span>` : ''}</td>`;
+        }
+        html += '</tr>';
+      }
+      return `<div class="map"><h3>${esc(row.material)}</h3>
+        <p>${tests.length} tests of ${esc(names.slice(0, 3).join(', '))}${names.length > 3 ? ` and ${names.length - 3} more` : ''}.${onChart ? '' : ` Your atmosphere (${num(s.o2 * 100, 1)}% oxygen at ${num(points[0].atm)} atm) is off this chart: no test of this fuel comes near it.`}</p>
+        <div class="wrap"><table class="heat" aria-label="Tests of ${esc(row.material)} by oxygen and pressure">${html}</table></div></div>`;
+    }).join('');
+    $('maps').innerHTML = maps;
+    $('mapBlock').classList.toggle('hidden', !maps);
+  }
+
+  // ---------- export: every test behind this ranking, for modelling ----------
+  $('csv').addEventListener('click', () => {
+    if (!lastRun) return;
+    const q = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v));
+    const head = ['searched_material', 'test_id', 'investigation_id', 'investigation_title', 'doi', 'fuel_material', 'o2_fraction', 'pressure_atm', 'burn_rate', 'burn_rate_source_column', 'outcome_as_recorded', 'outcome_class', 'test_date'];
+    const lines = [head.join(',')];
+    lastRun.rows.forEach((row) => {
+      const inv = (id) => POINTS?.investigations[id] || {};
+      const tests = POINTS ? matching(row.material).map((t) => [row.material, t.id, t.inv, inv(t.inv).title, inv(t.inv).doi, t.fuel, t.o2, t.p, t.burn, t.bh, t.outcome, t.cls, t.date])
+        : (row.nominal.r.evidence || []).map((t) => [row.material, t.test_id, t.investigation_id, t.investigation_title, t.doi, t.fuel_material, t.o2_fraction, t.pressure_atm, t.burn_rate, null, t.outcome, classify(t.outcome), t.test_date]);
+      tests.forEach((t) => lines.push(t.map(q).join(',')));
+    });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })), download: 'phenox-evidence.csv' });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setStatus(`Downloaded ${lines.length - 1} test records as phenox-evidence.csv.`);
+  });
+
+  // ---------- fuel picker: the fuels that have both oxygen and pressure on record ----------
+  pointsReady.then((P) => {
+    if (!P) return;
+    const n = new Map(); P.rows.forEach((t) => { if (t.p != null && t.fuel) n.set(t.fuel, (n.get(t.fuel) || 0) + 1); });
+    const top = [...n].sort((a, b) => b[1] - a[1]).slice(0, 6);
+    if (!top.length) return;
+    $('fuelPicks').innerHTML = '<span>Fuels with oxygen and pressure on record:</span>' + top.map(([f, k]) => `<button type="button" data-fuel="${esc(f.toLowerCase())}" aria-label="Add ${esc(f)}, ${k} tests">${esc(f)}<small>${k}</small></button>`).join('');
+    $('fuelPicks').classList.remove('hidden');
+    $('fuelPicks').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      const list = $('materials').value.split(',').map((x) => x.trim()).filter(Boolean);
+      if (!list.some((x) => x.toLowerCase() === b.dataset.fuel)) list.push(b.dataset.fuel);
+      $('materials').value = list.join(', ');
+    });
+  });
+
+  // ---------- investigations, ranked for the chosen atmosphere ----------
+  // Areas follow the challenge's prevention / detection / suppression split and are read from the investigation's title.
+  const AREAS = [['flam', 'Material flammability', /solids|spacecraft fire|burning rate emulator|flame spread/i], ['supp', 'Suppression', /extinguish/i], ['detect', 'Detection', /smoke|aerosol/i], ['other', 'Not a fire study', /solder|surface tension/i]];
+  const HARDWARE = [[/^flame extinguishment|^cool flames investigation$/i, 'Burning liquid droplets in the Combustion Integrated Rack'], [/^advanced combustion via microgravity/i, 'Gas flames on the ACME hardware in the Combustion Integrated Rack'],
+    [/^burning and suppression of solids|^smoke point in co-flow|^structure and liftoff/i, 'Flow duct in the Microgravity Science Glovebox'], [/^spacecraft fire/i, 'Large samples burned inside an uncrewed Cygnus cargo vehicle']];
+  let INV = [], invArea = 'all', invAll = false;
+  const INV_SHOWN = 6;
+  pointsReady.then(async (P) => {
+    if (!P) { $('invIntro').textContent = 'The investigation list could not be loaded. Check the worker address in Settings, or open the page from a web server so the bundled snapshot can be read.'; $('invFocus').classList.add('hidden'); return; }
+    let extra = {};   // objectives, once the worker has GET /investigations
+    try { if (!mockOn()) { const r = await fetch(apiBase() + '/investigations'); if (r.ok) (await r.json()).forEach((x) => { extra[x.accession] = x; }); } } catch {}
+    INV = Object.entries(P.investigations).map(([id, v]) => {
+      const tests = P.rows.filter((t) => t.inv === id && t.o2 >= 0 && t.o2 <= 1), fuels = new Map();
+      tests.forEach((t) => { if (t.fuel) fuels.set(t.fuel, (fuels.get(t.fuel) || 0) + 1); });
+      const area = AREAS.find((a) => a[2].test(v.title || '')) || ['sci', 'Combustion science'];
+      return { id, title: v.title || id, doi: v.doi, verified: v.verified !== false, objective: extra[id]?.objective || '', area: area[0], areaLabel: area[1],
+        hardware: (HARDWARE.find((h) => h[0].test(v.title || '')) || [])[1] || '', n: tests.length, nP: tests.filter((t) => t.p != null).length,
+        lo: tests.length ? Math.min(...tests.map((t) => t.o2)) : null, hi: tests.length ? Math.max(...tests.map((t) => t.o2)) : null,
+        fuels: [...fuels].sort((a, b) => b[1] - a[1]).map((f) => f[0]), c: count(tests) };
+    });
+    $('invIntro').textContent = `NASA's ${INV.length} investigations, ordered for the atmosphere in the form. First come those that tested at your oxygen level, then those that came closest; within each group, fire safety studies come before general combustion science and larger test sets before smaller ones. Change the oxygen and the order follows.`;
+    $('invFocus').innerHTML = [['all', 'All'], ['flam', 'Flammability'], ['supp', 'Suppression'], ['detect', 'Detection'], ['sci', 'Combustion science']].map(([k, l]) => `<button type="button" data-area="${k}" aria-pressed="${k === 'all'}">${l}</button>`).join('');
+    drawInv();
+  });
+  function drawInv() {
+    if (!INV.length) return;
+    const o2 = Number($('o2').value) / 100, q = $('invQ').value.trim().toLowerCase();
+    const gap = (v) => (v.lo == null ? null : o2 < v.lo ? v.lo - o2 : o2 > v.hi ? o2 - v.hi : 0);
+    const group = (v) => (v.area === 'other' ? 3 : gap(v) == null ? 2 : gap(v) < 0.0005 ? 0 : 1), fire = (v) => (['flam', 'supp', 'detect'].includes(v.area) ? 0 : 1);
+    const list = INV.filter((v) => (invArea === 'all' || v.area === invArea) && (!q || (v.title + ' ' + v.id + ' ' + v.fuels.join(' ') + ' ' + v.areaLabel).toLowerCase().includes(q)))
+      .sort((a, b) => group(a) - group(b) || (group(a) === 1 ? gap(a) - gap(b) : 0) || fire(a) - fire(b) || b.n - a.n || a.title.localeCompare(b.title));
+    const shown = invAll || q ? list : list.slice(0, INV_SHOWN), mine = num(o2 * 100, 1) + '%';
+    animateHeight($('invList'), () => {
+      $('invList').innerHTML = shown.map((v) => {
+        const g = gap(v), range = v.lo == null ? '' : v.hi - v.lo < 0.0005 ? `at ${pct(v.lo)} oxygen` : `from ${pct(v.lo)} to ${pct(v.hi)} oxygen`;
+        const why = v.area === 'other' ? 'In the repository but not a combustion study.'
+          : g == null ? 'No oxygen level per test in the tables loaded so far, so it cannot be placed against your atmosphere. Read the investigation for its conditions.'
+          : g < 0.0005 ? `Tested ${range}, which covers your ${mine}.`
+          : `Tested ${range}, ${num(g * 100, 1)} points ${o2 > v.hi ? 'below' : 'above'} your ${mine}.`;
+        const ended = v.c.out + v.c.burn + v.c.disrupt ? ` ${obar(v.c)}` : '';
+        return `<article class="inv"><h3>${esc(v.title)}</h3><span class="tag ${v.area === 'sci' || v.area === 'other' ? 'placeholder' : 'cited'}">${v.areaLabel}</span>${v.verified ? '' : ' <span class="tag placeholder">Community upload, not reviewed</span>'}
+          <div class="meta">${esc(v.id)}, DOI ${doiLink(v.doi)}${v.hardware ? `. ${esc(v.hardware)}` : ''}</div>
+          ${v.objective ? `<p class="objective">${esc(v.objective.length > 260 ? v.objective.slice(0, 260) + '…' : v.objective)}</p>` : ''}
+          <p class="why">${why}</p>
+          ${v.n ? `<div class="meta">${v.n} tests with oxygen on record${v.nP ? `, ${v.nP} of them with pressure` : ', none with pressure'}. Fuels: ${esc(v.fuels.slice(0, 3).join(', ') || 'not named')}${v.fuels.length > 3 ? ` and ${v.fuels.length - 3} more` : ''}.${ended}</div>` : ''}</article>`;
+      }).join('') || '<p class="quiet">No investigation matches. Clear the search or choose All.</p>';
+    });
+    $('invCount').textContent = `Showing ${shown.length} of ${list.length} investigations for ${mine} oxygen.`;
+    $('invMore').classList.toggle('hidden', !!q || list.length <= INV_SHOWN);
+    $('invMore').textContent = invAll ? 'Show fewer' : `Show all ${list.length} investigations`;
+  }
+  $('invFocus').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    invArea = b.dataset.area; $('invFocus').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    drawInv();
+  });
+  $('invQ').addEventListener('input', drawInv);
+  $('invMore').addEventListener('click', () => { invAll = !invAll; drawInv(); });
+  $('o2').addEventListener('input', drawInv);
+  $('presets').addEventListener('change', drawInv);
 
   // ---------- Mission log: click the chamber for one random real test record ----------
   const logDialog = $('logDialog');
@@ -1049,9 +1292,11 @@
       if (mockOn()) reply = 'Mock mode is on, so Mission Control is offline. It needs the worker\'s chat route, which runs through Gemini on Cloudflare AI Gateway. Turn mock mode off in Settings to ask for real.';
       else {
         const transcript = chatHistory.map((turn) => `${turn.role === 'user' ? 'User' : 'Mission Control'}: ${turn.content}`).join('\n');
+        // the form's atmosphere is the default, so "is heptane safe here?" works without restating the numbers
+        const here = `The atmosphere on the page is ${num(Number($('o2').value), 1)}% oxygen at ${num(atm(Number($('p').value)), 3)} atm. Use these values unless the question gives others.`;
         const contextualMessage = transcript
-          ? `Conversation so far:\n${transcript}\n\nUser: ${message}\nMission Control:`
-          : message;
+          ? `${here}\n\nConversation so far:\n${transcript}\n\nUser: ${message}\nMission Control:`
+          : `${here}\n\nUser: ${message}`;
         const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: contextualMessage }) });
         const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
         reply = d.reply;
@@ -1653,13 +1898,13 @@ ${move}`;
       + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
   }
   function clearVerdict() {
-    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see Phenox\'s verdicts for this atmosphere.</p>';
-    $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each verdict will be listed here.</p>';
+    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see Phenox\'s readings for this atmosphere.</p>';
+    $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each reading will be listed here.</p>';
   }
   document.addEventListener('fireline:ranked', (e) => {
     const items = e.detail.items;
-    $('envVerdict').innerHTML = `<p class="small quiet" style="margin-bottom:6px">At ${esc(e.detail.scenario.pNom)} psia nominal. Confidence is out of 99.</p><ul class="env-list">`
-      + items.map((it) => `<li><span>${esc(it.material)}</span><span>${it.level.key !== 'none' ? `<span class="quiet">${it.confidence}</span> ` : ''}<span class="chip ${it.level.key}"><b>${it.level.label}</b></span></span></li>`).join('') + '</ul>';
+    $('envVerdict').innerHTML = `<p class="small quiet" style="margin-bottom:6px">At ${esc(e.detail.scenario.pNom)} psia nominal. The count is how many conclusive tests went out.</p><ul class="env-list">`
+      + items.map((it) => `<li><span>${esc(it.material)}</span><span>${it.count ? `<span class="quiet">${esc(it.count)}</span> ` : ''}<span class="chip ${it.level.key}"><b>${it.level.label}</b></span></span></li>`).join('') + '</ul>';
     const seen = new Map();
     items.forEach((it) => { const n = it.nearest; if (n && !seen.has(n.investigation_id)) seen.set(n.investigation_id, n); });
     $('envEvidence').innerHTML = seen.size ? '<ul class="env-ev">' + [...seen.values()].map((n) => `<li><b>${esc(n.investigation_title || n.investigation_id)}</b><span>${esc(n.investigation_id)}${n.doi ? `, DOI <a href="https://doi.org/${esc(n.doi)}" target="_blank" rel="noopener">${esc(n.doi)}</a>` : ''}</span></li>`).join('') + '</ul><p class="small quiet" style="margin-top:8px">Full test records are in the ranking below.</p>'
@@ -1685,13 +1930,10 @@ ${move}`;
 <script>
 (() => {
   const steps = [
-    { target: '#hero-h', title: 'Welcome to Phenox', text: 'This page compares candidate materials with recorded spacecraft combustion tests. The tour takes you through the controls and the evidence.' },
-    { target: '#materials', title: 'Set the atmosphere', text: 'Choose a mission preset, enter oxygen and pressure, then list materials separated by commas. Use the same fuel names found in the test data for the closest matches.' },
-    { target: '#go', title: 'Rank materials', text: 'Rank materials checks each one at nominal pressure and across the depress floor. Results appear below the mission environment, with evidence and confidence for each call.' },
-    { target: '#env-h', title: 'Read the mission view', text: 'This view shows the selected mission context and summarizes material verdicts and supporting evidence. The 3D location is for context; it does not affect the ranking.' },
-    { target: '#method', title: 'Understand each verdict', text: 'Open “How the verdicts are made” to see how test counts, distance from tested conditions, and the tested range shape each result.' },
-    { target: '#importGo', title: 'Contribute test data', text: 'Researchers can add a combustion CSV here. Uploads are marked community-contributed and unverified until reviewed.' },
-    { target: '#chatToggle', title: 'Ask Mission Control', text: 'Ask a question about oxygen, pressure, or a material. Mission Control looks up test evidence and summarizes it.' },
+    { target: '#materials', title: 'Set the atmosphere', text: 'Choose a mission, adjust oxygen and pressure, then list materials separated by commas. The buttons under the box add fuels that NASA tested with both oxygen and pressure on record.' },
+    { target: '#go', title: 'Rank materials', text: 'Each material is checked at nominal pressure and down to the depress floor. The ranking appears just below, with how the nearest flames ended, a map of what NASA tested, and the evidence as a CSV.' },
+    { target: '#inv-h', title: 'Find the right investigations', text: 'All of NASA’s investigations, ordered for your atmosphere: those that tested at your oxygen level come first. Filter by flammability, suppression or detection.' },
+    { target: '#chatToggle', title: 'Ask Mission Control', text: 'Ask about a material in plain words. Mission Control uses the atmosphere on the page unless you give other numbers.' },
   ];
   let index = 0, active = false, target = null;
   const seenKey = 'fireline.tour.seen';
