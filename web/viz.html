@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Phenox · the data</title>
-<meta name="description" content="Every NASA microgravity combustion test in Phenox that recorded an oxygen level, as a 3D model you can turn and click.">
+<meta name="description" content="Every NASA microgravity combustion test in Phenox that recorded an oxygen level, as a 2D plot with trend lines, plus charts of the same tests.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -56,9 +56,11 @@
   .finding .b { display: none; grid-column: 1 / -1; margin-top: 12px; font-size: 14px; color: var(--ink); }
   .finding[aria-pressed=true] { background: var(--paper); box-shadow: inset 3px 0 0 var(--accent); }
   .finding[aria-pressed=true] .b { display: block; }
+  .research-note { margin: 18px 12px 0 0; padding: 14px 16px; border-radius: 18px; background: var(--paper); font-size: 14px; color: var(--ink-2); }
+  .research-note a { display: inline-block; margin-bottom: 4px; font-weight: 700; color: var(--ink); }
   .read { margin-top: 10px; padding-left: 18px; color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; }
 
-  .stage { grid-area: stage; position: relative; min-height: 0; overflow: hidden; margin: 16px 16px 16px 0; border-radius: 28px; background: var(--char); color: var(--on-dark); }
+  .stage { position: relative; flex: none; height: clamp(540px, calc(100dvh - 200px), 880px); overflow: hidden; margin: 16px 16px 16px 0; border-radius: 28px; background: var(--char); color: var(--on-dark); }
   #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
   #scene.drag { cursor: grabbing; }
   #scene.point { cursor: pointer; }
@@ -77,7 +79,6 @@
   .sw.unknown { width: 8px; height: 8px; border-radius: 50%; background: var(--c-unknown); }
   .sw.unv { border-radius: 50%; border: 1.5px solid var(--on-dark-2); }
   .count { position: absolute; right: 18px; top: 14px; z-index: 2; font-size: 13px; color: var(--on-dark-2); }
-  .no3d { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; color: var(--on-dark-2); }
 
   .panel { position: absolute; z-index: 4; right: 16px; width: min(340px, calc(100% - 32px)); padding: 16px 18px; border-radius: 22px; background: var(--card); border: 1px solid var(--line-dark); box-shadow: 0 20px 50px rgba(0, 0, 0, .4); }
   #filters { top: 40px; display: grid; gap: 12px; }
@@ -121,7 +122,10 @@
   .seg .btn[aria-pressed=true] { background: var(--ink); color: #fff; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  .charts { grid-area: stage; min-height: 0; overflow-y: auto; padding: 16px 16px 28px 0; }
+  .col { grid-area: stage; min-height: 0; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+  .charts { padding: 6px 16px 32px 0; }
+  .charts-h { margin: 8px 0 12px 4px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .ctip { position: fixed; left: 0; top: 0; z-index: 30; max-width: 280px; padding: 8px 12px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; white-space: pre-line; pointer-events: none; box-shadow: 0 10px 30px rgba(11, 27, 51, .3); }
   .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .cc { --c-out: #2a78d6; --c-burn: #eb6834; --c-disrupt: #199e70; --c-unknown: #8a97ad; min-width: 0; padding: 24px 26px 20px; border-radius: 28px; background: var(--paper); }
   .cc.wide { grid-column: 1 / -1; }
@@ -172,7 +176,11 @@
   @keyframes ccrise { from { opacity: 0; transform: translateY(14px); } }
 
   @media (max-width: 860px) {
-    body { grid-template: "bar" auto "scn" auto "stage" minmax(0, 1fr) "rail" auto / minmax(0, 1fr); }
+    body { display: flex; flex-direction: column; height: auto; min-height: 100dvh; overflow: visible; }
+    .col { display: contents; }
+    .stage { order: 1; height: clamp(440px, 72dvh, 660px); margin: 8px; }
+    .rail { order: 2; max-height: none; overflow: visible; }
+    .charts { order: 3; padding: 0 8px 24px; }
     .bar { margin: 0 8px; padding: 8px 10px 8px 14px; gap: 4px 5px; }
     .btn .full { display: none; }
     .brand { font-size: 18px; }
@@ -309,12 +317,14 @@
   <div class="q"><p class="eyebrow">The question</p><p class="qt">At what oxygen level and pressure does a flame in microgravity go out, and how many real tests back that up?</p><button class="btn" id="investBtn" type="button">Investigate it yourself ↑</button></div>
   <h2 id="findings-h">Key findings</h2>
   <ol id="findings" aria-labelledby="findings-h"></ol>
+  <p class="research-note"><a href="research.html">Backed by published research →</a> NASA’s own FLEX experiment reported that methanol droplets cannot keep burning below about 12–13% oxygen, which our methanol rows agree with.</p>
   <div class="how">
     <h2>How to read it</h2>
     <ul class="read" id="read"></ul>
   </div>
 </aside>
 
+<div class="col" id="col">
 <main class="stage" id="stage">
   <div class="plot2d" id="plot2d"><div class="p2bar" id="p2bar"></div><svg id="p2svg" role="img" aria-labelledby="p2title"></svg><p class="sr-only" id="p2title"></p></div>
     <p class="count" id="count" role="status"></p>
@@ -345,6 +355,10 @@
 </main>
 
 
+<section class="charts" id="charts" aria-labelledby="charts-h"><h2 id="charts-h" class="charts-h">More views of the same tests</h2><div id="chartsGrid" class="charts-grid"></div></section>
+</div>
+<div class="ctip" id="ctip" hidden></div>
+
 <dialog id="tableDialog" aria-labelledby="table-h">
   <div class="dlg-head"><h2 id="table-h">Tests</h2><button class="btn" id="tableClose" type="button">Close</button></div>
   <div class="tbl-wrap"><table>
@@ -354,7 +368,7 @@
 </dialog>
 
 <script type="module">
-// Phenox 3D model. Data comes from the worker's GET /points (live), then the bundled points.json
+// Phenox data page. Data comes from the worker's GET /points (live), then the bundled points.json
 // snapshot (real NASA data exported from the same query), then a labeled mock set. Every number in
 // the findings is computed here from whatever loaded; none are written in by hand.
 const $ = (id) => document.getElementById(id);
@@ -463,7 +477,7 @@ const sx = (o2) => ((o2 - X0) / (X1 - X0)) * W, sz = (p) => -(p / P_MAX) * D, sy
 const xLabelStep = (X1 - X0) / XS > 8 ? 0.1 : XS;
 const xTicks = []; for (let t = X0; t <= X1 + 1e-9; t += xLabelStep) xTicks.push(Math.round(t * 1000) / 1000);
 const jit = (i, k) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return (s - Math.floor(s)) - 0.5; };
-// Tests with no pressure on record cannot be placed in 3D; they stay reachable in Table view.
+// Tests with no pressure on record have no position; they stay reachable in Table view.
 P.forEach((p) => {
   if (p.zone === 'cloud') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.16, sy(p.burn), sz(p.p) + jit(p.i, 2) * 0.2];
   else if (p.zone === 'floor') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.22, 0.04, sz(p.p) + jit(p.i, 2) * 0.22];
@@ -642,8 +656,212 @@ $('tableClose').addEventListener('click', () => dlg.close());
 dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); const b = e.target.closest('button[data-i]'); if (b) { dlg.close(); select(Number(b.dataset.i), true); } });
 
 
+// ---------- charts, below the plot ----------
+// Every chart is drawn from the same rows as the plot, and every title and number is computed here.
+// Marks carry data-tip text for the hover tooltip; Table view lists every test for keyboard readers.
+// Bars with data-hi light exactly those tests in the plot above.
+const pcOf = (p) => Math.round(p.o2 * 1000) / 10;
+const svgWrap = (w, h, inner, label) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`;
+const tipA = (t) => ` data-tip="${esc(t)}"`;
+const HI = {}, HINT = '\nClick to light these in the plot';
+const hiA = (key, label, idx) => { HI[key] = idx; return ` data-hi="${esc(key)}" data-label="${esc(label)}"`; };
+function markSvg(cls, x, y, r) {
+  if (cls === 'burn') return `<rect class="shape f-burn" x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}"/>`;
+  if (cls === 'disrupt') { const d = r * 1.35; return `<polygon class="shape f-disrupt" points="${x},${y - d} ${x + d},${y} ${x},${y + d} ${x - d},${y}"/>`; }
+  return `<circle class="shape f-${cls}" cx="${x}" cy="${y}" r="${cls === 'unknown' ? r * 0.8 : r}"/>`;
+}
+const trendOfSet = (set) => {
+  if (set.length < 4) return null;
+  const xs = set.map(pcOf), ys = set.map((p) => p.burn), mx = mean(xs), my = mean(ys); let sxy = 0, sxx = 0;
+  xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; });
+  const m = sxx ? sxy / sxx : 0; return { m, b: my - m * mx, r: pearson(xs, ys) };
+};
+const known3 = WP.filter((p) => p.cls !== 'unknown');
+const oxLo = known3.filter((p) => p.o2 < LOW), oxHi = known3.filter((p) => p.o2 >= HIGH);
+const histBins = () => { const b = Array.from({ length: 20 }, (_, i) => ({ a: i * 5, n: 0 })); P.forEach((p) => { b[Math.min(19, Math.floor(pcOf(p) / 5 + 1e-9))].n++; }); return b; };
+const invRows = () => { const m = new Map(); P.forEach((p) => { const e = m.get(p.inv) || { id: p.inv, n: 0, wp: 0 }; e.n++; if (p.p != null) e.wp++; m.set(p.inv, e); }); return [...m.values()].sort((a, b) => b.n - a.n || String(a.id).localeCompare(String(b.id))).slice(0, 8); };
+
+function drawFunnel(w) {
+  const rows = [['All tests in the database', TOTAL], ['Recorded an oxygen level', P.length], ['…and the pressure', WP.length], ['…and a comparable burn rate', F.length]];
+  const fills = ['#c6d9f2', '#8fb8ea', '#5a9be0', '#2a78d6'];
+  const narrow = w < 440, labW = narrow ? 0 : Math.min(200, Math.round(w * 0.4)), barH = 32, gap = narrow ? 30 : 14, valW = 96, rowH = barH + gap;
+  const sc = (w - labW - valW) / Math.max(1, TOTAL); let out = '';
+  rows.forEach(([lab, v], i) => {
+    const y = i * rowH + (narrow ? 18 : 0), bw = Math.max(barH, v * sc);
+    out += narrow ? `<text class="ax" x="0" y="${y - 6}">${esc(lab)}</text>` : `<text class="ax-t" x="0" y="${y + barH / 2 + 4}">${esc(lab)}</text>`;
+    out += `<rect class="bar h" style="--i:${i}" x="${labW}" y="${y}" width="${bw}" height="${barH}" rx="${barH / 2}" fill="${fills[i]}"${tipA(`${lab}\n${int(v)} tests, ${share(v, TOTAL)} of all`)}/>`;
+    out += `<text class="val" x="${labW + bw + 8}" y="${y + barH / 2 + 4}">${int(v)} <tspan class="ax">${share(v, TOTAL)}</tspan></text>`;
+  });
+  return svgWrap(w, rows.length * rowH + (narrow ? 18 : 0), out, `Bar chart: ${rows.map(([l, v]) => `${l} ${int(v)}`).join('; ')}`);
+}
+
+function drawOx(w) {
+  if (known3.length < 6) return null;
+  const lo = Math.floor(Math.min(...known3.map(pcOf)) / 3) * 3, hi = Math.ceil((Math.max(...known3.map(pcOf)) + 1e-9) / 3) * 3, bands = [];
+  for (let b = lo; b < hi; b += 3) { const it = known3.filter((p) => pcOf(p) >= b && pcOf(p) < b + 3); bands.push({ b, it, n: it.length, c: { out: it.filter((p) => p.cls === 'out').length, disrupt: it.filter((p) => p.cls === 'disrupt').length, burn: it.filter((p) => p.cls === 'burn').length } }); }
+  const L = 38, R = 6, T = 24, B = 46, h = Math.round(Math.min(330, Math.max(250, w * 0.62))), pw = w - L - R, ph = h - T - B, y0 = T + ph, step = pw / bands.length, bw = Math.max(10, step - 6);
+  let out = '';
+  [0, 50, 100].forEach((v) => { const y = y0 - (v / 100) * ph; out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${y}" y2="${y}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 6}" y="${y + 4}" text-anchor="end">${v}%</text>`; });
+  bands.forEach((bd, bi) => {
+    const x = L + bi * step + (step - bw) / 2, cx = x + bw / 2;
+    out += `<text class="ax" x="${cx}" y="${y0 + 16}" text-anchor="middle">${step >= 40 ? `${bd.b}–${bd.b + 3}` : bd.b}</text>`;
+    if (!bd.n) return;
+    out += `<text class="ax" x="${cx}" y="${T - 8}" text-anchor="middle">n=${bd.n}</text>`;
+    const hi3 = hiA('b:' + bd.b, `${bd.b}–${bd.b + 3}% oxygen`, bd.it.map((p) => p.i));
+    let cum = 0;
+    ['out', 'disrupt', 'burn'].forEach((k) => {
+      const c = bd.c[k]; if (!c) return; const sh = (c / bd.n) * ph, y = y0 - cum - sh; cum += sh;
+      out += `<rect class="bar v f-${k}" style="--i:${bi}" x="${x}" y="${y}" width="${bw}" height="${sh}" rx="3" stroke="#fff" stroke-width="2" opacity="${bd.n < 5 ? 0.55 : 1}"${hi3}${tipA(`${bd.b}–${bd.b + 3}% oxygen\n${CLS_LABEL[k]}: ${c} of ${bd.n} tests (${Math.round((c / bd.n) * 100)}%)${bd.n < 5 ? '\nOnly ' + bd.n + ' tests here' : ''}${HINT}`)}/>`;
+      if (sh >= 20 && bw >= 30) out += `<text class="in" x="${cx}" y="${y + sh / 2 + 4}" text-anchor="middle">${Math.round((c / bd.n) * 100)}%</text>`;
+    });
+  });
+  out += `<text class="ax-t" x="${L + pw / 2}" y="${y0 + 36}" text-anchor="middle">Oxygen (% of the air${step >= 40 ? '' : ', 3-point bands'})</text>`;
+  return svgWrap(w, h, out, `Stacked bars by oxygen band showing the share of tests that went out, broke apart or kept burning`);
+}
+
+let scFuel = '';
+const scSet = () => (scFuel ? F.filter((p) => p.fuelKey === scFuel) : F);
+const scFuels = () => { const m = new Map(); F.forEach((p) => { const e = m.get(p.fuelKey) || { key: p.fuelKey, label: p.fuel || 'Not recorded', n: 0 }; e.n++; m.set(p.fuelKey, e); }); return [...m.values()].sort((a, b) => b.n - a.n).slice(0, 3); };
+function scHead() {
+  const set = scSet(), t = trendOfSet(set), name = scFuel ? (set[0]?.fuel || scFuel) : '';
+  if (!t) return { big: '', title: 'Burn rate against oxygen', sub: '' };
+  return { big: t.m > 0 ? `+${num(t.m * 10, 2)}` : '', title: t.m > 0 ? `${name ? name + ': burn' : 'Burn'} rate rises about ${num(t.m * 10, 2)} ${UNIT} for every 10 points of oxygen` : `${name ? name + ': ' : ''}burn rate against oxygen`,
+    sub: `${name ? name + ', ' : ''}${int(set.length)} tests. The dashed line is the straight-line trend; the link between oxygen and burn rate is ${num(t.r)} on a scale where 1 is perfect.` };
+}
+function drawScatter(w) {
+  if (F.length < 6) return null;
+  const set = scSet(), t = trendOfSet(set);
+  const L = 46, R = 14, T = 30, B = 48, h = Math.round(Math.min(380, Math.max(260, w * 0.46))), pw = w - L - R, ph = h - T - B, y0 = T + ph;
+  const xs = F.map(pcOf), x0 = Math.floor(Math.min(...xs) / 5) * 5, x1 = Math.max(x0 + 5, Math.ceil(Math.max(...xs) / 5) * 5);
+  const X = (v) => L + ((v - x0) / (x1 - x0)) * pw, Y = (v) => y0 - (v / B_MAX) * ph, ts = B_MAX >= 1 ? 0.4 : 0.2;
+  let out = `<rect x="${L}" y="${T}" width="${pw}" height="${ph}" rx="12" fill="#f6f8fb"/>`;
+  for (let v = 0; v <= B_MAX + 1e-9; v += ts) out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${Y(v)}" y2="${Y(v)}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${num(v, 1)}</text>`;
+  for (let v = x0; v <= x1; v += 5) out += `<text class="ax" x="${X(v)}" y="${y0 + 18}" text-anchor="middle">${v}%</text>`;
+  out += `<text class="ax-t" x="${L - 40}" y="${T - 14}">Burn rate${UNIT ? ' (' + UNIT + ')' : ''}</text><text class="ax-t" x="${L + pw / 2}" y="${y0 + 40}" text-anchor="middle">Oxygen (% of the air)</text>`;
+  if (t) { const xa = Math.min(...set.map(pcOf)), xb = Math.max(...set.map(pcOf)); out += `<line x1="${X(xa)}" y1="${Y(t.m * xa + t.b)}" x2="${X(xb)}" y2="${Y(t.m * xb + t.b)}" stroke="#0b1b33" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>`; }
+  [...set].sort((a, b) => CLS.indexOf(b.cls) - CLS.indexOf(a.cls)).forEach((p, n) => {
+    const cx = X(pcOf(p)), cy = Y(p.burn);
+    out += `<g class="pt" style="--i:${n}"${tipA(`${p.fuel || 'Fuel not recorded'}\n${pct(p.o2)} oxygen · ${num(p.p)} atm\n${num(p.burn, 3)} ${UNIT} · ${CLS_LABEL[p.cls]}\n${p.inv}`)}><circle cx="${cx}" cy="${cy}" r="11" fill="transparent"/>${markSvg(p.cls, cx, cy, 3.8)}</g>`;
+  });
+  return svgWrap(w, h, out, `Scatter plot of burn rate against oxygen for ${set.length} tests, with a trend line`);
+}
+
+function drawHist(w) {
+  const bins = histBins(), maxN = Math.max(...bins.map((b) => b.n));
+  if (!maxN) return null;
+  const st2 = [10, 20, 50, 100, 200, 500].find((s2) => maxN / s2 <= 5) || 500, ymax = Math.ceil(maxN / st2) * st2;
+  const L = 42, R = 10, T = 22, B = 92, h = Math.round(Math.min(350, Math.max(270, w * 0.64))), pw = w - L - R, ph = h - T - B, y0 = T + ph, bwid = pw / 20;
+  let out = '';
+  for (let v = 0; v <= ymax; v += st2) { const y = y0 - (v / ymax) * ph; out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${y}" y2="${y}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 6}" y="${y + 4}" text-anchor="end">${int(v)}</text>`; }
+  bins.forEach((b, bi) => {
+    const x = L + bi * bwid, bh = (b.n / ymax) * ph, idx = P.filter((q) => Math.min(19, Math.floor(pcOf(q) / 5 + 1e-9)) === bi && q.pos).map((q) => q.i);
+    const tip = `${b.a}–${b.a + 5}% oxygen\n${int(b.n)} tests${idx.length ? HINT : '\nNone of these have a pressure on record'}`, hi2 = idx.length ? hiA('h:' + bi, `${b.a}–${b.a + 5}% oxygen`, idx) : '';
+    out += `<rect x="${x}" y="${T}" width="${bwid}" height="${ph}" fill="transparent"${hi2}${tipA(tip)}/>`;
+    if (b.n) out += `<rect class="bar v" style="--i:${bi}" x="${x + 1.5}" y="${y0 - bh}" width="${Math.max(2, bwid - 3)}" height="${bh}" rx="4" fill="#2a78d6"${hi2}${tipA(tip)}/>`;
+    if (b.n >= maxN * 0.12) out += `<text class="val" x="${x + bwid / 2}" y="${y0 - bh - 5}" text-anchor="middle">${int(b.n)}</text>`;
+  });
+  for (let v = 0; v <= 100; v += 10) out += `<text class="ax" x="${L + (v / 100) * pw}" y="${y0 + 15}" text-anchor="middle">${v}%</text>`;
+  [['ISS', MISSIONS[0]], ['Lunar', MISSIONS[1]], ['Mars', MISSIONS[2]], ['Suit', MISSIONS[3]]].forEach(([lab, m], i) => {
+    const x = L + m.o2 * pw, row = i % 2, ly = y0 + 46 + row * 15;
+    out += `<polygon points="${x},${y0 + 22} ${x + 5},${y0 + 31} ${x - 5},${y0 + 31}" fill="#d42a1c"${tipA(`${m.name}\n${pct(m.o2)} oxygen, ${num(m.p)} atm`)}/>`;
+    if (row) out += `<line x1="${x}" x2="${x}" y1="${y0 + 31}" y2="${ly - 11}" stroke="#d42a1c" stroke-width="1"/>`;
+    out += `<text class="ax-t" x="${x}" y="${ly}" text-anchor="${x > w - 50 ? 'end' : 'middle'}">${lab}</text>`;
+  });
+  out += `<text class="ax-t" x="${L + pw / 2}" y="${h - 4}" text-anchor="middle">Oxygen (% of the air)</text>`;
+  return svgWrap(w, h, out, `Histogram of ${P.length} tests by oxygen level in 5% bands, with mission atmospheres marked`);
+}
+
+function drawInv(w) {
+  const rows = invRows(); if (!rows.length) return null;
+  const narrow = w < 440, labW = narrow ? 0 : Math.min(230, Math.round(w * 0.45)), barH = 22, gap = narrow ? 26 : 12, valW = 46, rowH = barH + gap, sc = (w - labW - valW) / Math.max(1, rows[0].n);
+  let out = '';
+  rows.forEach((r, i) => {
+    const y = i * rowH + (narrow ? 16 : 0), t = String(INV[r.id]?.title || '').trim(), short = t.length > 26 ? t.slice(0, 25) + '…' : t;
+    const idx = P.filter((q) => q.inv === r.id && q.pos).map((q) => q.i), hi2 = idx.length ? hiA('i:' + r.id, `${r.id}`, idx) : '';
+    const tip = `${r.id}\n${t}\n${int(r.n)} tests with oxygen, ${int(r.wp)} also with pressure${idx.length ? HINT : ''}`;
+    out += `<text class="ax" x="0" y="${narrow ? y - 5 : y + barH / 2 + 4}"><tspan class="ax-t">${esc(r.id)}</tspan> ${esc(short)}</text>`;
+    if (r.wp) out += `<rect class="bar h" style="--i:${i}" x="${labW}" y="${y}" width="${Math.max(2, r.wp * sc)}" height="${barH}" rx="4" fill="#2a78d6" stroke="#fff" stroke-width="2"${hi2}${tipA(tip)}/>`;
+    if (r.n > r.wp) out += `<rect class="bar h" style="--i:${i}" x="${labW + r.wp * sc}" y="${y}" width="${Math.max(2, (r.n - r.wp) * sc)}" height="${barH}" rx="4" fill="#a9c6ee" stroke="#fff" stroke-width="2"${hi2}${tipA(tip)}/>`;
+    out += `<text class="val" x="${labW + r.n * sc + 8}" y="${y + barH / 2 + 4}">${int(r.n)}</text>`;
+  });
+  return svgWrap(w, rows.length * rowH + (narrow ? 16 : 0), out, `Bar chart of tests per investigation: ${rows.map((r) => `${r.id} ${r.n}`).join('; ')}`);
+}
+
+const lgi = (c) => `<button type="button" class="lgi" data-cls="${c}" aria-pressed="false"><i class="sw ${c}"></i>${CLS_LABEL[c]}</button>`;
+const LEG3 = lgi('out') + lgi('disrupt') + lgi('burn');
+const cabin = P.filter((p) => pcOf(p) >= 20 && pcOf(p) < 25).length, midN = P.filter((p) => pcOf(p) > 40 && pcOf(p) < 80).length, nearSuit = P.filter((p) => p.o2 >= 0.95).length, top3 = invRows();
+const fuelChips = () => { const f = scFuels(); return f.length > 1 ? `<div class="chips" role="group" aria-label="Fuel">${[{ key: '', label: 'All fuels' }, ...f].map((o) => `<button type="button" data-f="${esc(o.key)}" aria-pressed="${o.key === scFuel}">${esc(o.label)}</button>`).join('')}</div>` : ''; };
+const CHARTS = [
+  { draw: drawFunnel, head: () => ({ big: share(F.length, TOTAL), title: 'of tests recorded oxygen, pressure and burn rate', sub: 'Each bar keeps only the tests that also recorded the next measurement.' }),
+    foot: 'Burn rates in different investigations use different units, so only comparable ones are counted.' },
+  { draw: drawOx, head: () => (oxLo.length >= 3 && oxHi.length >= 3
+      ? { big: share(oxLo.filter((p) => p.cls === 'out').length, oxLo.length), title: `of flames went out below ${pct(LOW)} oxygen, against ${share(oxHi.filter((p) => p.cls === 'out').length, oxHi.length)} at ${pct(HIGH)} and above`, sub: 'Share of tests that went out, broke apart or kept burning, by oxygen band. Click a bar to light its tests in the plot above.' }
+      : { big: '', title: 'How flames ended, by oxygen level', sub: 'Click a bar to light its tests in the plot above.' }), legend: LEG3, foot: 'Tests with a recorded pressure and result. Bands with very few tests are drawn paler. The n above each bar is the number of tests.' },
+  { draw: drawScatter, wide: true, head: scHead, ctl: fuelChips, legend: LEG3 + lgi('unknown') + '<span><i class="dash"></i>Trend</span>', foot: 'Tests with oxygen, pressure and a comparable burn rate. Hover a mark for its details; pick a fuel to redraw the trend.' },
+  { draw: drawHist, head: () => ({ big: share(cabin, P.length), title: 'of tests ran at 20–25% oxygen', sub: `Only ${int(midN)} ran between 41% and 79%, and ${nearSuit ? int(nearSuit) + ' near' : 'none near'} 100%, the spacesuit atmosphere. Click a bar to light its tests in the plot above.` }),
+    foot: `${int(P.length)} tests that recorded oxygen, in 5% bands. Red triangles mark the planning atmospheres: ISS 21%, lunar 30%, Mars 34%, spacesuit 100% oxygen.` },
+  { draw: drawInv, head: () => (top3.length >= 3 ? { big: share(top3[0].n + top3[1].n + top3[2].n, P.length), title: `of the tests come from ${top3[0].id}, ${top3[1].id} and ${top3[2].id}`, sub: 'Tests that recorded an oxygen level, by investigation. The dark part also recorded pressure.' } : { big: '', title: 'Tests by investigation', sub: '' }),
+    legend: '<span><i class="sw" style="background:#2a78d6"></i>With pressure</span><span><i class="sw" style="background:#a9c6ee"></i>Oxygen only</span>', foot: 'Titles are shortened. Ids are NASA PSI accession numbers; the 8 largest are shown. Click a bar to light its tests in the plot above.' },
+];
+const headHtml = (c) => { const h = c.head(); return `<div class="chead">${h.big ? `<span class="cbig">${esc(h.big)}</span>` : ''}<h3>${esc(h.title)}</h3></div>${h.sub ? `<p class="sub">${esc(h.sub)}</p>` : ''}`; };
+const grid = $('chartsGrid');
+grid.innerHTML = (source === 'mock' ? '<p class="mockbar" style="grid-column:1/-1">Mock data · not from NASA</p>' : '') + CHARTS.map((c, i) =>
+  `<article class="cc${c.wide ? ' wide' : ''}" data-c="${i}"><div class="hd">${headHtml(c)}</div><div class="ctl">${c.ctl ? c.ctl() : ''}</div><div class="box"></div>${c.legend ? `<div class="lg">${c.legend}</div>` : ''}${c.foot ? `<p class="foot">${esc(c.foot)}</p>` : ''}</article>`).join('');
+const play = (card) => { card.classList.add('anim'); setTimeout(() => card.classList.remove('anim'), 1800); };
+let chartW = 0;
+function renderCharts() {
+  if ($('charts').hidden) return;
+  grid.querySelectorAll('.cc').forEach((card) => {
+    const c = CHARTS[Number(card.dataset.c)], box = card.querySelector('.box'), w = Math.floor(box.clientWidth);
+    if (w < 150) return;
+    const svg = c.draw(w); card.hidden = !svg; box.innerHTML = svg || '';
+    if (svg && !card.dataset.played) { card.dataset.played = '1'; play(card); }
+  });
+}
+new ResizeObserver(() => { const w = Math.round(grid.clientWidth); if (w && w !== chartW) { chartW = w; renderCharts(); } }).observe(grid);
+
+// tooltip
+const ctip = $('ctip');
+function moveTip(e) {
+  const t = e.target.closest ? e.target.closest('[data-tip]') : null;
+  if (!t) { ctip.hidden = true; return; }
+  ctip.textContent = t.dataset.tip; ctip.hidden = false;
+  const tw = ctip.offsetWidth, th = ctip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 16;
+  if (x + tw > innerWidth - 8) x = e.clientX - tw - 14; if (y + th > innerHeight - 8) y = e.clientY - th - 12;
+  ctip.style.transform = `translate(${Math.max(8, Math.round(x))}px, ${Math.max(8, Math.round(y))}px)`;
+}
+['pointermove', 'pointerdown'].forEach((ev) => $('charts').addEventListener(ev, moveTip));
+$('charts').addEventListener('pointerleave', () => { ctip.hidden = true; });
+$('charts').addEventListener('scroll', () => { ctip.hidden = true; }, { passive: true });
+
+// legend chips fade the other results in every chart; click pins it
+let hlPin = '';
+const applyHl = (c) => { grid.dataset.hl = c || ''; };
+const syncLgi = () => grid.querySelectorAll('.lgi').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cls === hlPin)));
+grid.addEventListener('mouseover', (e) => { const b = e.target.closest('.lgi'); if (b) applyHl(b.dataset.cls); });
+grid.addEventListener('mouseout', (e) => { if (e.target.closest('.lgi')) applyHl(hlPin); });
+grid.addEventListener('focusin', (e) => { const b = e.target.closest('.lgi'); if (b) applyHl(b.dataset.cls); });
+grid.addEventListener('focusout', (e) => { if (e.target.closest('.lgi')) applyHl(hlPin); });
+grid.addEventListener('click', (e) => {
+  const lg = e.target.closest('.lgi');
+  if (lg) { hlPin = hlPin === lg.dataset.cls ? '' : lg.dataset.cls; syncLgi(); applyHl(hlPin); return; }
+  const chip = e.target.closest('.chips button');
+  if (chip) {
+    scFuel = chip.dataset.f; const card = chip.closest('.cc'), c = CHARTS[Number(card.dataset.c)];
+    card.querySelectorAll('.chips button').forEach((b) => b.setAttribute('aria-pressed', String(b === chip)));
+    card.querySelector('.hd').innerHTML = headHtml(c); card.querySelector('.box').innerHTML = c.draw(Math.floor(card.querySelector('.box').clientWidth)) || ''; play(card); return;
+  }
+  const t = e.target.closest('[data-hi]'); if (t) highlightPlot(t.dataset.hi, t.dataset.label);
+});
+
 function showHl(n, label) { $('hlText').textContent = `${int(n)} tests: ${label}`; $('hlbar').hidden = false; }
 function hideHl() { $('hlbar').hidden = true; }
+function highlightPlot(key, label) {
+  const idx = HI[key]; if (!idx || !idx.length) return;
+  st.finding = -1; st.hi = new Set(idx); fl.querySelectorAll('.finding').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+  view.paint(); showHl(idx.length, label);
+  $('plot2d').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+}
 $('hlClear').addEventListener('click', () => { st.hi = null; hideHl(); view.paint(); });
 
 const p2 = { y: 'burn', trend: true, byFuel: true };
