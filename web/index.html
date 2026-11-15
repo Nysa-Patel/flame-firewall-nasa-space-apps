@@ -917,10 +917,6 @@
             <label><input type="radio" name="labMission" value="moon"><span>Moon base</span></label>
             <label><input type="radio" name="labMission" value="mars"><span>Mars habitat</span></label>
             <label><input type="radio" name="labMission" value="suit"><span>Spacesuit</span></label>
-            <label><input type="radio" name="labMission" value="orion"><span>Orion, campout</span></label>
-            <label><input type="radio" name="labMission" value="apollo"><span>Apollo cabin</span></label>
-            <label><input type="radio" name="labMission" value="airliner"><span>Airliner cabin</span></label>
-            <label><input type="radio" name="labMission" value="earth"><span>Earth lab</span></label>
           </fieldset>
           <div class="lab-pair">
             <div>
@@ -1783,10 +1779,6 @@
     moon:  { g: .165, o2: 30,  p: 10.2, air: 'still' },
     mars:  { g: .38,  o2: 34,  p: 8.2,  air: 'still' },
     suit:  { g: 0,    o2: 100, p: 4.3,  air: 'still' },
-    orion:    { g: 0, o2: 26.5, p: 10.2, air: 'vent' },     // Orion's reduced-pressure campout before a spacewalk
-    apollo:   { g: 0, o2: 100,  p: 5,    air: 'still' },    // the Apollo cabin in flight
-    airliner: { g: 1, o2: 21,   p: 10.9, air: 'vent' },     // a cabin held at 8,000 ft
-    earth: { g: 1,    o2: 21,  p: 14.7, air: 'still' },
   };
   // air and weather: airflow it sets (cm/s, null keeps the slider), warmth (-1 cold to 1 warm), dust
   const AIR = {
