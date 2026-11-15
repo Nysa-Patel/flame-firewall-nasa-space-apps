@@ -363,13 +363,13 @@
   .dark section + section, .dark .block + .block { margin-top: 56px; }
   /* features alternate between two shades of the page's own colours (15 Nov 2026), so neighbouring features read as separate tools:
      on navy, a lighter and a darker panel in turn; each carries a small name tag. Order on navy: Material ranking (light), Test map
-     (dark), pressure sweep (light), How it works (dark), Investigations (light), Mission environment (dark), Contribute data (light). */
+     (dark), pressure sweep (light), How it works (dark), Mission environment (light), Investigations (dark), Contribute data (light). */
   .feature { position: relative; }
   .feature[data-feature]::after { content: attr(data-feature); position: absolute; top: 0; left: 28px; translate: 0 -50%; padding: 4px 12px; border-radius: 999px;
     font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; pointer-events: none; background: var(--ink); color: #fff; }
   .dark .feature { padding: 40px 32px 32px; border-radius: 28px; border: 1px solid var(--line-dark); }
-  .dark .f-rank, .dark .f-inv, .dark .f-import { background: color-mix(in srgb, #fff 7%, var(--char)); }
-  .dark .f-map, .dark .f-method, .dark .f-env { background: color-mix(in srgb, #000 28%, var(--char)); border-color: color-mix(in srgb, #000 30%, var(--line-dark)); }
+  .dark .f-rank, .dark .f-env, .dark .f-import { background: color-mix(in srgb, #fff 7%, var(--char)); }
+  .dark .f-map, .dark .f-method, .dark .f-inv { background: color-mix(in srgb, #000 28%, var(--char)); border-color: color-mix(in srgb, #000 30%, var(--line-dark)); }
   .dark .feature[data-feature]::after { background: var(--on-dark); color: var(--char); }
   .dark .feature + .feature, .dark #results + .feature, .dark .feature + section.feature { margin-top: 40px; }
   .atmo .atmo-step { color: var(--accent); }
@@ -929,15 +929,6 @@
       </div>
       </div>
     </div>
-    <div class="block feature f-inv" id="invBlock" data-feature="Investigations">
-      <h2 id="inv-h">Investigations for this atmosphere</h2>
-      <p class="intro" id="invIntro">Loading NASA's investigations…</p>
-      <div class="seg" role="group" aria-label="Filter by fire safety area" id="invFocus"></div>
-      <div class="inv-search"><label for="invQ">Search investigations <span class="quiet">(title, number or fuel)</span></label><input id="invQ" type="search" autocomplete="off"></div>
-      <p class="inv-source" id="invCount" role="status"></p>
-      <div class="inv-list" id="invList"></div>
-      <button type="button" id="invMore" class="secondary inv-more hidden"></button>
-    </div>
     <div class="block env-block feature f-env" data-feature="Mission environment">
       <h2 id="env-h">Mission environment</h2>
       <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and Phenox steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
@@ -965,6 +956,15 @@
           <div><h3>Supporting evidence</h3><div id="envEvidence"></div></div>
         </aside>
       </div>
+    </div>
+    <div class="block feature f-inv" id="invBlock" data-feature="Investigations">
+      <h2 id="inv-h">Investigations for this atmosphere</h2>
+      <p class="intro" id="invIntro">Loading NASA's investigations…</p>
+      <div class="seg" role="group" aria-label="Filter by fire safety area" id="invFocus"></div>
+      <div class="inv-search"><label for="invQ">Search investigations <span class="quiet">(title, number or fuel)</span></label><input id="invQ" type="search" autocomplete="off"></div>
+      <p class="inv-source" id="invCount" role="status"></p>
+      <div class="inv-list" id="invList"></div>
+      <button type="button" id="invMore" class="secondary inv-more hidden"></button>
     </div>
     <section class="block feature f-import" data-feature="Contribute data">
       <h2 id="import-h">Contribute data</h2>
