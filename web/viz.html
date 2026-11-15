@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FireLine · the data in 3D</title>
+<meta name="description" content="Every NASA microgravity combustion test in FireLine that recorded an oxygen level, as a 3D model you can turn and click.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+  /* Tokens match web/index.html (navy section). Outcome colors are a separate, validated set:
+     they are test results, not FireLine verdicts, so they do not reuse the pass/caution/fail colors. */
+  :root {
+    --char: #0b1f3f; --scene: #0a1830; --card: #132b52; --card-2: #1b3766; --paper: #ffffff; --ink: #0b1b33;
+    --on-dark: #f2f5fa; --on-dark-2: #b6c3d8; --line-dark: #2c4878; --sky: #9cc4ff;
+    --c-out: #3987e5; --c-burn: #d95926; --c-disrupt: #199e70; --c-unknown: #8a97ad;
+    --spring: cubic-bezier(.22, 1, .36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body { display: grid; grid-template: "bar bar" auto "rail stage" minmax(0, 1fr) / 360px minmax(0, 1fr); height: 100dvh; overflow: hidden;
+    background: var(--char); color: var(--on-dark); font: 15px/1.45 "Space Grotesk", system-ui, sans-serif; }
+  a { color: var(--sky); }
+  :focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; border-radius: 8px; }
+  button, select { font: inherit; color: inherit; }
+  .hidden, [hidden] { display: none !important; }
+
+  .bar { grid-area: bar; display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line-dark); flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.04em; color: var(--on-dark); text-decoration: none; }
+  .bar .back { font-size: 14px; margin-right: auto; }
+  .chip { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-dark); font-size: 13px; color: var(--on-dark-2); white-space: nowrap; }
+  .chip.mock { background: var(--paper); color: var(--ink); border-color: var(--paper); font-weight: 700; }
+  .btn { min-height: 36px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line-dark); background: transparent; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .btn:hover { background: var(--card-2); }
+  .btn[aria-pressed=true], .btn[aria-expanded=true] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+
+  .rail { grid-area: rail; overflow-y: auto; padding: 18px 16px 24px; border-right: 1px solid var(--line-dark); }
+  .rail h1 { font-size: 26px; line-height: 1.1; font-weight: 600; letter-spacing: -.03em; }
+  .rail .sub { margin-top: 8px; color: var(--on-dark-2); font-size: 14px; }
+  .rail h2 { margin: 22px 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-2); }
+  #findings { list-style: none; padding: 0; display: grid; gap: 8px; }
+  .finding { display: grid; grid-template-columns: 30px 1fr; gap: 2px 10px; width: 100%; padding: 12px 14px; text-align: left; border-radius: 18px; border: 1px solid var(--line-dark); background: var(--card); cursor: pointer;
+    transition: background .2s, border-color .2s; }
+  .finding:hover { background: var(--card-2); }
+  .finding .n { grid-row: span 3; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-dark); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--on-dark-2); }
+  .finding .t { font-weight: 600; font-size: 16px; line-height: 1.25; }
+  .finding .s { font-size: 13px; color: var(--on-dark-2); }
+  .finding .b { display: none; margin-top: 6px; font-size: 14px; color: var(--on-dark); }
+  .finding[aria-pressed=true] { background: var(--card-2); border-color: var(--sky); }
+  .finding[aria-pressed=true] .n { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .finding[aria-pressed=true] .b { display: block; }
+  .read { margin-top: 8px; padding-left: 18px; color: var(--on-dark-2); font-size: 13px; display: grid; gap: 6px; }
+
+  .stage { grid-area: stage; position: relative; min-height: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #16305c 0%, var(--scene) 70%); }
+  #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #scene.drag { cursor: grabbing; }
+  #scene.point { cursor: pointer; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lab { position: absolute; left: 0; top: 0; font-size: 12px; color: var(--on-dark-2); white-space: nowrap; will-change: transform; }
+  .lab.axis { color: var(--on-dark); font-weight: 600; }
+  .lab.zone { font-size: 13px; color: var(--on-dark); background: rgba(10, 24, 48, .72); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-dark); }
+  .lab.mission { color: var(--on-dark); font-weight: 600; font-size: 12px; background: rgba(10, 24, 48, .6); padding: 1px 8px; border-radius: 999px; }
+  .tip { position: absolute; left: 0; top: 0; z-index: 3; max-width: 260px; padding: 8px 12px; border-radius: 12px; background: var(--paper); color: var(--ink); font-size: 13px; pointer-events: none; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+  .tip b { display: block; }
+  .legend { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px 14px; max-width: calc(100% - 28px); padding: 8px 14px; border-radius: 16px; background: rgba(10, 24, 48, .78); border: 1px solid var(--line-dark); font-size: 13px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .sw { flex: none; width: 12px; height: 12px; }
+  .sw.out { border-radius: 50%; background: var(--c-out); }
+  .sw.burn { background: var(--c-burn); }
+  .sw.disrupt { background: var(--c-disrupt); rotate: 45deg; scale: .86; }
+  .sw.unknown { width: 8px; height: 8px; border-radius: 50%; background: var(--c-unknown); }
+  .sw.unv { border-radius: 50%; border: 1.5px solid var(--on-dark-2); }
+  .count { position: absolute; right: 14px; top: 12px; z-index: 2; font-size: 13px; color: var(--on-dark-2); }
+  .no3d { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; color: var(--on-dark-2); }
+
+  .panel { position: absolute; z-index: 4; right: 14px; width: min(340px, calc(100% - 28px)); padding: 16px 18px; border-radius: 22px; background: var(--card); border: 1px solid var(--line-dark); box-shadow: 0 20px 50px rgba(0, 0, 0, .4); }
+  #filters { top: 40px; display: grid; gap: 12px; }
+  #filters label { display: grid; gap: 4px; font-size: 13px; color: var(--on-dark-2); }
+  #filters select { width: 100%; min-height: 38px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--line-dark); background: var(--char); color: var(--on-dark); }
+  #filters fieldset { border: 0; padding: 0; display: grid; gap: 6px; }
+  #filters legend { font-size: 13px; color: var(--on-dark-2); margin-bottom: 6px; }
+  #filters .ck { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--on-dark); }
+  #filters input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--sky); }
+  #detail { bottom: 14px; max-height: calc(100% - 28px); overflow-y: auto; }
+  #detail h2 { font-size: 22px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; margin: 8px 34px 0 0; overflow-wrap: anywhere; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--paper); color: var(--ink); }
+  .badge.unv { background: transparent; color: var(--on-dark); border: 1px dashed var(--on-dark-2); }
+  .x { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line-dark); background: transparent; cursor: pointer; font-size: 18px; line-height: 1; }
+  .x:hover { background: var(--card-2); }
+  #detail dl { margin-top: 12px; border-top: 1px solid var(--line-dark); }
+  #detail dl > div { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line-dark); }
+  #detail dt { font-size: 13px; color: var(--on-dark-2); }
+  #detail dd { overflow-wrap: anywhere; }
+  #detail dd small { display: block; color: var(--on-dark-2); font-size: 12px; }
+  #detail dd .sw { display: inline-block; margin-right: 6px; }
+
+  dialog { width: min(1040px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--line-dark); border-radius: 22px; background: var(--char); color: var(--on-dark); }
+  dialog::backdrop { background: rgba(4, 10, 22, .7); }
+  .dlg-head { position: sticky; top: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--char); border-bottom: 1px solid var(--line-dark); }
+  .dlg-head h2 { font-size: 18px; font-weight: 600; margin-right: auto; }
+  .tbl-wrap { overflow: auto; max-height: calc(100dvh - 110px); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line-dark); white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--card); color: var(--on-dark-2); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td .btn { min-height: 28px; padding: 2px 10px; font-size: 12px; }
+
+  @media (max-width: 860px) {
+    body { grid-template: "bar" auto "stage" minmax(0, 1fr) "rail" auto / minmax(0, 1fr); }
+    .bar { padding: 8px 10px; gap: 4px 5px; }
+    .bar .back, .btn .full { display: none; }
+    .brand { margin-right: auto; font-size: 18px; }
+    .btn { min-height: 34px; padding: 4px 10px; font-size: 13px; text-transform: capitalize; }
+    .chip { order: 5; flex-basis: 100%; padding: 0; border: 0; font-size: 12px; }
+    .chip.mock { padding: 2px 10px; flex-basis: auto; }
+    .rail { border-right: 0; border-top: 1px solid var(--line-dark); padding: 10px 0 12px; max-height: 46dvh; overflow-y: auto; }
+    .rail h1, .rail .sub, .rail .how { display: none; }
+    .rail h2 { margin: 0 12px 8px; }
+    #findings { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 4px; scroll-snap-type: x mandatory; }
+    #findings li { flex: none; width: min(78vw, 320px); scroll-snap-align: start; }
+    .finding { height: 100%; align-content: start; }
+    .finding .b { font-size: 13px; }
+    .legend { left: 8px; bottom: 8px; padding: 6px 10px; font-size: 12px; gap: 4px 10px; }
+    .count { right: 10px; top: 8px; font-size: 12px; }
+    .panel { right: 8px; width: calc(100% - 16px); }
+    #detail { position: fixed; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 62dvh; }
+    #filters { top: 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .finding { transition: none; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="index.html">FireLine.</a>
+  <a class="back" href="index.html">Back to the ranking tool</a>
+  <span class="chip" id="source" role="status">Loading data…</span>
+  <button class="btn" id="filterBtn" type="button" aria-expanded="false" aria-controls="filters">Filters</button>
+  <button class="btn" id="tableBtn" type="button">Table<span class="full"> view</span></button>
+  <button class="btn" id="rotateBtn" type="button" aria-pressed="false"><span class="full">Auto-</span>rotate</button>
+  <button class="btn" id="resetBtn" type="button">Reset<span class="full"> view</span></button>
+</header>
+
+<aside class="rail" aria-label="Key findings">
+  <h1>What the tests tell us</h1>
+  <p class="sub" id="sub">Every test that recorded an oxygen level, placed by oxygen, pressure and burn rate. Drag to turn, scroll to zoom, click a point to open its record.</p>
+  <h2 id="findings-h">Key findings</h2>
+  <ol id="findings" aria-labelledby="findings-h"></ol>
+  <div class="how">
+    <h2>How to read it</h2>
+    <ul class="read" id="read"></ul>
+  </div>
+</aside>
+
+<main class="stage" id="stage">
+  <canvas id="scene" tabindex="0" aria-label="3D model of the combustion tests. Arrow keys turn it, plus and minus zoom. Use Table view to reach every test from the keyboard."></canvas>
+  <div id="labels" aria-hidden="true"></div>
+  <p class="count" id="count" role="status"></p>
+  <div class="legend" aria-label="Legend">
+    <span><i class="sw out"></i>Went out on its own</span>
+    <span><i class="sw burn"></i>Kept burning</span>
+    <span><i class="sw disrupt"></i>Droplet broke apart</span>
+    <span><i class="sw unknown"></i>Result not recorded</span>
+    <span id="legendUnv" hidden><i class="sw unv"></i>Outline: unverified upload</span>
+  </div>
+  <div class="tip" id="tip" hidden></div>
+
+  <section class="panel" id="filters" aria-label="Filters" hidden>
+    <label>Fuel or material<select id="fFuel"></select></label>
+    <label>Investigation<select id="fInv"></select></label>
+    <fieldset><legend>Result</legend>
+      <label class="ck"><input type="checkbox" data-cls="out" checked><i class="sw out"></i>Went out on its own</label>
+      <label class="ck"><input type="checkbox" data-cls="burn" checked><i class="sw burn"></i>Kept burning</label>
+      <label class="ck"><input type="checkbox" data-cls="disrupt" checked><i class="sw disrupt"></i>Droplet broke apart</label>
+      <label class="ck"><input type="checkbox" data-cls="unknown" checked><i class="sw unknown"></i>Result not recorded</label>
+    </fieldset>
+    <label class="ck"><input type="checkbox" id="fVerified">Verified NASA records only</label>
+    <label class="ck"><input type="checkbox" id="fMissions" checked>Show mission atmospheres</label>
+  </section>
+
+  <section class="panel" id="detail" aria-label="Selected test" aria-live="polite" hidden></section>
+</main>
+
+<dialog id="tableDialog" aria-labelledby="table-h">
+  <div class="dlg-head"><h2 id="table-h">Tests</h2><button class="btn" id="tableClose" type="button">Close</button></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Fuel or material</th><th class="num">Oxygen</th><th class="num">Pressure</th><th class="num">Burn rate</th><th>Result</th><th>Investigation</th><th>Source</th><th></th></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table></div>
+</dialog>
+
+<script type="module">
+// FireLine 3D model. Data comes from the worker's GET /points (live), then the bundled points.json
+// snapshot (real NASA data exported from the same query), then a labeled mock set. Every number in
+// the findings is computed here from whatever loaded; none are written in by hand.
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const trim0 = (s) => (s.includes('.') ? s.replace(/\.?0+$/, '') : s);
+const num = (x, d = 2) => trim0(Number(x).toFixed(d));
+const pct = (f) => num(f * 100, 1) + '%';
+const int = (n) => Number(n).toLocaleString('en-US');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PSI_PER_ATM = 14.696;
+
+// ---------- settings (same rules as index.html) ----------
+const params = new URLSearchParams(location.search);
+const DEPLOYED = 'https://fireline-verdict.fireline-team.workers.dev';
+const servedByWorker = /\.workers\.dev$/.test(location.hostname) || location.port === '8787';
+let savedApi = null, savedMock = null;
+try { savedApi = localStorage.getItem('fireline.api'); savedMock = localStorage.getItem('fireline.mock'); } catch {}
+const API = (params.get('api') || savedApi || (servedByWorker ? location.origin : DEPLOYED)).trim().replace(/\/+$/, '');
+const MOCK = params.has('mock') ? params.get('mock') !== '0' : savedMock === '1';
+
+// ---------- outcome classes ----------
+const CLS = ['out', 'burn', 'disrupt', 'unknown'];
+const CLS_LABEL = { out: 'Went out on its own', burn: 'Kept burning', disrupt: 'Droplet broke apart', unknown: 'Result not recorded' };
+const CLS_COLOR = { out: '#3987e5', burn: '#d95926', disrupt: '#199e70', unknown: '#8a97ad' };
+function classify(o) {
+  const s = String(o ?? '').trim().toLowerCase();
+  if (!s || s === '-') return 'unknown';
+  if (s === 'se' || s.startsWith('extinct') || s.includes('self-ext') || s.includes('self ext')) return 'out';
+  if (s === 'ft' || s.startsWith('complet') || s.includes('flow term')) return 'burn';
+  if (s.startsWith('disrupt')) return 'disrupt';
+  return 'unknown';
+}
+const unitOf = (h) => (!h ? '' : /mg\s*\/\s*s/i.test(h) ? 'mg/s' : (/;\s*mm\s*$/i.test(h) || /mm\^?2\s*\/\s*s/i.test(h)) ? 'mm²/s' : '');
+
+// Planning figures, the same ones as the presets on the main page (psia converted to atm).
+const MISSIONS = [
+  { name: 'ISS cabin', o2: 0.21, p: 14.7 / PSI_PER_ATM },
+  { name: 'Lunar base', o2: 0.30, p: 10.2 / PSI_PER_ATM },
+  { name: 'Mars habitat', o2: 0.34, p: 8.2 / PSI_PER_ATM },
+  { name: 'Spacesuit', o2: 1.00, p: 4.3 / PSI_PER_ATM },
+];
+
+// ---------- data ----------
+async function getJson(url, ms = 8000) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+const valid = (d) => d && Array.isArray(d.columns) && Array.isArray(d.rows) && d.rows.length > 0;
+function mockData() {
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rows = [];
+  for (let i = 0; i < 90; i++) {
+    const o2 = +(0.12 + rnd() * 0.3).toFixed(2), hasP = i < 60, hasB = i < 45;
+    const fuel = rnd() < 0.5 ? 'heptane (mock)' : 'methanol (mock)';
+    rows.push(['m' + i, 'MOCK-1', fuel, o2, hasP ? (rnd() < 0.5 ? 0.7 : 1) : null, hasB ? +(0.15 + 1.3 * o2 + rnd() * 0.15).toFixed(2) : null,
+      o2 < 0.19 ? 'Extinction' : rnd() < 0.5 ? 'Disruption' : 'Completion', null, hasB ? 'Burning rate; mm' : null]);
+  }
+  return { generated_at: null, summary: { tests_total: rows.length, tests_unverified: 0, investigations_with_tests: 1 },
+    investigations: { 'MOCK-1': { title: 'Synthetic example, not a NASA investigation', doi: null, verified: false } },
+    columns: ['test_id', 'investigation_id', 'fuel_material', 'o2_fraction', 'pressure_atm', 'burn_rate', 'outcome', 'test_date', 'burn_header'], rows };
+}
+async function load() {
+  if (MOCK) return { data: mockData(), source: 'mock' };
+  try { const d = await getJson(API + '/points'); if (valid(d)) return { data: d, source: 'live' }; } catch {}
+  try { const d = await getJson('points.json'); if (valid(d)) return { data: d, source: 'snapshot' }; } catch {}
+  return { data: mockData(), source: 'mock', failed: true };
+}
+
+const { data, source, failed } = await load();
+const col = Object.fromEntries(data.columns.map((c, i) => [c, i]));
+const INV = data.investigations || {};
+const numOrNull = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+const P = data.rows.map((r, i) => {
+  const inv = r[col.investigation_id];
+  const fuel = String(r[col.fuel_material] ?? '').trim();
+  return { i, id: r[col.test_id], inv, fuel, fuelKey: fuel.toLowerCase(), o2: numOrNull(r[col.o2_fraction]), p: numOrNull(r[col.pressure_atm]),
+    burn: numOrNull(r[col.burn_rate]), outcome: r[col.outcome], date: r[col.test_date], bh: r[col.burn_header] || null,
+    cls: classify(r[col.outcome]), verified: source !== 'mock' && (INV[inv] ? INV[inv].verified !== false : !String(inv).startsWith('USER-')) };
+}).filter((p) => p.o2 != null && p.o2 >= 0 && p.o2 <= 1);
+
+// Burn rates come in different units in different investigations. Only one unit can share the height
+// axis, so the axis uses the unit that most tests with oxygen + pressure + burn rate were recorded in.
+const headerCount = new Map();
+P.forEach((p) => { if (p.p != null && p.burn != null) headerCount.set(p.bh, (headerCount.get(p.bh) || 0) + 1); });
+const MAIN_HEADER = [...headerCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+const UNIT = unitOf(MAIN_HEADER);
+P.forEach((p) => { p.zone = p.p == null ? 'shelf' : (p.burn != null && p.bh === MAIN_HEADER) ? 'cloud' : 'floor'; });
+const F = P.filter((p) => p.zone === 'cloud');          // oxygen + pressure + burn rate
+const WP = P.filter((p) => p.p != null);                 // oxygen + pressure
+const SHELF = P.filter((p) => p.zone === 'shelf');       // oxygen only
+const TOTAL = Number(data.summary?.tests_total) || P.length;
+const UNVERIFIED = P.filter((p) => !p.verified).length;
+
+// ---------- scene geometry (data units -> scene units) ----------
+const W = 12, D = 8, H = 4.5;
+const niceMax = (v, step) => Math.max(step, Math.ceil(v / step - 1e-9) * step);
+const P_MAX = niceMax(Math.max(1, ...WP.map((p) => p.p)), 1);
+const B_MAX = niceMax(Math.max(0.2, ...F.map((p) => p.burn)), 0.2);
+const sx = (o2) => o2 * W, sz = (p) => -(p / P_MAX) * D, sy = (b) => (b / B_MAX) * H;
+const jit = (i, k) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return (s - Math.floor(s)) - 0.5; };
+const SHELF_Z0 = 1.05, SHELF_STEP = 0.082, BIN = 0.025, SHELF_COLS = 4;
+let shelfDepth = 0;
+{ // Tests with no pressure on record are laid flat in front of the floor as a dot histogram by oxygen.
+  const bins = new Map();
+  SHELF.forEach((p) => { const b = Math.min(Math.round(1 / BIN) - 1, Math.floor(p.o2 / BIN + 1e-9)); (bins.get(b) || bins.set(b, []).get(b)).push(p); });
+  bins.forEach((list, b) => {
+    list.sort((a, c) => CLS.indexOf(a.cls) - CLS.indexOf(c.cls) || String(a.inv).localeCompare(String(c.inv)) || a.i - c.i);
+    list.forEach((p, k) => { const row = Math.floor(k / SHELF_COLS), c = k % SHELF_COLS; p.pos = [(b + 0.5) * BIN * W + (c - (SHELF_COLS - 1) / 2) * 0.068, 0.05, SHELF_Z0 + row * SHELF_STEP];
+      shelfDepth = Math.max(shelfDepth, (row + 1) * SHELF_STEP); });
+  });
+}
+P.forEach((p) => {
+  if (p.zone === 'cloud') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.07, sy(p.burn), sz(p.p) + jit(p.i, 2) * 0.09];
+  else if (p.zone === 'floor') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.14, 0.05, sz(p.p) + jit(p.i, 2) * 0.14];
+});
+
+// ---------- findings (all computed from P) ----------
+const mean = (a) => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : null);
+function pearson(xs, ys) {
+  const n = xs.length; if (n < 3) return null;
+  const mx = mean(xs), my = mean(ys); let a = 0, b = 0, c = 0;
+  for (let i = 0; i < n; i++) { const dx = xs[i] - mx, dy = ys[i] - my; a += dx * dy; b += dx * dx; c += dy * dy; }
+  return b && c ? a / Math.sqrt(b * c) : null;
+}
+const LOW = 0.17, HIGH = 0.25;
+const invTitle = (id) => INV[id]?.title || id;
+const share = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '—');
+function buildFindings() {
+  const out = [];
+  const overview = { target: [W * 0.42, 0.8, -0.6], theta: -0.5, phi: 1.0, radius: 22 };
+
+  { // 1. coverage
+    const invs = [...new Set(F.map((p) => p.inv))].map((id) => `${id} (${invTitle(id)})`);
+    out.push({ title: 'Most tests did not record everything', stat: `${int(F.length)} of ${int(TOTAL)} tests have oxygen, pressure and burn rate`,
+      body: `The database holds ${int(TOTAL)} tests. ${int(P.length)} recorded an oxygen level, so they can be placed here. ${int(WP.length)} of those also recorded pressure, and ${int(F.length)} recorded a comparable burn rate too. Those ${int(F.length)} are the floating points${invs.length ? ', all from ' + invs.join(' and ') : ''}. `
+        + (source === 'mock' ? 'These are synthetic mock points, not NASA records.' : UNVERIFIED ? `${int(UNVERIFIED)} plotted tests are unverified community uploads, drawn as outlines.` : 'Every plotted test is a NASA PSI record; none are community uploads.'),
+      view: overview, hi: null });
+  }
+  if (F.length >= 6) { // 2. oxygen vs burn rate
+    const lo = F.filter((p) => p.o2 < LOW), hi = F.filter((p) => p.o2 >= HIGH), r = pearson(F.map((p) => p.o2), F.map((p) => p.burn));
+    if (lo.length && hi.length && r != null) {
+      const ml = mean(lo.map((p) => p.burn)), mh = mean(hi.map((p) => p.burn));
+      out.push({ title: mh > ml ? 'More oxygen, faster burn' : 'Oxygen and burn rate', stat: `${num(ml)} → ${num(mh)} ${UNIT} from low to high oxygen`,
+        body: `At ${pct(HIGH)} oxygen and above, flames burned at ${num(mh)} ${UNIT} on average (${int(hi.length)} tests). Below ${pct(LOW)}, the average was ${num(ml)} ${UNIT} (${int(lo.length)} tests). Across all ${int(F.length)} tests with a burn rate, the link between oxygen and burn rate is ${num(r)} on a scale where 0 is no link and 1 is a perfect one.`,
+        view: { target: [sx(mean(F.map((p) => p.o2))), H * 0.45, sz(mean(F.map((p) => p.p)))], theta: 0, phi: 1.42, radius: 12 }, hi: new Set([...lo, ...hi].map((p) => p.i)) });
+    }
+  }
+  { // 3. low oxygen puts flames out
+    const known = WP.filter((p) => p.cls !== 'unknown'), lo = known.filter((p) => p.o2 < LOW), hi = known.filter((p) => p.o2 >= HIGH);
+    if (lo.length >= 3 && hi.length >= 3) {
+      const lo1 = lo.filter((p) => p.cls === 'out'), hi1 = hi.filter((p) => p.cls === 'out');
+      out.push({ title: lo1.length / lo.length > hi1.length / hi.length ? 'Thin oxygen puts flames out' : 'Oxygen and flames going out',
+        stat: `${share(lo1.length, lo.length)} went out below ${pct(LOW)} oxygen, ${share(hi1.length, hi.length)} at ${pct(HIGH)} and above`,
+        body: `Below ${pct(LOW)} oxygen, ${int(lo1.length)} of ${int(lo.length)} flames went out on their own (${share(lo1.length, lo.length)}). At ${pct(HIGH)} and above, ${int(hi1.length)} of ${int(hi.length)} did (${share(hi1.length, hi.length)}). This counts the tests that recorded both pressure and a result.`,
+        view: { target: [sx(0.2), H * 0.3, sz(mean(known.map((p) => p.p)))], theta: -0.45, phi: 1.1, radius: 12 }, hi: new Set([...lo1, ...hi].map((p) => p.i)) });
+    }
+  }
+  if (F.length >= 6) { // 4. pressure vs burn rate
+    const rp = pearson(F.map((p) => p.p), F.map((p) => p.burn)), ro = pearson(F.map((p) => p.o2), F.map((p) => p.burn));
+    const near = WP.filter((p) => Math.abs(p.p - 0.7) < 0.05 || Math.abs(p.p - 1) < 0.05);
+    if (rp != null && ro != null) {
+      const weak = Math.abs(rp) < Math.abs(ro);
+      out.push({ title: weak ? 'Pressure matters less than oxygen here' : 'Pressure moves burn rate too', stat: `Pressure link ${num(rp)}, oxygen link ${num(ro)}`,
+        body: `Burn rate ${Math.abs(rp) < 0.2 ? 'barely moves' : Math.abs(rp) < 0.5 ? 'moves somewhat' : 'moves strongly'} with pressure in this data (a link of ${num(rp)}, against ${num(ro)} for oxygen). But ${share(near.length, WP.length)} of the ${int(WP.length)} tests with pressure on record ran near 0.7 or 1.0 atm, so other pressures are thinly covered.`,
+        view: { target: [sx(mean(F.map((p) => p.o2))), H * 0.4, sz(Math.min(P_MAX, 2) / 2)], theta: Math.PI / 2, phi: 1.4, radius: 12 }, hi: new Set(F.map((p) => p.i)) });
+    }
+  }
+  if (WP.length) { // 5. most-tested condition
+    const cells = new Map();
+    WP.forEach((p) => { const k = Math.round(p.o2 * 100) + '|' + Math.round(p.p * 10); (cells.get(k) || cells.set(k, []).get(k)).push(p); });
+    const best = [...cells.values()].sort((a, b) => b.length - a.length)[0];
+    const o2 = Math.round(best[0].o2 * 100) / 100, p = Math.round(best[0].p * 10) / 10;
+    const iss = Math.abs(o2 - 0.21) <= 0.011 && Math.abs(p - 1) <= 0.051;
+    out.push({ title: 'The most-tested condition', stat: `${int(best.length)} tests at ${pct(o2)} oxygen and ${num(p, 1)} atm`,
+      body: `More tests ran at ${pct(o2)} oxygen and ${num(p, 1)} atm than at any other condition: ${int(best.length)} of the ${int(WP.length)} with pressure on record${iss ? '. That is ordinary cabin air, the same as the ISS' : ''}.`,
+      view: { target: [sx(o2), H * 0.3, sz(p)], theta: -0.5, phi: 1.05, radius: 8 }, hi: new Set(best.map((q) => q.i)) });
+  }
+  if (WP.length) { // 6. mission atmospheres with no nearby test
+    const maxO2 = Math.max(...WP.map((p) => p.o2)), hi = new Set(), parts = []; let empty = 0;
+    MISSIONS.forEach((m) => {
+      const near = WP.filter((p) => Math.abs(p.o2 - m.o2) <= 0.02 + 1e-9 && Math.abs(p.p - m.p) <= 0.1 + 1e-9);
+      const head = `${m.name} (${pct(m.o2)}, ${num(m.p)} atm)`;
+      if (near.length) { near.forEach((p) => hi.add(p.i)); parts.push(`${head}: ${int(near.length)} tests nearby.`); return; }
+      empty++;
+      const d = (p) => Math.hypot((p.o2 - m.o2) / 0.02, (p.p - m.p) / 0.1);
+      const n0 = WP.reduce((a, b) => (d(b) < d(a) ? b : a));
+      const same = WP.filter((p) => Math.abs(p.o2 - n0.o2) < 0.005 && Math.abs(p.p - n0.p) < 0.05); same.forEach((p) => hi.add(p.i));
+      parts.push(`${head}: none nearby. The closest ${same.length === 1 ? 'test is' : int(same.length) + ' tests are'} at ${pct(n0.o2)} and ${num(n0.p)} atm.`);
+    });
+    out.push({ title: empty ? 'Where the tests run out' : 'Mission atmospheres are covered', stat: `${empty} of ${MISSIONS.length} mission atmospheres have no nearby test`,
+      body: `Counting tests within 2% oxygen and 0.1 atm of each planning atmosphere. ${parts.join(' ')} No test with pressure on record goes above ${pct(maxO2)} oxygen.`,
+      view: { target: [sx(0.45), 0.2, sz(0.8)], theta: -0.25, phi: 0.62, radius: 19 }, hi });
+  }
+  return { list: out, overview };
+}
+const { list: FINDINGS, overview: OVERVIEW } = buildFindings();
+
+// ---------- state + UI (works with or without WebGL) ----------
+const st = { sel: -1, finding: -1, hi: null, fuel: '', inv: '', cls: new Set(CLS), verifiedOnly: false, missions: true, auto: !reduced };
+const passes = (p) => (!st.fuel || p.fuelKey === st.fuel) && (!st.inv || p.inv === st.inv) && st.cls.has(p.cls) && (!st.verifiedOnly || p.verified);
+let view = { paint() {}, fly() {}, select() {}, missions() {}, auto() {} };
+
+const srcChip = $('source');
+if (source === 'live') srcChip.textContent = 'Live from Tiger Data';
+else if (source === 'snapshot') srcChip.textContent = 'NASA data snapshot' + (data.generated_at ? ' · ' + new Date(data.generated_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+else { srcChip.textContent = 'Mock data · not from NASA'; srcChip.classList.add('mock'); if (failed) srcChip.title = 'The worker and the bundled snapshot could not be loaded, so this is synthetic data.'; }
+$('legendUnv').hidden = UNVERIFIED === 0;
+if (source === 'mock') $('legendUnv').lastChild.textContent = 'Outline: mock data';
+
+$('read').innerHTML = [
+  `Left to right is oxygen. Front to back is pressure. Height is burn rate${UNIT ? ' in ' + UNIT : ''}.`,
+  `Floating points recorded all three (${int(F.length)} tests). Points on the floor recorded oxygen and pressure but no comparable burn rate (${int(WP.length - F.length)}).`,
+  `The strip in front holds the ${int(SHELF.length)} tests with no pressure on record, lined up by oxygen in 2.5% steps.`,
+  'Points are nudged slightly so tests at the same condition do not hide each other.',
+  MAIN_HEADER ? `Burn rate is the column NASA labels “${esc(MAIN_HEADER)}”${UNIT === 'mm²/s' ? '; its values match a droplet burning-rate constant in mm²/s' : ''}.` : '',
+  'Rings mark planning atmospheres from the FireLine presets. They are not test results.',
+].filter(Boolean).map((t) => `<li>${t}</li>`).join('');
+
+const fl = $('findings');
+fl.innerHTML = FINDINGS.map((f, i) => `<li><button type="button" class="finding" aria-pressed="false" data-i="${i}"><span class="n">${i + 1}</span><span class="t">${esc(f.title)}</span><span class="s">${esc(f.stat)}</span><span class="b">${esc(f.body)}</span></button></li>`).join('');
+function setFinding(i) {
+  st.finding = st.finding === i ? -1 : i;
+  st.hi = st.finding >= 0 ? FINDINGS[st.finding].hi : null;
+  fl.querySelectorAll('.finding').forEach((b, k) => b.setAttribute('aria-pressed', String(k === st.finding)));
+  view.paint(); view.fly(st.finding >= 0 ? FINDINGS[st.finding].view : OVERVIEW);
+  if (st.finding >= 0) fl.children[st.finding].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+}
+fl.addEventListener('click', (e) => { const b = e.target.closest('.finding'); if (b) setFinding(Number(b.dataset.i)); });
+
+function countBy(key) { const m = new Map(); P.forEach((p) => m.set(p[key], (m.get(p[key]) || 0) + 1)); return [...m.entries()].sort((a, b) => b[1] - a[1]); }
+$('fFuel').innerHTML = '<option value="">All fuels and materials</option>' + countBy('fuelKey').map(([k, n]) => `<option value="${esc(k)}">${esc(k || 'Not recorded')} (${n})</option>`).join('');
+$('fInv').innerHTML = '<option value="">All investigations</option>' + countBy('inv').map(([k, n]) => `<option value="${esc(k)}">${esc(k)} · ${esc(String(invTitle(k)).slice(0, 48))} (${n})</option>`).join('');
+// "Not recorded" has an empty key, which would read as "all"; give it its own value.
+[...$('fFuel').options].forEach((o, i) => { if (i > 0 && o.value === '') o.value = '\u0000'; });
+function updateCount() { const n = P.filter(passesAll).length; $('count').textContent = n === P.length ? `${int(n)} tests shown` : `${int(n)} of ${int(P.length)} tests shown`; }
+function filtersChanged() {
+  const f = $('fFuel').value; st.fuel = f === '\u0000' ? '' : f; st.fuelNone = f === '\u0000';
+  st.inv = $('fInv').value; st.verifiedOnly = $('fVerified').checked;
+  st.cls = new Set([...document.querySelectorAll('#filters [data-cls]')].filter((c) => c.checked).map((c) => c.dataset.cls));
+  if (st.sel >= 0 && !passesAll(P[st.sel])) select(-1);
+  updateCount(); view.paint();
+}
+const passesAll = (p) => passes(p) && (!st.fuelNone || p.fuelKey === '');
+$('filters').addEventListener('change', (e) => { if (e.target.id === 'fMissions') { st.missions = e.target.checked; view.missions(); } else filtersChanged(); });
+$('filterBtn').addEventListener('click', () => { const open = $('filters').hidden; $('filters').hidden = !open; $('filterBtn').setAttribute('aria-expanded', String(open)); });
+updateCount();
+
+function burnText(p) { if (p.burn == null) return 'Not recorded'; const u = unitOf(p.bh); return num(p.burn, 3) + (u ? ' ' + u : ''); }
+function select(i, fly) {
+  st.sel = i; const d = $('detail');
+  if (i < 0) { d.hidden = true; d.innerHTML = ''; view.select(); view.paint(); return; }
+  const p = P[i], inv = INV[p.inv] || {};
+  $('filters').hidden = true; $('filterBtn').setAttribute('aria-expanded', 'false');
+  d.innerHTML = `<button class="x" type="button" id="detailClose" aria-label="Close this record">×</button>
+    <span class="badge${p.verified ? '' : ' unv'}">${source === 'mock' ? 'Mock data, not from NASA' : p.verified ? 'Verified NASA PSI record' : 'Unverified community upload'}</span>
+    <h2>${esc(p.fuel || 'Fuel not recorded')}</h2>
+    <dl>
+      <div><dt>Oxygen</dt><dd>${pct(p.o2)}</dd></div>
+      <div><dt>Pressure</dt><dd>${p.p == null ? 'Not recorded' : `${num(p.p)} atm<small>${num(p.p * PSI_PER_ATM, 1)} psia</small>`}</dd></div>
+      <div><dt>Burn rate</dt><dd>${burnText(p)}${p.bh ? `<small>recorded as “${esc(p.bh)}”</small>` : ''}</dd></div>
+      <div><dt>Result</dt><dd><i class="sw ${p.cls}"></i>${CLS_LABEL[p.cls]}${p.outcome && String(p.outcome).trim() !== '-' ? `<small>recorded as “${esc(p.outcome)}”</small>` : ''}</dd></div>
+      ${p.date ? `<div><dt>Test date</dt><dd>${esc(p.date)}</dd></div>` : ''}
+      <div><dt>Investigation</dt><dd>${esc(p.inv)}<small>${esc(inv.title || '')}</small></dd></div>
+      <div><dt>DOI</dt><dd>${inv.doi ? `<a href="https://doi.org/${esc(inv.doi)}" target="_blank" rel="noopener">${esc(inv.doi)}</a>` : 'None on record'}</dd></div>
+      <div><dt>Test id</dt><dd>${esc(p.id)}</dd></div>
+    </dl>`;
+  d.hidden = false;
+  $('detailClose').addEventListener('click', () => select(-1));
+  view.select(); view.paint();
+  if (fly) view.fly({ target: p.pos, radius: 7 });
+}
+
+// ---------- table view (the keyboard route to every test) ----------
+const dlg = $('tableDialog');
+$('tableBtn').addEventListener('click', () => {
+  const rows = P.filter(passesAll);
+  $('table-h').textContent = `${int(rows.length)} tests`;
+  $('tableBody').innerHTML = rows.map((p) => `<tr><td>${esc(p.fuel || 'Not recorded')}</td><td class="num">${pct(p.o2)}</td><td class="num">${p.p == null ? '—' : num(p.p) + ' atm'}</td><td class="num">${p.burn == null ? '—' : burnText(p)}</td><td>${CLS_LABEL[p.cls]}</td><td>${esc(p.inv)}</td><td>${source === 'mock' ? 'Mock' : p.verified ? 'NASA PSI' : 'Unverified'}</td><td><button class="btn" type="button" data-i="${p.i}">Show</button></td></tr>`).join('');
+  dlg.showModal();
+});
+$('tableClose').addEventListener('click', () => dlg.close());
+dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); const b = e.target.closest('button[data-i]'); if (b) { dlg.close(); select(Number(b.dataset.i), true); } });
+
+$('rotateBtn').setAttribute('aria-pressed', String(st.auto));
+$('rotateBtn').addEventListener('click', () => { st.auto = !st.auto; $('rotateBtn').setAttribute('aria-pressed', String(st.auto)); view.auto(); });
+$('resetBtn').addEventListener('click', () => { if (st.finding >= 0) setFinding(st.finding); else view.fly(OVERVIEW); });
+
+// ---------- 3D ----------
+let THREE = null;
+try { THREE = await import('https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.min.js'); } catch {}
+function no3d(msg) {
+  $('scene').hidden = true; $('labels').hidden = true; document.querySelector('.legend').hidden = true;
+  const d = document.createElement('div'); d.className = 'no3d';
+  d.innerHTML = `<p>${esc(msg)}</p><p>The findings and the full table still work.</p>`;
+  $('stage').append(d); $('rotateBtn').hidden = true; $('resetBtn').hidden = true;
+}
+if (!THREE) no3d('The 3D library could not be loaded.');
+else try { start3d(); } catch (e) { console.error(e); no3d('This browser could not start the 3D view.'); }
+
+function start3d() {
+  const canvas = $('scene'), stage = $('stage'), labelsEl = $('labels'), tip = $('tip');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  const BG = new THREE.Color('#0a1830');
+  scene.fog = new THREE.Fog(BG, 26, 60);   // near and far are reset every frame from the camera distance
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  scene.add(new THREE.AmbientLight(0xffffff, 2.3));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-6, 12, 8); scene.add(sun);
+
+  // --- floors, grid, axes ---
+  const lineMat = (c, o) => new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: o });
+  const segs = (pts, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3)); const l = new THREE.LineSegments(g, mat); scene.add(l); return l; };
+  const plane = (x0, x1, z0, z1, color, opacity) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, Math.abs(z1 - z0)), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, -0.01, (z0 + z1) / 2); scene.add(m); return m; };
+  plane(0, W, 0, -D, '#1b3766', 0.42);
+  const shelfEnd = SHELF_Z0 + Math.max(shelfDepth, 0.6) + 0.2;
+  if (SHELF.length) plane(0, W, SHELF_Z0 - 0.2, shelfEnd, '#132b52', 0.5);
+  const grid = [], wall = [];
+  for (let i = 0; i <= 10; i++) grid.push([sx(i / 10), 0, 0], [sx(i / 10), 0, -D]);
+  for (let a = 0; a <= P_MAX; a++) grid.push([0, 0, sz(a)], [W, 0, sz(a)]);
+  const bStep = B_MAX / Math.round(B_MAX / 0.2);
+  for (let b = bStep; b <= B_MAX + 1e-9; b += bStep) wall.push([0, sy(b), -D], [W, sy(b), -D], [0, sy(b), 0], [0, sy(b), -D]);
+  for (let i = 0; i <= 10; i += 2) wall.push([sx(i / 10), 0, -D], [sx(i / 10), H, -D]);
+  wall.push([0, 0, 0], [0, H, 0]);
+  segs(grid, lineMat('#3b5a94', 0.55)); segs(wall, lineMat('#3b5a94', 0.3));
+  segs([[0, 0, 0], [W, 0, 0], [W, 0, 0], [W, 0, -D], [0, 0, -D], [0, H, -D]], lineMat('#b6c3d8', 0.8));
+
+  // --- labels (HTML, projected every frame) ---
+  const labels = [];
+  const label = (text, pos, cls = '', anchor = 'c') => { const el = document.createElement('span'); el.className = 'lab ' + cls; el.textContent = text; labelsEl.append(el);
+    const l = { el, pos: new THREE.Vector3(...pos), anchor, on: true, w: 0, h: 0, pri: cls === 'axis' ? 0 : cls === 'zone' ? 1 : cls === 'mission' ? 2 : 3 }; labels.push(l); return l; };
+  for (let i = 0; i <= 10; i += 2) label(i * 10 + '%', [sx(i / 10), 0, 0.42]);
+  label('Oxygen', [sx(0.5), 0, 0.42], 'axis');
+  for (let a = 1; a <= P_MAX; a++) label(a + ' atm', [W + 0.3, 0, sz(a)], '', 'l');
+  label('Pressure', [W + 0.3, 0, sz(P_MAX) - 0.7], 'axis');
+  for (let k = 2; k * bStep <= B_MAX + 1e-9; k += 2) label(num(k * bStep, 1), [-0.3, sy(k * bStep), -D], '', 'r');
+  label(`Burn rate${UNIT ? ', ' + UNIT : ''}`, [0, H + 0.4, -D], 'axis');
+  if (SHELF.length) label(`No pressure on record · ${int(SHELF.length)} tests`, [W / 2, 0, shelfEnd + 0.45], 'zone');
+
+  // --- mission atmosphere markers ---
+  const missionGroup = new THREE.Group(); scene.add(missionGroup); const missionLabels = [];
+  MISSIONS.filter((m) => m.p <= P_MAX).forEach((m, k) => { const top = H * (0.5 + 0.13 * k);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.26, 40), new THREE.MeshBasicMaterial({ color: '#f2f5fa', side: THREE.DoubleSide, transparent: true, opacity: 0.9, fog: false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(sx(m.o2), 0.02, sz(m.p)); missionGroup.add(ring);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([sx(m.o2), 0, sz(m.p), sx(m.o2), top, sz(m.p)], 3));
+    missionGroup.add(new THREE.Line(g, lineMat('#f2f5fa', 0.35)));
+    missionLabels.push(label(m.name, [sx(m.o2), top + 0.18, sz(m.p)], 'mission'));
+  });
+
+  // --- points: one instanced mesh per result shape, a wireframe copy for unverified uploads ---
+  const geo = { out: new THREE.SphereGeometry(0.075, 16, 12), burn: new THREE.BoxGeometry(0.125, 0.125, 0.125), disrupt: new THREE.OctahedronGeometry(0.105), unknown: new THREE.SphereGeometry(0.05, 10, 8) };
+  const groups = [];
+  CLS.forEach((c) => [true, false].forEach((v) => {
+    const idx = P.filter((p) => p.cls === c && p.verified === v).map((p) => p.i); if (!idx.length) return;
+    const mat = v ? new THREE.MeshLambertMaterial() : new THREE.MeshBasicMaterial({ wireframe: true });
+    const mesh = new THREE.InstancedMesh(geo[c], mat, idx.length); mesh.frustumCulled = false; scene.add(mesh);
+    groups.push({ mesh, idx, base: new THREE.Color(CLS_COLOR[c]) });
+  }));
+  const m4 = new THREE.Matrix4(), q0 = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), tmpC = new THREE.Color();
+  const shown = new Uint8Array(P.length);
+  function paint() {
+    groups.forEach(({ mesh, idx, base }) => {
+      idx.forEach((pi, j) => {
+        const p = P[pi], vis = passesAll(p), lit = !st.hi || st.hi.has(pi), sel = pi === st.sel;
+        shown[pi] = vis ? 1 : 0;
+        const s = !vis ? 0 : sel ? 1.9 : lit ? (st.hi ? 1.25 : 1) : 0.7;
+        m4.compose(v3.set(...p.pos), q0, s3.set(s, s, s)); mesh.setMatrixAt(j, m4);
+        tmpC.copy(base); if (!lit && !sel) tmpC.lerp(BG, 0.72); mesh.setColorAt(j, tmpC);
+      });
+      mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
+  }
+
+  // --- selection + hover markers ---
+  function ringTex() { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.strokeStyle = '#fff'; x.lineWidth = 9; x.beginPath(); x.arc(64, 64, 52, 0, Math.PI * 2); x.stroke(); return new THREE.CanvasTexture(c); }
+  const tex = ringTex();
+  const mkRing = (o, s) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: o, depthTest: false, fog: false })); sp.scale.set(s, s, 1); sp.visible = false; sp.renderOrder = 5; scene.add(sp); return sp; };
+  const selRing = mkRing(1, 0.5), hovRing = mkRing(0.6, 0.36);
+  const dropGeo = new THREE.BufferGeometry(); dropGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+  const drop = new THREE.Line(dropGeo, lineMat('#f2f5fa', 0.7)); drop.visible = false; drop.frustumCulled = false; scene.add(drop);
+  function showSelect() {
+    const p = st.sel >= 0 ? P[st.sel] : null; selRing.visible = !!p; drop.visible = !!p && p.zone === 'cloud';
+    if (!p) return; selRing.position.set(...p.pos);
+    const a = dropGeo.attributes.position; a.setXYZ(0, p.pos[0], p.pos[1], p.pos[2]); a.setXYZ(1, p.pos[0], 0, p.pos[2]); a.needsUpdate = true;
+  }
+
+  // --- camera: a small orbit control (drag to turn, wheel or pinch to zoom, shift-drag or two fingers to pan) ---
+  const cam = { target: new THREE.Vector3(...OVERVIEW.target), theta: OVERVIEW.theta, phi: OVERVIEW.phi, radius: OVERVIEW.radius };
+  const rScale = () => { const a = camera.aspect; return a < 1.25 ? Math.min(2.4, Math.pow(1.25 / a, 0.85)) : 1; };
+  function applyCam() {
+    cam.phi = Math.min(1.54, Math.max(0.12, cam.phi)); cam.radius = Math.min(70, Math.max(2.5, cam.radius));
+    const sp = Math.sin(cam.phi);
+    camera.position.set(cam.target.x + cam.radius * sp * Math.sin(cam.theta), cam.target.y + cam.radius * Math.cos(cam.phi), cam.target.z + cam.radius * sp * Math.cos(cam.theta));
+    camera.lookAt(cam.target);
+  }
+  const OVERVIEW_TALL = { target: [W * 0.2, 1.2, -1.6], theta: -0.9, phi: 1.06, radius: 15 };
+  const fit = (v) => (v === OVERVIEW && camera.aspect < 1 ? OVERVIEW_TALL : v);
+  let flight = null;
+  function fly(v) {
+    v = fit(v);
+    const to = { target: new THREE.Vector3(...(v.target || cam.target.toArray())), theta: v.theta ?? cam.theta, phi: v.phi ?? cam.phi, radius: (v.radius ?? cam.radius / rScale()) * rScale() };
+    if (reduced) { cam.target.copy(to.target); cam.theta = to.theta; cam.phi = to.phi; cam.radius = to.radius; flight = null; return; }
+    let dth = (to.theta - cam.theta) % (Math.PI * 2); if (dth > Math.PI) dth -= Math.PI * 2; if (dth < -Math.PI) dth += Math.PI * 2;
+    flight = { t0: performance.now(), from: { target: cam.target.clone(), theta: cam.theta, phi: cam.phi, radius: cam.radius }, to, dth };
+  }
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const stopAuto = () => { if (st.auto) { st.auto = false; $('rotateBtn').setAttribute('aria-pressed', 'false'); } flight = null; };
+
+  const ptrs = new Map(); let down = null, pinch = null;
+  const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  function pan(dx, dy) {
+    const k = cam.radius * 0.0016; camera.updateMatrixWorld();
+    const right = v3.setFromMatrixColumn(camera.matrixWorld, 0).clone(), up = v3.setFromMatrixColumn(camera.matrixWorld, 1).clone();
+    cam.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 1) down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false, pan: e.shiftKey || e.button === 2 };
+    else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2 }; if (down) down.moved = true; }
+    hideTip();
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) { if (e.pointerType === 'mouse') hover(e); return; }
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 1 && down) {
+      const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
+      if (!down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) return;
+      if (!down.moved) { down.moved = true; stopAuto(); canvas.classList.add('drag'); }
+      if (down.pan) pan(dx, dy); else { cam.theta -= dx * 0.006; cam.phi -= dy * 0.005; }
+    } else if (ptrs.size === 2 && pinch) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+      stopAuto(); cam.radius *= pinch.d / Math.max(d, 1); pan(cx - pinch.cx, cy - pinch.cy); pinch = { d, cx, cy };
+    }
+  });
+  const up = (e) => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); canvas.classList.remove('drag');
+    if (ptrs.size < 2) pinch = null;
+    if (ptrs.size === 0 && down) { if (!down.moved && e.type === 'pointerup' && performance.now() - down.t < 600) { const hit = pick(...local(e), e.pointerType === 'mouse' ? 13 : 24); select(hit); if (hit >= 0) stopAuto(); } down = null; }
+  };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('pointerleave', () => { hideTip(); });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); stopAuto(); cam.radius *= Math.exp(Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 120) * 0.0014); }, { passive: false });
+  canvas.addEventListener('keydown', (e) => {
+    const k = e.key; let used = true;
+    if (k === 'ArrowLeft') cam.theta -= 0.12; else if (k === 'ArrowRight') cam.theta += 0.12; else if (k === 'ArrowUp') cam.phi -= 0.08; else if (k === 'ArrowDown') cam.phi += 0.08;
+    else if (k === '+' || k === '=') cam.radius *= 0.88; else if (k === '-' || k === '_') cam.radius *= 1.14; else if (k === 'Escape') select(-1); else if (k === 'Home') fly(OVERVIEW); else used = false;
+    if (used) { e.preventDefault(); if (k !== 'Escape' && k !== 'Home') stopAuto(); }
+  });
+
+  // --- picking: nearest point on screen, so the hit area is bigger than the mark ---
+  let cw = 1, ch = 1;
+  function pick(x, y, r) {
+    let best = -1, bd = r * r, bz = 2;
+    for (const p of P) {
+      if (!shown[p.i]) continue; v3.set(...p.pos).project(camera); if (v3.z > 1 || v3.z < -1) continue;
+      const dx = (v3.x + 1) / 2 * cw - x, dy = (1 - v3.y) / 2 * ch - y, d = dx * dx + dy * dy;
+      if (d < bd - 16 || (d < bd + 16 && d <= r * r && v3.z < bz)) { best = p.i; bd = d; bz = v3.z; }
+    }
+    return best;
+  }
+  let hov = -1;
+  function hideTip() { tip.hidden = true; hov = -1; hovRing.visible = false; canvas.classList.remove('point'); }
+  function hover(e) {
+    const [x, y] = local(e), i = pick(x, y, 13);
+    if (i < 0) { if (hov >= 0) hideTip(); return; }
+    const p = P[i]; hov = i; hovRing.visible = true; hovRing.position.set(...p.pos); canvas.classList.add('point');
+    tip.innerHTML = `<b>${esc(p.fuel || 'Fuel not recorded')}</b>${pct(p.o2)} oxygen${p.p == null ? '' : ' · ' + num(p.p) + ' atm'}${p.burn == null ? '' : ' · ' + burnText(p)}<br>${CLS_LABEL[p.cls]} · ${esc(p.inv)}${p.verified || source === 'mock' ? '' : ' · unverified'}`;
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.transform = `translate(${Math.round(Math.min(Math.max(8, x + 14), cw - tw - 8))}px, ${Math.round(y + 18 + th > ch ? y - th - 12 : y + 18)}px)`;
+  }
+
+  // --- frame loop ---
+  function resize() { cw = stage.clientWidth || 1; ch = stage.clientHeight || 1; labels.forEach((l) => { l.w = 0; }); renderer.setSize(cw, ch, false); camera.aspect = cw / ch; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(stage); resize();
+  { const v = fit(OVERVIEW); cam.target.set(...v.target); cam.theta = v.theta; cam.phi = v.phi; cam.radius = v.radius * rScale(); }
+  let last = performance.now(); const placed = [];
+  labels.sort((a, b) => a.pri - b.pri);
+  function frame(now) { requestAnimationFrame(frame); if (document.hidden) { last = now; return; } draw(now); }
+  function draw(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (flight) {
+      const t = Math.min(1, (now - flight.t0) / 1200), k = ease(t), f = flight.from, to = flight.to;
+      cam.target.lerpVectors(f.target, to.target, k); cam.theta = f.theta + flight.dth * k; cam.phi = f.phi + (to.phi - f.phi) * k; cam.radius = f.radius + (to.radius - f.radius) * k;
+      if (t >= 1) flight = null;
+    } else if (st.auto && !down) cam.theta += dt * 0.07;
+    applyCam(); camera.updateMatrixWorld();
+    scene.fog.near = cam.radius * 0.95; scene.fog.far = cam.radius * 2.6;
+    renderer.render(scene, camera);
+    placed.length = 0;
+    for (const l of labels) {
+      v3.copy(l.pos).project(camera); let ok = l.on && v3.z < 1 && v3.z > -1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05;
+      if (ok) {
+        if (!l.w) { l.w = l.el.offsetWidth; l.h = l.el.offsetHeight; }
+        const x = (v3.x + 1) / 2 * cw, y = (1 - v3.y) / 2 * ch;
+        const left = Math.round(Math.min(Math.max(4, l.anchor === 'l' ? x : l.anchor === 'r' ? x - l.w : x - l.w / 2), Math.max(4, cw - l.w - 4))), top = Math.round(y - l.h / 2);
+        ok = !placed.some((r) => left < r[0] + r[2] + 4 && left + l.w + 4 > r[0] && top < r[1] + r[3] + 2 && top + l.h + 2 > r[1]);
+        if (ok) { placed.push([left, top, l.w, l.h]); l.el.style.transform = `translate(${left}px, ${top}px)`; }
+      }
+      l.el.style.visibility = ok ? 'visible' : 'hidden';
+    }
+  }
+  view = { paint, fly, select: showSelect, auto() { flight = null; },
+    missions() { missionGroup.visible = st.missions; missionLabels.forEach((l) => { l.on = st.missions; }); } };
+  paint(); draw(performance.now()); requestAnimationFrame(frame);
+  if (params.has('finding')) { const i = Number(params.get('finding')) - 1; if (FINDINGS[i]) setFinding(i); }
+}
+</script>
+</body>
+</html>
