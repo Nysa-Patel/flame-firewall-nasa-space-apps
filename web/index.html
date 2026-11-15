@@ -917,7 +917,7 @@
         <div><h3>${esc(row.material)}</h3>
           <p class="rec">${esc(recommend(a.level, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
           <p class="cite">${cite}</p>
-          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${ev}</div>
+          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${n ? `<p class="cite"><a href="flammability.html?material=${encodeURIComponent(n.fuel_material || row.material)}&o2=${num(s.o2 * 100, 1)}&p=${row.nominal.pt.atm}" target="_blank" rel="noopener">See this fuel's flammability map in 3D</a></p>` : ''}${ev}</div>
         <div class="conf">${a.level < 3 ? `Confidence ${a.confidence} of 99${meter(a.confidence)}` : 'No confidence score without data.'}</div></article>`;
     }).join('');
     $('rangeIntro').textContent = `Oxygen held at ${num(s.o2 * 100, 1)}% while pressure steps from the nominal ${s.pNom} psia down to the ${s.pMin} psia depress floor. Each cell is the verdict from the nearest tested bucket at that point, with its confidence.`;
