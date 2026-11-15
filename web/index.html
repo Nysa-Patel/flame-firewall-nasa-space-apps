@@ -661,6 +661,16 @@
   :root { --r-out: #3987e5; --r-disrupt: #199e70; --r-burn: #d95926; --r-unknown: #8a97ad; }
   #map-h { --i: var(--i-flask); } #inv-h { --i: var(--i-stack-2); }
   #results:not(.hidden) + .block { margin-top: 56px; }
+  /* the ranking is one zone and everything after it (mission environment, investigations, contribute) is another */
+  #results:not(.hidden) { position: relative; padding: 44px 28px 28px; border-radius: 40px; background: color-mix(in srgb, var(--sky) 5%, var(--char)); box-shadow: inset 0 3px 0 var(--sky), 0 0 0 1px var(--line-dark); }
+  #results:not(.hidden)::before { content: 'Your ranking'; position: absolute; top: 0; left: 32px; translate: 0 -50%; padding: 5px 16px; border-radius: 999px; background: var(--sky); color: var(--char); font-weight: 700; font-size: 13px; }
+  .zone-break { position: relative; margin: 76px 0 30px; text-align: center; }
+  .zone-break::before { content: ''; position: absolute; left: 0; right: 0; top: 18px; border-top: 1px dashed var(--line-dark); }
+  .zone-break span { position: relative; display: inline-block; padding: 8px 20px; border-radius: 999px; border: 1px solid var(--line-dark); background: var(--char); font-weight: 700; font-size: 14px; letter-spacing: .02em; }
+  .zone-break p { margin: 14px auto 0; max-width: 56ch; color: var(--on-dark-2); font-size: 15px; }
+  #results.hidden + .zone-break { display: none; }
+  .lower { padding: 44px 24px 28px; border-radius: 40px; background: color-mix(in srgb, #000 42%, var(--char)); box-shadow: 0 0 0 1px var(--line-dark); }
+  @media (max-width: 760px) { #results:not(.hidden) { padding: 38px 12px 18px; border-radius: 28px; } .lower { padding: 34px 10px 18px; border-radius: 28px; } .zone-break { margin: 56px 0 24px; } }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .obar { display: flex; gap: 2px; height: 10px; min-width: 40px; border-radius: 4px; overflow: hidden; }
   .obar i { min-width: 3px; background: var(--r-unknown); }
@@ -728,7 +738,7 @@
 <div class="shell">
   <header class="topbar">
     <div class="brand">Project Phenox</div>
-    <nav aria-label="Sections"><a href="methods.html">How it works</a><a href="viz.html">Visualize the data</a><a href="research.html">Research</a><a href="#import-h">Contribute data</a></nav>
+    <nav aria-label="Sections"><a href="methods.html">How it works</a><a href="viz.html">Visualize the data</a><a href="research.html">Research</a><a href="#env-h">Mission environment</a><a href="#import-h">Contribute data</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
@@ -933,6 +943,8 @@
       </div>
       </div>
     </div>
+    <div class="zone-break" role="separator" aria-label="End of the ranking"><span>Beyond the ranking</span><p>Where this atmosphere would be used, the NASA studies behind it, and how to add data.</p></div>
+    <div class="lower">
     <div class="block env-block feature f-env" data-feature="Mission environment">
       <h2 id="env-h">Mission environment</h2>
       <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and Phenox steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
@@ -998,6 +1010,7 @@
       </div>
       <div id="importResult" class="reply hidden"></div>
     </section>
+    </div>
 
     <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
