@@ -1262,100 +1262,66 @@
     new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(canvas);
   }).catch(() => {});
 
-  // ---- hero background: the same controlled fireball, drawn as gold dust so the navy type stays readable ----
-  (function waveGL() {
-    const hero = document.querySelector('.hero'); if (!hero) return;
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
-    if (!gl) return;
-    const VS = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }';
-    const FS = [
-      'precision mediump float;',
-      'uniform vec2 u_res; uniform float u_time; uniform vec3 u_m;',   // u_m = pointer x, pointer y (0..1, y up), strength
-      'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
-      // small hard dots, drifting slowly, so the field reads as embers rather than a ribbon
-      'float motes(vec2 frag, float t){',
-      '  float cell = 13.;',
-      '  vec2 p = frag + vec2(t * 12., sin(t * .22) * 5.);',
-      '  vec2 id = floor(p / cell);',
-      '  vec2 f = fract(p / cell) - .5;',
-      '  float h = hash(id);',
-      '  vec2 o = (vec2(hash(id + 1.7), hash(id + 8.2)) - .5) * .5;',
-      '  float edge = smoothstep(.5, .2, max(abs(f.x), abs(f.y)));',
-      '  float tw = .78 + .22 * sin(t * 1.1 + h * 6.28318);',
-      '  return smoothstep(.04 + h * .01, 0., length(f - o)) * edge * tw;',
-      '}',
-      'void main(){',
-      '  vec2 uv = gl_FragCoord.xy / u_res;',
-      '  float aspect = u_res.x / max(u_res.y, 1.);',
-      '  float t = u_time;',
-      '  vec2 frag = gl_FragCoord.xy;',
-      '  vec2 mouse = vec2(u_m.x, u_m.y) * u_res;',
-      '  vec2 delta = mouse - frag;',
-      '  vec2 pull = delta * exp(-dot(delta, delta) / 32000.) * .4 * u_m.z;',
-      '  vec2 suv = vec2(uv.x * aspect, uv.y);',
-      '  vec2 sc = vec2(.52 * aspect, .68);',
-      '  sc += (vec2(u_m.x * aspect, u_m.y) - sc) * .045 * u_m.z;',
-      '  float sd = length(suv - sc);',
-      '  float R = .40;',
-      '  float shellD = (sd - R) / .03;',
-      '  float shell = exp(-(shellD * shellD));',
-      '  float inner = smoothstep(R, R * .2, sd) * .28;',
-      '  float dy = (suv.y - sc.y) / .05;',
-      '  float band = exp(-(dy * dy)) * smoothstep(R + .02, 0., sd);',
-      '  float mask = clamp(shell * 1.25 + inner + band * .9, 0., 1.);',
-      '  float stipple = motes(frag + pull, t) + .7 * motes(frag * .62 + 48. + pull, t * .55 + 1.7);',
-      '  float fade = smoothstep(0., .14, uv.y);',
-      '  float aDot = min(stipple * (.14 + mask) * fade, .62);',
-      '  float hot = hash(floor((frag + pull) / 13.));',
-      '  vec3 gold = mix(vec3(.55, .22, .06), vec3(.90, .62, .16), hot);',
-      '  float glowD = sd / R;',
-      '  float glow = exp(-(glowD * glowD)) * .07 * fade;',
-      '  vec3 prem = gold * aDot + vec3(.45, .22, .08) * glow;',
-      '  gl_FragColor = vec4(prem, clamp(aDot + glow, 0., .65));',
-      '}'].join('\n');
-    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
-    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS); if (!vs || !fs) return;
-    const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-    gl.useProgram(prog);
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    const uRes = gl.getUniformLocation(prog, 'u_res'), uTime = gl.getUniformLocation(prog, 'u_time'), uM = gl.getUniformLocation(prog, 'u_m');
-    canvas.className = 'wave-gl'; canvas.setAttribute('aria-hidden', 'true');
-    document.body.insertBefore(canvas, document.body.firstChild);
+  // ---- Hero background: a ribbon of fire-dust. One flowing, twisting sheet made of fine stippled dots runs across the hero through the
+  // chamber: dense where the sheet faces you, thin at the twists, with loose dust around it. It swells, twists faster and thickens with
+  // oxygen, takes the flame's colour near the chamber (blue in cabin air, orange in rich oxygen) and gold further out, flickers with the
+  // flame, and bends toward the pointer. ----
+  libs.then(async ([THREE]) => {
+    const hero = document.querySelector('.hero'), orb = document.querySelector('.orb'), canvas = document.createElement('canvas');
+    const T = THREE.TSL, r = await gpu(THREE, canvas, true), scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const res = T.uniform(new THREE.Vector2(1, 1)), src = T.uniform(new THREE.Vector2()), ptr = T.uniform(new THREE.Vector3()), heat = T.uniform(0);
+    const t = T.time, n01 = (v) => v.mul(.5).add(.5), px = T.uv().mul(res);
+    const d = ptr.xy.sub(px), q = px.add(d.mul(T.exp(d.dot(d).div(-32000))).mul(ptr.z.mul(.4)));   // pointer pull
+    const dx = q.x.sub(src.x), near = T.exp(dx.div(res.x.mul(.22)).pow(2).negate());
+    const flick = n01(T.mx_noise_float(T.vec3(t.mul(1.7), 0, 0))).mul(.4).add(.8);
+    const k = T.float(6.283).div(res.x.mul(.9)), sp = heat.mul(.5).add(.25), scale = T.clamp(res.x.div(1200), .45, 1);
+    // the sheet: a slow double sine for its spine, a twist that pinches it, and a swell at the chamber that grows with oxygen
+    const w1 = T.sin(q.x.mul(k).sub(t.mul(sp))).mul(res.y.mul(.12));
+    const w2 = T.sin(q.x.mul(k.mul(.53)).add(t.mul(sp.mul(.7))).add(1.3)).mul(res.y.mul(.08));
+    const swell = near.mul(T.sin(t.mul(heat.add(.6)))).mul(res.y.mul(heat.mul(.06).add(.02)));
+    const spine = src.y.add(w1.add(w2).add(swell).mul(scale));
+    const twist = T.cos(q.x.mul(k.mul(.8)).sub(t.mul(sp.mul(.9))).add(.5));
+    const half = res.y.mul(.16).mul(twist.abs().mul(.75).add(.25)).mul(near.mul(heat.mul(.6).add(.25)).add(1)).mul(scale);
+    // shade it like a sheet: bright where it faces you, a rim where it curls at the edges, fading where the twist turns it edge-on
+    const v = q.y.sub(spine).div(half), av = v.abs(), face = twist.abs().mul(.7).add(.3);
+    const sheet = T.smoothstep(1, .55, av).mul(T.mix(.45, 1, n01(v.mul(twist.sign()).negate())));
+    const rim = T.exp(av.sub(.88).div(.07).pow(2).negate()).mul(.8);
+    const lit = T.clamp(sheet.add(rim).mul(face), 0, 1);
+    // fine grain that drifts along the ribbon; a light dust of the same grain around the chamber
+    const cell = T.floor(T.vec2(q.x.sub(t.mul(sp.mul(90))), q.y)), grain = T.hash(cell.x.add(cell.y.mul(1013)));
+    const density = lit.mul(heat.mul(.25).add(.6)).mul(flick).add(near.mul(.012).add(.003));
+    const dot = T.step(grain, density);
+    const flame = T.mix(T.color(css('--blaze-cold')), T.color(css('--blaze-warm')), heat), gold = T.color(css('--caution'));
+    const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+    mat.colorNode = T.mix(T.mix(gold, flame, near), T.color(css('--blaze-hot')), rim.mul(near).mul(heat).mul(.6));
+    mat.opacityNode = T.min(dot.mul(lit.mul(.3).add(.25)).mul(T.smoothstep(.06, .3, T.uv().y)), .55);   // fades out over the facts strip
+    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
 
-    let visible = true, raf = 0, mx = .5, my = .5, ms = 0, tx = .5, ty = .5, ts = 0;
-    function size() {
-      const h = Math.round(hero.getBoundingClientRect().bottom + window.scrollY + 40);
-      if (canvas.style.height !== h + 'px') canvas.style.height = h + 'px';
-      const r = canvas.getBoundingClientRect(), dpr = Math.min(1.5, window.devicePixelRatio || 1);
-      const w = Math.max(2, Math.round(r.width * dpr)), hh = Math.max(2, Math.round(r.height * dpr));
-      if (canvas.width !== w || canvas.height !== hh) { canvas.width = w; canvas.height = hh; gl.viewport(0, 0, w, hh); }
+    let on = false, tx = 0, ty = 0, ts = 0, ps = 0, last = 0;
+    const target = () => Math.max(0, Math.min(1, ((Number($('o2').value) || 0) - 15) / 85));
+    function fit() {
+      const hh = Math.round(hero.getBoundingClientRect().bottom + scrollY + 40);
+      if (canvas.style.height !== hh + 'px') canvas.style.height = hh + 'px';
+      const c = canvas.getBoundingClientRect(), o = orb.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
+      r.setPixelRatio(dpr); r.setSize(c.width, c.height, false); res.value.set(c.width * dpr, c.height * dpr);
+      src.value.set((o.left + o.width / 2 - c.left) * dpr, (c.bottom - o.top - o.height / 2) * dpr);
     }
-    function draw(now) {
-      size();
-      mx += (tx - mx) * .08; my += (ty - my) * .08; ms += (ts - ms) * .06;
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, reduce() ? 12.3 : now / 1000);
-      gl.uniform3f(uM, mx, my, reduce() ? 0 : ms);
-      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    }
-    function loop(now) { raf = 0; draw(now); if (visible && !reduce()) raf = requestAnimationFrame(loop); }
-    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
-    window.addEventListener('pointermove', (e) => {
-      const r = canvas.getBoundingClientRect();
-      const inside = e.clientY >= r.top && e.clientY <= r.bottom;
-      ts = inside ? 1 : 0;
-      if (inside) { tx = (e.clientX - r.left) / r.width; ty = 1 - (e.clientY - r.top) / r.height; }
+    const draw = (dt) => {
+      heat.value += (target() - heat.value) * (reduce() ? 1 : 1 - Math.exp(-dt * 3));
+      ps += (ts - ps) * .06; ptr.value.set(tx * r.getPixelRatio(), ty * r.getPixelRatio(), reduce() ? 0 : ps);
+      r.render(scene, cam);
+    };
+    const run = (v) => { on = v && !reduce(); r.setAnimationLoop(on ? (now) => { draw(Math.min(.1, (now - last) / 1000 || 0)); last = now; } : null); if (!on) draw(0); };
+    addEventListener('pointermove', (ev) => {
+      const c = canvas.getBoundingClientRect(); ts = ev.clientY >= c.top && ev.clientY <= c.bottom ? 1 : 0;
+      tx = ev.clientX - c.left; ty = c.bottom - ev.clientY;
     }, { passive: true });
     document.addEventListener('pointerleave', () => { ts = 0; });
-    new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) kick(); }).observe(canvas);
-    new ResizeObserver(kick).observe(hero);
-    kick();
-  })();
+    canvas.className = 'wave-gl'; canvas.setAttribute('aria-hidden', 'true'); document.body.prepend(canvas);
+    new ResizeObserver(() => { fit(); on || draw(0); }).observe(hero);
+    new IntersectionObserver(([en]) => run(en.isIntersecting)).observe(canvas);
+    new MutationObserver(() => on || draw(0)).observe($('o2conv'), { childList: true, characterData: true, subtree: true });
+  }).catch(() => {});
 
   // ---- Particle fire, after motion.dev's three/TSL particle example. One overlay serves first load and every ranking:
   // the dots burn as a flame globe that heats blue → white-hot with progress, then spring out into a grid coloured from the
