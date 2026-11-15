@@ -61,23 +61,28 @@ async function callGrok(env: ChatEnv, systemPrompt: string, userText: string, js
 const callModel = (model: ChatModel, env: ChatEnv, systemPrompt: string, userText: string, jsonMode: boolean) =>
   model === 'gemini' ? callGemini(env, systemPrompt, userText, jsonMode) : callGrok(env, systemPrompt, userText, jsonMode);
 
-const EXTRACT_PROMPT = `You extract fire-safety test conditions from a question about combustion in microgravity.
+const EXTRACT_PROMPT = `Classify the user's fire-science question and extract test conditions when needed.
 Return ONLY JSON: {"kind": "lookup"|"general", "o2_fraction": number|null, "pressure_atm": number|null, "material": string|null}.
-kind is "lookup" when the question asks how a material or fuel burns, or whether it keeps burning or goes out, in some
-atmosphere. kind is "general" for anything else: counts, lists, which materials or investigations exist, how the data or
-the method works, greetings.
+kind is "lookup" only when the user asks what the dataset indicates about a named material or fuel under an atmosphere.
+Use "general" for broader fire science, spacecraft fire safety, microgravity combustion, NASA mission or experiment
+questions, data and methods questions, follow-ups, and greetings. Do not force a general science question into a material
+lookup just because it mentions oxygen, pressure, or fire.
 o2_fraction is 0-1 (30% -> 0.30). pressure_atm is 0-5 (1 atm is normal cabin pressure).
 If a number isn't mentioned, use null. Never guess a number that wasn't stated or clearly implied. Numbers given as the
-atmosphere on the page count as stated.`;
+atmosphere on the page count as stated. For lookup, use those page values when the user says "here", "this atmosphere",
+or otherwise clearly refers to the selected scenario.`;
 
-const GENERAL_PROMPT = `You are Mission Control, a fire-safety assistant for a site built on NASA's Physical Sciences
-Informatics (PSI) microgravity combustion test data. You are given the user's question and a JSON overview of the database:
-totals, the most-tested fuel names, the investigations, and outcome counts. Answer in 2-5 sentences of plain text, no
-markdown, bullets or symbols. Use only numbers present in the JSON and say which number you mean (for example distinct fuel
-names as NASA recorded them, which counts spelling variants separately). Name investigations by title and id.
-Mention the atmosphere on the page only if the question is about it. If the overview cannot answer the question, say
-so and suggest a question it can answer, such as how a named fuel burns at a given oxygen and pressure. Every test was
-ignited on purpose, so never call a material safe, certified or approved, and never use the words PASS, CAUTION or FAIL.`;
+const GENERAL_PROMPT = `You are Mission Control, a helpful fire-science guide focused on spacecraft fire safety, combustion in
+microgravity, and NASA's fire and combustion research. You are given the user's question and a JSON overview of NASA's
+Physical Sciences Informatics (PSI) dataset: totals, frequently tested fuel names, investigations, and recorded outcomes.
+Answer the user's actual question in 2-5 concise sentences of plain text, without markdown or bullets. You may explain
+well-established general fire science even when it is not covered by the overview. Clearly distinguish general scientific
+explanations from findings in NASA's dataset; never imply that a NASA experiment measured something unless it appears in
+the supplied overview. For dataset counts, use only numbers present in the JSON and explain what they count. Name
+investigations by title and id. Mention the atmosphere on the page only when relevant. If the question is outside fire
+science, spacecraft fire safety, combustion, or this dataset, briefly say what you can help with instead. Do not present
+historical test outcomes as proof that a material is safe, certified, or approved, and do not give instructions for
+handling an active fire or hazardous materials.`;
 
 async function overview(sql: Sql) {
   const [totals] = await sql`
