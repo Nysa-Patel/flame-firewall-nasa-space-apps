@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Phenox · the data in 3D</title>
+<title>Phenox · the data</title>
 <meta name="description" content="Every NASA microgravity combustion test in Phenox that recorded an oxygen level, as a 3D model you can turn and click.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,6 +31,7 @@
 
   .bar { grid-area: bar; display: flex; align-items: center; gap: 8px; margin: 0 16px; padding: 12px 16px 12px 22px; background: var(--paper); border-radius: 0 0 20px 20px; flex-wrap: wrap; }
   .brand { font-weight: 700; font-size: 20px; letter-spacing: -.02em; text-decoration: none; margin-right: 12px; }
+  #source { margin-left: auto; }
   .chip { padding: 6px 12px; border-radius: 999px; background: var(--grey); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
   .chip.mock { background: var(--accent); color: #fff; font-weight: 700; }
   .btn { min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 0; background: var(--grey); cursor: pointer; font-weight: 600; font-size: 14px; transition: scale .35s var(--spring), background-color .2s; }
@@ -61,7 +62,6 @@
   #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
   #scene.drag { cursor: grabbing; }
   #scene.point { cursor: pointer; }
-  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .lab { position: absolute; left: 0; top: 0; font-size: 12px; color: var(--on-dark-2); white-space: nowrap; will-change: transform; }
   .lab.axis { color: var(--on-dark); font-weight: 600; }
   .lab.zone { font-size: 13px; color: var(--on-dark); background: var(--card); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-dark); }
@@ -119,7 +119,6 @@
   .seg .btn { min-height: 40px; padding: 6px 22px; font-size: 15px; font-weight: 700; background: transparent; box-shadow: none; }
   .seg .btn:hover { background: var(--grey); }
   .seg .btn[aria-pressed=true] { background: var(--ink); color: #fff; }
-  body[data-view=charts] :is(#filterBtn, #rotateBtn, #resetBtn) { display: none; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   .charts { grid-area: stage; min-height: 0; overflow-y: auto; padding: 16px 16px 28px 0; }
@@ -163,7 +162,6 @@
   .cc .shape { stroke: #fff; stroke-width: 1.5; }
   .cc [data-tip] { cursor: default; }
   .cc .bar:hover, .cc g[data-tip]:hover .shape { opacity: .8; stroke: var(--ink); stroke-width: 1.5; }
-  .ctip { position: fixed; left: 0; top: 0; z-index: 30; max-width: 280px; padding: 8px 12px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; white-space: pre-line; pointer-events: none; box-shadow: 0 10px 30px rgba(11, 27, 51, .3); }
   @media (prefers-reduced-motion: no-preference) {
     .cc.anim .bar.v { transform-box: fill-box; transform-origin: 50% 100%; animation: growV .8s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: calc(var(--i, 0) * 24ms); }
     .cc.anim .bar.h { transform-box: fill-box; transform-origin: 0 50%; animation: growH .8s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
@@ -276,8 +274,6 @@
   .plot2d { position: absolute; inset: 0; display: none; }
   body[data-view="2d"] .plot2d { display: block; }
   body[data-view="2d"] #scene { visibility: hidden; pointer-events: none; }
-  body[data-view="2d"] #labels { display: none; }
-  body[data-view="2d"] :is(#rotateBtn, #resetBtn) { display: none; }
   body[data-view="2d"] .count { top: auto; bottom: 14px; right: 18px; }
   body[data-view="2d"] .ov { left: auto; right: 16px; top: 54px; width: min(320px, calc(100% - 32px)); }
   #p2svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -293,15 +289,12 @@
   @media (max-width: 760px) { body[data-view="2d"] .ov { left: 8px; right: auto; top: 50px; } .p2sum { display: none; } }
 </style>
 </head>
-<body>
+<body data-view="2d">
 <header class="bar">
   <a class="brand" href="index.html">Project Phenox</a>
-  <div class="seg" role="group" aria-label="View"><button class="btn" id="v2d" type="button" aria-pressed="true">2D plot</button><button class="btn" id="v3d" type="button" aria-pressed="false">3D model</button><button class="btn" id="vCharts" type="button" aria-pressed="false">Charts</button></div>
   <span class="chip" id="source" role="status">Loading data…</span>
   <button class="btn" id="filterBtn" type="button" aria-expanded="false" aria-controls="filters">Filters</button>
   <button class="btn" id="tableBtn" type="button">Table<span class="full"> view</span></button>
-  <button class="btn" id="rotateBtn" type="button" aria-pressed="false"><span class="full">Auto-</span>rotate</button>
-  <button class="btn" id="resetBtn" type="button">Reset<span class="full"> view</span></button>
 </header>
 
 <section class="scn" id="scn" aria-label="Ask about an atmosphere">
@@ -312,7 +305,7 @@
 
 <aside class="rail" aria-label="Key findings">
   <h1>What the tests tell us</h1>
-  <p class="sub" id="sub">Every test that recorded an oxygen level, placed by oxygen, pressure and burn rate. Drag to turn, scroll to zoom, click a point to open its record.</p>
+  <p class="sub" id="sub">Every test that recorded an oxygen level, plotted by oxygen with trend lines. Hover a dot for its details and click it to open the record.</p>
   <div class="q"><p class="eyebrow">The question</p><p class="qt">At what oxygen level and pressure does a flame in microgravity go out, and how many real tests back that up?</p><button class="btn" id="investBtn" type="button">Investigate it yourself ↑</button></div>
   <h2 id="findings-h">Key findings</h2>
   <ol id="findings" aria-labelledby="findings-h"></ol>
@@ -324,9 +317,7 @@
 
 <main class="stage" id="stage">
   <div class="plot2d" id="plot2d"><div class="p2bar" id="p2bar"></div><svg id="p2svg" role="img" aria-labelledby="p2title"></svg><p class="sr-only" id="p2title"></p></div>
-  <canvas id="scene" tabindex="0" aria-label="3D model of the combustion tests. Arrow keys turn it, plus and minus zoom. Use Table view to reach every test from the keyboard."></canvas>
-  <div id="labels" aria-hidden="true"></div>
-  <p class="count" id="count" role="status"></p>
+    <p class="count" id="count" role="status"></p>
   <div class="legend" aria-label="Legend">
     <span><i class="sw out"></i>Went out on its own</span>
     <span><i class="sw burn"></i>Kept burning</span>
@@ -353,8 +344,6 @@
   <section class="panel" id="detail" aria-label="Selected test" aria-live="polite" hidden></section>
 </main>
 
-<section class="charts" id="charts" hidden aria-label="Charts of the test data"><div id="chartsGrid" class="charts-grid"></div></section>
-<div class="ctip" id="ctip" hidden></div>
 
 <dialog id="tableDialog" aria-labelledby="table-h">
   <div class="dlg-head"><h2 id="table-h">Tests</h2><button class="btn" id="tableClose" type="button">Close</button></div>
@@ -574,14 +563,6 @@ else { srcChip.textContent = 'Mock data · not from NASA'; srcChip.classList.add
 $('legendUnv').hidden = UNVERIFIED === 0;
 if (source === 'mock') $('legendUnv').lastChild.textContent = 'Outline: mock data';
 
-const READ3D = [
-  `Left to right is oxygen. Front to back is pressure. Height is burn rate${UNIT ? ' in ' + UNIT : ''}.`,
-  `Floating points recorded all three (${int(F.length)} tests). Points on the floor recorded oxygen and pressure but no comparable burn rate (${int(WP.length - F.length)}).`,
-  `${int(SHELF.length)} of the tests that recorded oxygen have no pressure on record, so they cannot be placed here. Open Table view to see them.`,
-  'Points are nudged slightly so tests at the same condition do not hide each other.',
-  MAIN_HEADER ? `Burn rate is the column NASA labels “${esc(MAIN_HEADER)}”${UNIT === 'mm²/s' ? '; its values match a droplet burning-rate constant in mm²/s' : ''}.` : '',
-  'Rings mark planning atmospheres from the Phenox presets. They are not test results.',
-].filter(Boolean);
 const READ2D = [
   'Left to right is oxygen. Each dot is one test; the shape and colour show what happened.',
   `Burn rate: the height is how fast the flame consumed its fuel${UNIT ? ' in ' + UNIT : ''}. Only the ${int(F.length)} tests with a comparable burn rate are drawn.`,
@@ -589,13 +570,11 @@ const READ2D = [
   'Trend lines are fitted to the tests currently shown, so the filters change them. A line is a pattern in past tests, not a prediction.',
   'Dashed vertical lines mark planning atmospheres from the Phenox presets. They are not test results.',
 ];
-function setReadText(v) { $('read').innerHTML = (v === '2d' ? READ2D : READ3D).map((t) => `<li>${t}</li>`).join(''); }
-setReadText('2d');
+$('read').innerHTML = READ2D.map((t) => `<li>${t}</li>`).join('');
 
 const fl = $('findings');
 fl.innerHTML = FINDINGS.map((f, i) => `<li><button type="button" class="finding" aria-pressed="false" data-i="${i}"><span class="big">${esc(f.big)}</span><span class="t">${esc(f.title)}</span><span class="s">${esc(f.stat)}</span><span class="b">${esc(f.body)}</span></button></li>`).join('');
 function setFinding(i) {
-  if (document.body.dataset.view === 'charts') setView(lastStage);
   hideHl();
   st.finding = st.finding === i ? -1 : i;
   st.hi = st.finding >= 0 ? FINDINGS[st.finding].hi : null;
@@ -662,459 +641,13 @@ $('tableBtn').addEventListener('click', () => {
 $('tableClose').addEventListener('click', () => dlg.close());
 dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); const b = e.target.closest('button[data-i]'); if (b) { dlg.close(); select(Number(b.dataset.i), true); } });
 
-$('rotateBtn').setAttribute('aria-pressed', String(st.auto));
-$('rotateBtn').addEventListener('click', () => { st.auto = !st.auto; $('rotateBtn').setAttribute('aria-pressed', String(st.auto)); view.auto(); });
-$('resetBtn').addEventListener('click', () => { if (st.finding >= 0) setFinding(st.finding); else { st.hi = null; hideHl(); view.paint(); view.fly(OVERVIEW); } });
 
-// ---------- charts view ----------
-// Every chart is drawn from the same rows as the 3D model, and every title and number is computed here.
-// Marks carry data-tip text for the hover tooltip; Table view lists every test for keyboard readers.
-// Bars with data-hi send you to the 3D model with exactly those tests lit.
-const pcOf = (p) => Math.round(p.o2 * 1000) / 10;
-const svgWrap = (w, h, inner, label) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`;
-const tipA = (t) => ` data-tip="${esc(t)}"`;
-const HI = {}, HINT = '\nClick to see these in the 3D model';
-const hiA = (key, label, idx) => { HI[key] = idx; return ` data-hi="${esc(key)}" data-label="${esc(label)}"`; };
-function markSvg(cls, x, y, r) {
-  if (cls === 'burn') return `<rect class="shape f-burn" x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}"/>`;
-  if (cls === 'disrupt') { const d = r * 1.35; return `<polygon class="shape f-disrupt" points="${x},${y - d} ${x + d},${y} ${x},${y + d} ${x - d},${y}"/>`; }
-  return `<circle class="shape f-${cls}" cx="${x}" cy="${y}" r="${cls === 'unknown' ? r * 0.8 : r}"/>`;
-}
-const trendOfSet = (set) => {
-  if (set.length < 4) return null;
-  const xs = set.map(pcOf), ys = set.map((p) => p.burn), mx = mean(xs), my = mean(ys); let sxy = 0, sxx = 0;
-  xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; });
-  const m = sxx ? sxy / sxx : 0; return { m, b: my - m * mx, r: pearson(xs, ys) };
-};
-const known3 = WP.filter((p) => p.cls !== 'unknown');
-const oxLo = known3.filter((p) => p.o2 < LOW), oxHi = known3.filter((p) => p.o2 >= HIGH);
-const histBins = () => { const b = Array.from({ length: 20 }, (_, i) => ({ a: i * 5, n: 0 })); P.forEach((p) => { b[Math.min(19, Math.floor(pcOf(p) / 5 + 1e-9))].n++; }); return b; };
-const invRows = () => { const m = new Map(); P.forEach((p) => { const e = m.get(p.inv) || { id: p.inv, n: 0, wp: 0 }; e.n++; if (p.p != null) e.wp++; m.set(p.inv, e); }); return [...m.values()].sort((a, b) => b.n - a.n || String(a.id).localeCompare(String(b.id))).slice(0, 8); };
-
-function drawFunnel(w) {
-  const rows = [['All tests in the database', TOTAL], ['Recorded an oxygen level', P.length], ['…and the pressure', WP.length], ['…and a comparable burn rate', F.length]];
-  const fills = ['#c6d9f2', '#8fb8ea', '#5a9be0', '#2a78d6'];
-  const narrow = w < 440, labW = narrow ? 0 : Math.min(200, Math.round(w * 0.4)), barH = 32, gap = narrow ? 30 : 14, valW = 96, rowH = barH + gap;
-  const sc = (w - labW - valW) / Math.max(1, TOTAL); let out = '';
-  rows.forEach(([lab, v], i) => {
-    const y = i * rowH + (narrow ? 18 : 0), bw = Math.max(barH, v * sc);
-    out += narrow ? `<text class="ax" x="0" y="${y - 6}">${esc(lab)}</text>` : `<text class="ax-t" x="0" y="${y + barH / 2 + 4}">${esc(lab)}</text>`;
-    out += `<rect class="bar h" style="--i:${i}" x="${labW}" y="${y}" width="${bw}" height="${barH}" rx="${barH / 2}" fill="${fills[i]}"${tipA(`${lab}\n${int(v)} tests, ${share(v, TOTAL)} of all`)}/>`;
-    out += `<text class="val" x="${labW + bw + 8}" y="${y + barH / 2 + 4}">${int(v)} <tspan class="ax">${share(v, TOTAL)}</tspan></text>`;
-  });
-  return svgWrap(w, rows.length * rowH + (narrow ? 18 : 0), out, `Bar chart: ${rows.map(([l, v]) => `${l} ${int(v)}`).join('; ')}`);
-}
-
-function drawOx(w) {
-  if (known3.length < 6) return null;
-  const lo = Math.floor(Math.min(...known3.map(pcOf)) / 3) * 3, hi = Math.ceil((Math.max(...known3.map(pcOf)) + 1e-9) / 3) * 3, bands = [];
-  for (let b = lo; b < hi; b += 3) { const it = known3.filter((p) => pcOf(p) >= b && pcOf(p) < b + 3); bands.push({ b, it, n: it.length, c: { out: it.filter((p) => p.cls === 'out').length, disrupt: it.filter((p) => p.cls === 'disrupt').length, burn: it.filter((p) => p.cls === 'burn').length } }); }
-  const L = 38, R = 6, T = 24, B = 46, h = Math.round(Math.min(330, Math.max(250, w * 0.62))), pw = w - L - R, ph = h - T - B, y0 = T + ph, step = pw / bands.length, bw = Math.max(10, step - 6);
-  let out = '';
-  [0, 50, 100].forEach((v) => { const y = y0 - (v / 100) * ph; out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${y}" y2="${y}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 6}" y="${y + 4}" text-anchor="end">${v}%</text>`; });
-  bands.forEach((bd, bi) => {
-    const x = L + bi * step + (step - bw) / 2, cx = x + bw / 2;
-    out += `<text class="ax" x="${cx}" y="${y0 + 16}" text-anchor="middle">${step >= 40 ? `${bd.b}–${bd.b + 3}` : bd.b}</text>`;
-    if (!bd.n) return;
-    out += `<text class="ax" x="${cx}" y="${T - 8}" text-anchor="middle">n=${bd.n}</text>`;
-    const hi3 = hiA('b:' + bd.b, `${bd.b}–${bd.b + 3}% oxygen`, bd.it.map((p) => p.i));
-    let cum = 0;
-    ['out', 'disrupt', 'burn'].forEach((k) => {
-      const c = bd.c[k]; if (!c) return; const sh = (c / bd.n) * ph, y = y0 - cum - sh; cum += sh;
-      out += `<rect class="bar v f-${k}" style="--i:${bi}" x="${x}" y="${y}" width="${bw}" height="${sh}" rx="3" stroke="#fff" stroke-width="2" opacity="${bd.n < 5 ? 0.55 : 1}"${hi3}${tipA(`${bd.b}–${bd.b + 3}% oxygen\n${CLS_LABEL[k]}: ${c} of ${bd.n} tests (${Math.round((c / bd.n) * 100)}%)${bd.n < 5 ? '\nOnly ' + bd.n + ' tests here' : ''}${HINT}`)}/>`;
-      if (sh >= 20 && bw >= 30) out += `<text class="in" x="${cx}" y="${y + sh / 2 + 4}" text-anchor="middle">${Math.round((c / bd.n) * 100)}%</text>`;
-    });
-  });
-  out += `<text class="ax-t" x="${L + pw / 2}" y="${y0 + 36}" text-anchor="middle">Oxygen (% of the air${step >= 40 ? '' : ', 3-point bands'})</text>`;
-  return svgWrap(w, h, out, `Stacked bars by oxygen band showing the share of tests that went out, broke apart or kept burning`);
-}
-
-let scFuel = '';
-const scSet = () => (scFuel ? F.filter((p) => p.fuelKey === scFuel) : F);
-const scFuels = () => { const m = new Map(); F.forEach((p) => { const e = m.get(p.fuelKey) || { key: p.fuelKey, label: p.fuel || 'Not recorded', n: 0 }; e.n++; m.set(p.fuelKey, e); }); return [...m.values()].sort((a, b) => b.n - a.n).slice(0, 3); };
-function scHead() {
-  const set = scSet(), t = trendOfSet(set), name = scFuel ? (set[0]?.fuel || scFuel) : '';
-  if (!t) return { big: '', title: 'Burn rate against oxygen', sub: '' };
-  return { big: t.m > 0 ? `+${num(t.m * 10, 2)}` : '', title: t.m > 0 ? `${name ? name + ': burn' : 'Burn'} rate rises about ${num(t.m * 10, 2)} ${UNIT} for every 10 points of oxygen` : `${name ? name + ': ' : ''}burn rate against oxygen`,
-    sub: `${name ? name + ', ' : ''}${int(set.length)} tests. The dashed line is the straight-line trend; the link between oxygen and burn rate is ${num(t.r)} on a scale where 1 is perfect.` };
-}
-function drawScatter(w) {
-  if (F.length < 6) return null;
-  const set = scSet(), t = trendOfSet(set);
-  const L = 46, R = 14, T = 30, B = 48, h = Math.round(Math.min(380, Math.max(260, w * 0.46))), pw = w - L - R, ph = h - T - B, y0 = T + ph;
-  const xs = F.map(pcOf), x0 = Math.floor(Math.min(...xs) / 5) * 5, x1 = Math.max(x0 + 5, Math.ceil(Math.max(...xs) / 5) * 5);
-  const X = (v) => L + ((v - x0) / (x1 - x0)) * pw, Y = (v) => y0 - (v / B_MAX) * ph, ts = B_MAX >= 1 ? 0.4 : 0.2;
-  let out = `<rect x="${L}" y="${T}" width="${pw}" height="${ph}" rx="12" fill="#f6f8fb"/>`;
-  for (let v = 0; v <= B_MAX + 1e-9; v += ts) out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${Y(v)}" y2="${Y(v)}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${num(v, 1)}</text>`;
-  for (let v = x0; v <= x1; v += 5) out += `<text class="ax" x="${X(v)}" y="${y0 + 18}" text-anchor="middle">${v}%</text>`;
-  out += `<text class="ax-t" x="${L - 40}" y="${T - 14}">Burn rate${UNIT ? ' (' + UNIT + ')' : ''}</text><text class="ax-t" x="${L + pw / 2}" y="${y0 + 40}" text-anchor="middle">Oxygen (% of the air)</text>`;
-  if (t) { const xa = Math.min(...set.map(pcOf)), xb = Math.max(...set.map(pcOf)); out += `<line x1="${X(xa)}" y1="${Y(t.m * xa + t.b)}" x2="${X(xb)}" y2="${Y(t.m * xb + t.b)}" stroke="#0b1b33" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>`; }
-  [...set].sort((a, b) => CLS.indexOf(b.cls) - CLS.indexOf(a.cls)).forEach((p, n) => {
-    const cx = X(pcOf(p)), cy = Y(p.burn);
-    out += `<g class="pt" style="--i:${n}"${tipA(`${p.fuel || 'Fuel not recorded'}\n${pct(p.o2)} oxygen · ${num(p.p)} atm\n${num(p.burn, 3)} ${UNIT} · ${CLS_LABEL[p.cls]}\n${p.inv}`)}><circle cx="${cx}" cy="${cy}" r="11" fill="transparent"/>${markSvg(p.cls, cx, cy, 3.8)}</g>`;
-  });
-  return svgWrap(w, h, out, `Scatter plot of burn rate against oxygen for ${set.length} tests, with a trend line`);
-}
-
-function drawHist(w) {
-  const bins = histBins(), maxN = Math.max(...bins.map((b) => b.n));
-  if (!maxN) return null;
-  const st2 = [10, 20, 50, 100, 200, 500].find((s2) => maxN / s2 <= 5) || 500, ymax = Math.ceil(maxN / st2) * st2;
-  const L = 42, R = 10, T = 22, B = 92, h = Math.round(Math.min(350, Math.max(270, w * 0.64))), pw = w - L - R, ph = h - T - B, y0 = T + ph, bwid = pw / 20;
-  let out = '';
-  for (let v = 0; v <= ymax; v += st2) { const y = y0 - (v / ymax) * ph; out += `<line class="gl" x1="${L}" x2="${w - R}" y1="${y}" y2="${y}" stroke-dasharray="${v ? '2 4' : ''}"/><text class="ax" x="${L - 6}" y="${y + 4}" text-anchor="end">${int(v)}</text>`; }
-  bins.forEach((b, bi) => {
-    const x = L + bi * bwid, bh = (b.n / ymax) * ph, idx = P.filter((q) => Math.min(19, Math.floor(pcOf(q) / 5 + 1e-9)) === bi && q.pos).map((q) => q.i);
-    const tip = `${b.a}–${b.a + 5}% oxygen\n${int(b.n)} tests${idx.length ? HINT : '\nNone of these have a pressure on record'}`, hi2 = idx.length ? hiA('h:' + bi, `${b.a}–${b.a + 5}% oxygen`, idx) : '';
-    out += `<rect x="${x}" y="${T}" width="${bwid}" height="${ph}" fill="transparent"${hi2}${tipA(tip)}/>`;
-    if (b.n) out += `<rect class="bar v" style="--i:${bi}" x="${x + 1.5}" y="${y0 - bh}" width="${Math.max(2, bwid - 3)}" height="${bh}" rx="4" fill="#2a78d6"${hi2}${tipA(tip)}/>`;
-    if (b.n >= maxN * 0.12) out += `<text class="val" x="${x + bwid / 2}" y="${y0 - bh - 5}" text-anchor="middle">${int(b.n)}</text>`;
-  });
-  for (let v = 0; v <= 100; v += 10) out += `<text class="ax" x="${L + (v / 100) * pw}" y="${y0 + 15}" text-anchor="middle">${v}%</text>`;
-  [['ISS', MISSIONS[0]], ['Lunar', MISSIONS[1]], ['Mars', MISSIONS[2]], ['Suit', MISSIONS[3]]].forEach(([lab, m], i) => {
-    const x = L + m.o2 * pw, row = i % 2, ly = y0 + 46 + row * 15;
-    out += `<polygon points="${x},${y0 + 22} ${x + 5},${y0 + 31} ${x - 5},${y0 + 31}" fill="#d42a1c"${tipA(`${m.name}\n${pct(m.o2)} oxygen, ${num(m.p)} atm`)}/>`;
-    if (row) out += `<line x1="${x}" x2="${x}" y1="${y0 + 31}" y2="${ly - 11}" stroke="#d42a1c" stroke-width="1"/>`;
-    out += `<text class="ax-t" x="${x}" y="${ly}" text-anchor="${x > w - 50 ? 'end' : 'middle'}">${lab}</text>`;
-  });
-  out += `<text class="ax-t" x="${L + pw / 2}" y="${h - 4}" text-anchor="middle">Oxygen (% of the air)</text>`;
-  return svgWrap(w, h, out, `Histogram of ${P.length} tests by oxygen level in 5% bands, with mission atmospheres marked`);
-}
-
-function drawInv(w) {
-  const rows = invRows(); if (!rows.length) return null;
-  const narrow = w < 440, labW = narrow ? 0 : Math.min(230, Math.round(w * 0.45)), barH = 22, gap = narrow ? 26 : 12, valW = 46, rowH = barH + gap, sc = (w - labW - valW) / Math.max(1, rows[0].n);
-  let out = '';
-  rows.forEach((r, i) => {
-    const y = i * rowH + (narrow ? 16 : 0), t = String(INV[r.id]?.title || '').trim(), short = t.length > 26 ? t.slice(0, 25) + '…' : t;
-    const idx = P.filter((q) => q.inv === r.id && q.pos).map((q) => q.i), hi2 = idx.length ? hiA('i:' + r.id, `${r.id}`, idx) : '';
-    const tip = `${r.id}\n${t}\n${int(r.n)} tests with oxygen, ${int(r.wp)} also with pressure${idx.length ? HINT : ''}`;
-    out += `<text class="ax" x="0" y="${narrow ? y - 5 : y + barH / 2 + 4}"><tspan class="ax-t">${esc(r.id)}</tspan> ${esc(short)}</text>`;
-    if (r.wp) out += `<rect class="bar h" style="--i:${i}" x="${labW}" y="${y}" width="${Math.max(2, r.wp * sc)}" height="${barH}" rx="4" fill="#2a78d6" stroke="#fff" stroke-width="2"${hi2}${tipA(tip)}/>`;
-    if (r.n > r.wp) out += `<rect class="bar h" style="--i:${i}" x="${labW + r.wp * sc}" y="${y}" width="${Math.max(2, (r.n - r.wp) * sc)}" height="${barH}" rx="4" fill="#a9c6ee" stroke="#fff" stroke-width="2"${hi2}${tipA(tip)}/>`;
-    out += `<text class="val" x="${labW + r.n * sc + 8}" y="${y + barH / 2 + 4}">${int(r.n)}</text>`;
-  });
-  return svgWrap(w, rows.length * rowH + (narrow ? 16 : 0), out, `Bar chart of tests per investigation: ${rows.map((r) => `${r.id} ${r.n}`).join('; ')}`);
-}
-
-const lgi = (c) => `<button type="button" class="lgi" data-cls="${c}" aria-pressed="false"><i class="sw ${c}"></i>${CLS_LABEL[c]}</button>`;
-const LEG3 = lgi('out') + lgi('disrupt') + lgi('burn');
-const cabin = P.filter((p) => pcOf(p) >= 20 && pcOf(p) < 25).length, midN = P.filter((p) => pcOf(p) > 40 && pcOf(p) < 80).length, nearSuit = P.filter((p) => p.o2 >= 0.95).length, top3 = invRows();
-const fuelChips = () => { const f = scFuels(); return f.length > 1 ? `<div class="chips" role="group" aria-label="Fuel">${[{ key: '', label: 'All fuels' }, ...f].map((o) => `<button type="button" data-f="${esc(o.key)}" aria-pressed="${o.key === scFuel}">${esc(o.label)}</button>`).join('')}</div>` : ''; };
-const CHARTS = [
-  { draw: drawFunnel, head: () => ({ big: share(F.length, TOTAL), title: 'of tests recorded oxygen, pressure and burn rate', sub: 'Each bar keeps only the tests that also recorded the next measurement.' }),
-    foot: 'Burn rates in different investigations use different units, so only comparable ones are counted.' },
-  { draw: drawOx, head: () => (oxLo.length >= 3 && oxHi.length >= 3
-      ? { big: share(oxLo.filter((p) => p.cls === 'out').length, oxLo.length), title: `of flames went out below ${pct(LOW)} oxygen, against ${share(oxHi.filter((p) => p.cls === 'out').length, oxHi.length)} at ${pct(HIGH)} and above`, sub: 'Share of tests that went out, broke apart or kept burning, by oxygen band. Click a bar to see its tests in 3D.' }
-      : { big: '', title: 'How flames ended, by oxygen level', sub: 'Click a bar to see its tests in 3D.' }), legend: LEG3, foot: 'Tests with a recorded pressure and result. Bands with very few tests are drawn paler. The n above each bar is the number of tests.' },
-  { draw: drawScatter, wide: true, head: scHead, ctl: fuelChips, legend: LEG3 + lgi('unknown') + '<span><i class="dash"></i>Trend</span>', foot: 'Tests with oxygen, pressure and a comparable burn rate. Hover a mark for its details; pick a fuel to redraw the trend.' },
-  { draw: drawHist, head: () => ({ big: share(cabin, P.length), title: 'of tests ran at 20–25% oxygen', sub: `Only ${int(midN)} ran between 41% and 79%, and ${nearSuit ? int(nearSuit) + ' near' : 'none near'} 100%, the spacesuit atmosphere. Click a bar to see its tests in 3D.` }),
-    foot: `${int(P.length)} tests that recorded oxygen, in 5% bands. Red triangles mark the planning atmospheres: ISS 21%, lunar 30%, Mars 34%, spacesuit 100% oxygen.` },
-  { draw: drawInv, head: () => (top3.length >= 3 ? { big: share(top3[0].n + top3[1].n + top3[2].n, P.length), title: `of the tests come from ${top3[0].id}, ${top3[1].id} and ${top3[2].id}`, sub: 'Tests that recorded an oxygen level, by investigation. The dark part also recorded pressure.' } : { big: '', title: 'Tests by investigation', sub: '' }),
-    legend: '<span><i class="sw" style="background:#2a78d6"></i>With pressure</span><span><i class="sw" style="background:#a9c6ee"></i>Oxygen only</span>', foot: 'Titles are shortened. Ids are NASA PSI accession numbers; the 8 largest are shown. Click a bar to see its tests in 3D.' },
-];
-const headHtml = (c) => { const h = c.head(); return `<div class="chead">${h.big ? `<span class="cbig">${esc(h.big)}</span>` : ''}<h3>${esc(h.title)}</h3></div>${h.sub ? `<p class="sub">${esc(h.sub)}</p>` : ''}`; };
-const grid = $('chartsGrid');
-grid.innerHTML = (source === 'mock' ? '<p class="mockbar" style="grid-column:1/-1">Mock data · not from NASA</p>' : '') + CHARTS.map((c, i) =>
-  `<article class="cc${c.wide ? ' wide' : ''}" data-c="${i}"><div class="hd">${headHtml(c)}</div><div class="ctl">${c.ctl ? c.ctl() : ''}</div><div class="box"></div>${c.legend ? `<div class="lg">${c.legend}</div>` : ''}${c.foot ? `<p class="foot">${esc(c.foot)}</p>` : ''}</article>`).join('');
-const play = (card) => { card.classList.add('anim'); setTimeout(() => card.classList.remove('anim'), 1800); };
-let chartW = 0;
-function renderCharts() {
-  if ($('charts').hidden) return;
-  grid.querySelectorAll('.cc').forEach((card) => {
-    const c = CHARTS[Number(card.dataset.c)], box = card.querySelector('.box'), w = Math.floor(box.clientWidth);
-    if (w < 150) return;
-    const svg = c.draw(w); card.hidden = !svg; box.innerHTML = svg || '';
-    if (svg && !card.dataset.played) { card.dataset.played = '1'; play(card); }
-  });
-}
-new ResizeObserver(() => { const w = Math.round(grid.clientWidth); if (w && w !== chartW) { chartW = w; renderCharts(); } }).observe(grid);
-
-// tooltip
-const ctip = $('ctip');
-function moveTip(e) {
-  const t = e.target.closest ? e.target.closest('[data-tip]') : null;
-  if (!t) { ctip.hidden = true; return; }
-  ctip.textContent = t.dataset.tip; ctip.hidden = false;
-  const tw = ctip.offsetWidth, th = ctip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 16;
-  if (x + tw > innerWidth - 8) x = e.clientX - tw - 14; if (y + th > innerHeight - 8) y = e.clientY - th - 12;
-  ctip.style.transform = `translate(${Math.max(8, Math.round(x))}px, ${Math.max(8, Math.round(y))}px)`;
-}
-['pointermove', 'pointerdown'].forEach((ev) => $('charts').addEventListener(ev, moveTip));
-$('charts').addEventListener('pointerleave', () => { ctip.hidden = true; });
-$('charts').addEventListener('scroll', () => { ctip.hidden = true; }, { passive: true });
-
-// legend chips fade the other results in every chart; click pins it
-let hlPin = '';
-const applyHl = (c) => { grid.dataset.hl = c || ''; };
-const syncLgi = () => grid.querySelectorAll('.lgi').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cls === hlPin)));
-grid.addEventListener('mouseover', (e) => { const b = e.target.closest('.lgi'); if (b) applyHl(b.dataset.cls); });
-grid.addEventListener('mouseout', (e) => { if (e.target.closest('.lgi')) applyHl(hlPin); });
-grid.addEventListener('focusin', (e) => { const b = e.target.closest('.lgi'); if (b) applyHl(b.dataset.cls); });
-grid.addEventListener('focusout', (e) => { if (e.target.closest('.lgi')) applyHl(hlPin); });
-grid.addEventListener('click', (e) => {
-  const lg = e.target.closest('.lgi');
-  if (lg) { hlPin = hlPin === lg.dataset.cls ? '' : lg.dataset.cls; syncLgi(); applyHl(hlPin); return; }
-  const chip = e.target.closest('.chips button');
-  if (chip) {
-    scFuel = chip.dataset.f; const card = chip.closest('.cc'), c = CHARTS[Number(card.dataset.c)];
-    card.querySelectorAll('.chips button').forEach((b) => b.setAttribute('aria-pressed', String(b === chip)));
-    card.querySelector('.hd').innerHTML = headHtml(c); card.querySelector('.box').innerHTML = c.draw(Math.floor(card.querySelector('.box').clientWidth)) || ''; play(card); return;
-  }
-  const t = e.target.closest('[data-hi]'); if (t) highlight3D(t.dataset.hi, t.dataset.label);
-});
-
-// a chart bar sends you to the 3D model with those tests lit
 function showHl(n, label) { $('hlText').textContent = `${int(n)} tests: ${label}`; $('hlbar').hidden = false; }
 function hideHl() { $('hlbar').hidden = true; }
-function highlight3D(key, label) {
-  const idx = HI[key]; if (!idx || !idx.length) return;
-  st.finding = -1; st.hi = new Set(idx); fl.querySelectorAll('.finding').forEach((b) => b.setAttribute('aria-pressed', 'false'));
-  setView(lastStage); view.paint(); view.fly(OVERVIEW); showHl(idx.length, label);
-}
 $('hlClear').addEventListener('click', () => { st.hi = null; hideHl(); view.paint(); });
 
-let lastStage = '2d';
 const p2 = { y: 'burn', trend: true, byFuel: true };
 const cap1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-function setView(v) {
-  if (v !== 'charts') lastStage = v;
-  document.body.dataset.view = v; $('stage').hidden = v === 'charts'; $('charts').hidden = v !== 'charts'; ctip.hidden = true;
-  $('v2d').setAttribute('aria-pressed', String(v === '2d')); $('v3d').setAttribute('aria-pressed', String(v === '3d')); $('vCharts').setAttribute('aria-pressed', String(v === 'charts'));
-  if (v === 'charts') { $('filters').hidden = true; $('filterBtn').setAttribute('aria-expanded', 'false'); requestAnimationFrame(renderCharts); }
-  if (v === '2d') requestAnimationFrame(draw2d);
-  setReadText(v);
-}
-$('v2d').addEventListener('click', () => setView('2d'));
-$('v3d').addEventListener('click', () => setView('3d'));
-$('vCharts').addEventListener('click', () => setView('charts'));
-if (params.get('view') === 'charts') setView('charts'); else if (params.get('view') === '3d') setView('3d'); else setView('2d');
-
-// ---------- 3D ----------
-let THREE = null;
-try { THREE = await import('https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.min.js'); } catch {}
-function no3d(msg) {
-  $('scene').hidden = true; $('labels').hidden = true; document.querySelector('.legend').hidden = true;
-  const d = document.createElement('div'); d.className = 'no3d';
-  d.innerHTML = `<p>${esc(msg)}</p><p>The findings and the full table still work.</p>`;
-  $('stage').append(d); $('rotateBtn').hidden = true; $('resetBtn').hidden = true;
-}
-if (!THREE) no3d('The 3D library could not be loaded.');
-else try { start3d(); } catch (e) { console.error(e); no3d('This browser could not start the 3D view.'); }
-
-function start3d() {
-  const canvas = $('scene'), stage = $('stage'), labelsEl = $('labels'), tip = $('tip');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  const scene = new THREE.Scene();
-  const BG = new THREE.Color('#0b1f3f');
-  scene.fog = new THREE.Fog(BG, 26, 60);   // near and far are reset every frame from the camera distance
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-  scene.add(new THREE.AmbientLight(0xffffff, 2.3));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-6, 12, 8); scene.add(sun);
-
-  // --- floors, grid, axes ---
-  const lineMat = (c, o) => new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: o });
-  const segs = (pts, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3)); const l = new THREE.LineSegments(g, mat); scene.add(l); return l; };
-  const plane = (x0, x1, z0, z1, color, opacity) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, Math.abs(z1 - z0)), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false }));
-    m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, -0.01, (z0 + z1) / 2); scene.add(m); return m; };
-  plane(0, W, 0, -D, '#1b3766', 0.42);
-  const grid = [], wall = [];
-  xTicks.forEach((t) => grid.push([sx(t), 0, 0], [sx(t), 0, -D]));
-  for (let a = 0; a <= P_MAX; a++) grid.push([0, 0, sz(a)], [W, 0, sz(a)]);
-  const bStep = B_MAX / Math.round(B_MAX / 0.2);
-  for (let b = bStep; b <= B_MAX + 1e-9; b += bStep) wall.push([0, sy(b), -D], [W, sy(b), -D], [0, sy(b), 0], [0, sy(b), -D]);
-  xTicks.forEach((t) => wall.push([sx(t), 0, -D], [sx(t), H, -D]));
-  wall.push([0, 0, 0], [0, H, 0]);
-  segs(grid, lineMat('#3b5a94', 0.55)); segs(wall, lineMat('#3b5a94', 0.3));
-  segs([[0, 0, 0], [W, 0, 0], [W, 0, 0], [W, 0, -D], [0, 0, -D], [0, H, -D]], lineMat('#b6c3d8', 0.8));
-
-  // --- labels (HTML, projected every frame) ---
-  const labels = [];
-  const label = (text, pos, cls = '', anchor = 'c') => { const el = document.createElement('span'); el.className = 'lab ' + cls; el.textContent = text; labelsEl.append(el);
-    const l = { el, pos: new THREE.Vector3(...pos), anchor, on: true, w: 0, h: 0, pri: cls === 'axis' ? 0 : cls === 'zone' ? 1 : cls === 'mission' ? 2 : 3 }; labels.push(l); return l; };
-  xTicks.forEach((t) => label(Math.round(t * 100) + '%', [sx(t), 0, 0.4]));
-  label('Oxygen in the air', [W / 2, 0, 1.0], 'axis');
-  for (let a = 1; a <= P_MAX; a++) label(a + ' atm', [W + 0.3, 0, sz(a)], '', 'l');
-  label('Pressure', [W + 0.3, 0, sz(P_MAX) - 0.7], 'axis');
-  for (let k = 2; k * bStep <= B_MAX + 1e-9; k += 2) label(num(k * bStep, 1), [-0.3, sy(k * bStep), -D], '', 'r');
-  label(`Burn rate${UNIT ? ', ' + UNIT : ''}`, [0, H + 0.4, -D], 'axis');
-
-  // --- mission atmosphere markers ---
-  const missionGroup = new THREE.Group(); scene.add(missionGroup); const missionLabels = [];
-  const inScale = (m) => m.o2 >= X0 - 1e-9 && m.o2 <= X1 + 1e-9 && m.p <= P_MAX;
-  MISSIONS.filter(inScale).forEach((m) => {
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.17, 0.23, 40), new THREE.MeshBasicMaterial({ color: '#f2f5fa', side: THREE.DoubleSide, transparent: true, opacity: 0.95, fog: false }));
-    ring.rotation.x = -Math.PI / 2; ring.position.set(sx(m.o2), 0.02, sz(m.p)); missionGroup.add(ring);
-    missionLabels.push(label(m.name, [sx(m.o2) + 0.3, 0.02, sz(m.p)], 'mission', 'l'));
-  });
-  const off = MISSIONS.filter((m) => !inScale(m));
-  if (off.length) missionLabels.push(label(`Off this scale: ${off.map((m) => `${m.name} (${pct(m.o2)} oxygen)`).join(', ')}`, [W / 2, 0, 2.0], 'zone'));
-
-  // --- points: one instanced mesh per result shape, a wireframe copy for unverified uploads ---
-  const geo = { out: new THREE.SphereGeometry(0.075, 16, 12), burn: new THREE.BoxGeometry(0.125, 0.125, 0.125), disrupt: new THREE.OctahedronGeometry(0.105), unknown: new THREE.SphereGeometry(0.05, 10, 8) };
-  const groups = [];
-  CLS.forEach((c) => [true, false].forEach((v) => {
-    const idx = PLOT.filter((p) => p.cls === c && p.verified === v).map((p) => p.i); if (!idx.length) return;
-    const mat = v ? new THREE.MeshLambertMaterial() : new THREE.MeshBasicMaterial({ wireframe: true });
-    const mesh = new THREE.InstancedMesh(geo[c], mat, idx.length); mesh.frustumCulled = false; scene.add(mesh);
-    groups.push({ mesh, idx, base: new THREE.Color(CLS_COLOR[c]) });
-  }));
-  const m4 = new THREE.Matrix4(), q0 = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), tmpC = new THREE.Color();
-  const shown = new Uint8Array(P.length);
-  function paint() {
-    groups.forEach(({ mesh, idx, base }) => {
-      idx.forEach((pi, j) => {
-        const p = P[pi], vis = passesAll(p), lit = !st.hi || st.hi.has(pi), sel = pi === st.sel;
-        shown[pi] = vis ? 1 : 0;
-        const s = !vis ? 0 : sel ? 1.9 : lit ? (st.hi ? 1.25 : 1) : 0.7;
-        m4.compose(v3.set(...p.pos), q0, s3.set(s, s, s)); mesh.setMatrixAt(j, m4);
-        tmpC.copy(base); if (!lit && !sel) tmpC.lerp(BG, 0.72); mesh.setColorAt(j, tmpC);
-      });
-      mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    });
-  }
-
-  // --- selection + hover markers ---
-  function ringTex() { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.strokeStyle = '#fff'; x.lineWidth = 9; x.beginPath(); x.arc(64, 64, 52, 0, Math.PI * 2); x.stroke(); return new THREE.CanvasTexture(c); }
-  const tex = ringTex();
-  const mkRing = (o, s) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: o, depthTest: false, fog: false })); sp.scale.set(s, s, 1); sp.visible = false; sp.renderOrder = 5; scene.add(sp); return sp; };
-  const selRing = mkRing(1, 0.5), hovRing = mkRing(0.6, 0.36);
-  const dropGeo = new THREE.BufferGeometry(); dropGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
-  const drop = new THREE.Line(dropGeo, lineMat('#f2f5fa', 0.7)); drop.visible = false; drop.frustumCulled = false; scene.add(drop);
-  function showSelect() {
-    const p = st.sel >= 0 ? P[st.sel] : null; selRing.visible = !!p; drop.visible = !!p && p.zone === 'cloud';
-    if (!p) return; selRing.position.set(...p.pos);
-    const a = dropGeo.attributes.position; a.setXYZ(0, p.pos[0], p.pos[1], p.pos[2]); a.setXYZ(1, p.pos[0], 0, p.pos[2]); a.needsUpdate = true;
-  }
-
-  // --- scenario markers: a ring on the floor and a line up through the box for each atmosphere asked about ---
-  const scnRings = ['#f2f5fa', '#9cc4ff'].map((c) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: c, transparent: true, depthTest: false, fog: false })); sp.scale.set(0.85, 0.85, 1); sp.visible = false; sp.renderOrder = 6; scene.add(sp); return sp; });
-  const scnLines = ['#f2f5fa', '#9cc4ff'].map((c) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, H, 0], 3)); const l = new THREE.Line(g, lineMat(c, 0.8)); l.visible = false; l.frustumCulled = false; scene.add(l); return l; });
-  function scenario(list) { [0, 1].forEach((i) => { const m = list[i]; scnRings[i].visible = scnLines[i].visible = !!m; if (m) { scnRings[i].position.set(m.x, 0.06, m.z); scnLines[i].position.set(m.x, 0, m.z); } }); }
-
-  // --- camera: a small orbit control (drag to turn, wheel or pinch to zoom, shift-drag or two fingers to pan) ---
-  const cam = { target: new THREE.Vector3(...OVERVIEW.target), theta: OVERVIEW.theta, phi: OVERVIEW.phi, radius: OVERVIEW.radius };
-  const rScale = () => { const a = camera.aspect; return a < 1.25 ? Math.min(2.4, Math.pow(1.25 / a, 0.85)) : 1; };
-  function applyCam() {
-    cam.phi = Math.min(1.54, Math.max(0.12, cam.phi)); cam.radius = Math.min(70, Math.max(2.5, cam.radius));
-    const sp = Math.sin(cam.phi);
-    camera.position.set(cam.target.x + cam.radius * sp * Math.sin(cam.theta), cam.target.y + cam.radius * Math.cos(cam.phi), cam.target.z + cam.radius * sp * Math.cos(cam.theta));
-    camera.lookAt(cam.target);
-  }
-  const OVERVIEW_TALL = { target: [W * 0.5, H * 0.25, -D * 0.45], theta: -1.0, phi: 1.1, radius: 14 };
-  const fit = (v) => (v === OVERVIEW && camera.aspect < 1 ? OVERVIEW_TALL : v);
-  let flight = null;
-  function fly(v) {
-    v = fit(v);
-    const to = { target: new THREE.Vector3(...(v.target || cam.target.toArray())), theta: v.theta ?? cam.theta, phi: v.phi ?? cam.phi, radius: (v.radius ?? cam.radius / rScale()) * rScale() };
-    if (reduced) { cam.target.copy(to.target); cam.theta = to.theta; cam.phi = to.phi; cam.radius = to.radius; flight = null; return; }
-    let dth = (to.theta - cam.theta) % (Math.PI * 2); if (dth > Math.PI) dth -= Math.PI * 2; if (dth < -Math.PI) dth += Math.PI * 2;
-    flight = { t0: performance.now(), from: { target: cam.target.clone(), theta: cam.theta, phi: cam.phi, radius: cam.radius }, to, dth };
-  }
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  const stopAuto = () => { if (st.auto) { st.auto = false; $('rotateBtn').setAttribute('aria-pressed', 'false'); } flight = null; };
-
-  const ptrs = new Map(); let down = null, pinch = null;
-  const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  function pan(dx, dy) {
-    const k = cam.radius * 0.0016; camera.updateMatrixWorld();
-    const right = v3.setFromMatrixColumn(camera.matrixWorld, 0).clone(), up = v3.setFromMatrixColumn(camera.matrixWorld, 1).clone();
-    cam.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
-  }
-  canvas.addEventListener('pointerdown', (e) => {
-    canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-    if (ptrs.size === 1) down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false, pan: e.shiftKey || e.button === 2 };
-    else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2 }; if (down) down.moved = true; }
-    hideTip();
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!ptrs.has(e.pointerId)) { if (e.pointerType === 'mouse') hover(e); return; }
-    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-    if (ptrs.size === 1 && down) {
-      const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
-      if (!down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) return;
-      if (!down.moved) { down.moved = true; stopAuto(); canvas.classList.add('drag'); }
-      if (down.pan) pan(dx, dy); else { cam.theta -= dx * 0.006; cam.phi -= dy * 0.005; }
-    } else if (ptrs.size === 2 && pinch) {
-      const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
-      stopAuto(); cam.radius *= pinch.d / Math.max(d, 1); pan(cx - pinch.cx, cy - pinch.cy); pinch = { d, cx, cy };
-    }
-  });
-  const up = (e) => {
-    if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); canvas.classList.remove('drag');
-    if (ptrs.size < 2) pinch = null;
-    if (ptrs.size === 0 && down) { if (!down.moved && e.type === 'pointerup' && performance.now() - down.t < 600) { const hit = pick(...local(e), e.pointerType === 'mouse' ? 13 : 24); select(hit); if (hit >= 0) stopAuto(); } down = null; }
-  };
-  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
-  canvas.addEventListener('pointerleave', () => { hideTip(); });
-  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-  canvas.addEventListener('wheel', (e) => { e.preventDefault(); stopAuto(); cam.radius *= Math.exp(Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 120) * 0.0014); }, { passive: false });
-  canvas.addEventListener('keydown', (e) => {
-    const k = e.key; let used = true;
-    if (k === 'ArrowLeft') cam.theta -= 0.12; else if (k === 'ArrowRight') cam.theta += 0.12; else if (k === 'ArrowUp') cam.phi -= 0.08; else if (k === 'ArrowDown') cam.phi += 0.08;
-    else if (k === '+' || k === '=') cam.radius *= 0.88; else if (k === '-' || k === '_') cam.radius *= 1.14; else if (k === 'Escape') select(-1); else if (k === 'Home') fly(OVERVIEW); else used = false;
-    if (used) { e.preventDefault(); if (k !== 'Escape' && k !== 'Home') stopAuto(); }
-  });
-
-  // --- picking: nearest point on screen, so the hit area is bigger than the mark ---
-  let cw = 1, ch = 1;
-  function pick(x, y, r) {
-    let best = -1, bd = r * r, bz = 2;
-    for (const p of P) {
-      if (!shown[p.i]) continue; v3.set(...p.pos).project(camera); if (v3.z > 1 || v3.z < -1) continue;
-      const dx = (v3.x + 1) / 2 * cw - x, dy = (1 - v3.y) / 2 * ch - y, d = dx * dx + dy * dy;
-      if (d < bd - 16 || (d < bd + 16 && d <= r * r && v3.z < bz)) { best = p.i; bd = d; bz = v3.z; }
-    }
-    return best;
-  }
-  let hov = -1;
-  function hideTip() { tip.hidden = true; hov = -1; hovRing.visible = false; canvas.classList.remove('point'); }
-  function hover(e) {
-    const [x, y] = local(e), i = pick(x, y, 13);
-    if (i < 0) { if (hov >= 0) hideTip(); return; }
-    const p = P[i]; hov = i; hovRing.visible = true; hovRing.position.set(...p.pos); canvas.classList.add('point');
-    tip.innerHTML = `<b>${esc(p.fuel || 'Fuel not recorded')}</b>${pct(p.o2)} oxygen${p.p == null ? '' : ' · ' + num(p.p) + ' atm'}${p.burn == null ? '' : ' · ' + burnText(p)}<br>${CLS_LABEL[p.cls]} · ${esc(p.inv)}${p.verified || source === 'mock' ? '' : ' · unverified'}`;
-    tip.hidden = false;
-    const tw = tip.offsetWidth, th = tip.offsetHeight;
-    tip.style.transform = `translate(${Math.round(Math.min(Math.max(8, x + 14), cw - tw - 8))}px, ${Math.round(y + 18 + th > ch ? y - th - 12 : y + 18)}px)`;
-  }
-
-  // --- frame loop ---
-  function resize() { cw = stage.clientWidth || 1; ch = stage.clientHeight || 1; labels.forEach((l) => { l.w = 0; }); renderer.setSize(cw, ch, false); camera.aspect = cw / ch; camera.updateProjectionMatrix(); }
-  new ResizeObserver(resize).observe(stage); resize();
-  { const v = fit(OVERVIEW); cam.target.set(...v.target); cam.theta = v.theta; cam.phi = v.phi; cam.radius = v.radius * rScale(); }
-  let last = performance.now(); const placed = [];
-  labels.sort((a, b) => a.pri - b.pri);
-  function frame(now) { requestAnimationFrame(frame); if (document.hidden || stage.hidden) { last = now; return; } draw(now); }
-  function draw(now) {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    if (flight) {
-      const t = Math.min(1, (now - flight.t0) / 1200), k = ease(t), f = flight.from, to = flight.to;
-      cam.target.lerpVectors(f.target, to.target, k); cam.theta = f.theta + flight.dth * k; cam.phi = f.phi + (to.phi - f.phi) * k; cam.radius = f.radius + (to.radius - f.radius) * k;
-      if (t >= 1) flight = null;
-    } else if (st.auto && !down) cam.theta += dt * 0.07;
-    applyCam(); camera.updateMatrixWorld();
-    scene.fog.near = cam.radius * 0.95; scene.fog.far = cam.radius * 2.6;
-    renderer.render(scene, camera);
-    placed.length = 0;
-    for (const l of labels) {
-      v3.copy(l.pos).project(camera); let ok = l.on && v3.z < 1 && v3.z > -1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05;
-      if (ok) {
-        if (!l.w) { l.w = l.el.offsetWidth; l.h = l.el.offsetHeight; }
-        const x = (v3.x + 1) / 2 * cw, y = (1 - v3.y) / 2 * ch;
-        const left = Math.round(Math.min(Math.max(4, l.anchor === 'l' ? x : l.anchor === 'r' ? x - l.w : x - l.w / 2), Math.max(4, cw - l.w - 4))), top = Math.round(y - l.h / 2);
-        ok = !placed.some((r) => left < r[0] + r[2] + 4 && left + l.w + 4 > r[0] && top < r[1] + r[3] + 2 && top + l.h + 2 > r[1]);
-        if (ok) { placed.push([left, top, l.w, l.h]); l.el.style.transform = `translate(${left}px, ${top}px)`; }
-      }
-      l.el.style.visibility = ok ? 'visible' : 'hidden';
-    }
-  }
-  view = { paint, fly, scenario, select: showSelect, auto() { flight = null; },
-    missions() { missionGroup.visible = st.missions; missionLabels.forEach((l) => { l.on = st.missions; }); } };
-  paint(); draw(performance.now()); requestAnimationFrame(frame);
-  if (params.has('finding')) { const i = Number(params.get('finding')) - 1; if (FINDINGS[i]) setFinding(i); }
-}
 
 // ---------- scenario: "If the cabin is at X% oxygen and Y psia ..." ----------
 // A reading of the tests nearest the atmosphere you type in. Same rules as the main page: only tests that
@@ -1203,7 +736,6 @@ function run(interact, which) {
   const mk = ['A', 'B'].map((id) => { const r = res[id]; if (!r || r.o2 < X0 - 1e-9 || r.o2 > X1 + 1e-9 || r.atm > P_MAX) return null; return { x: sx(r.o2), z: sz(r.atm) }; });
   view.scenario(scState.cmp ? mk : [mk[0]]);
   if (!interact) return;
-  if (document.body.dataset.view === 'charts') setView(lastStage);
   const idx = new Set(); have.forEach((id) => res[id].near.forEach((p) => { if (p.pos) idx.add(p.i); }));
   st.finding = -1; fl.querySelectorAll('.finding').forEach((b) => b.setAttribute('aria-pressed', 'false'));
   st.hi = idx.size ? idx : null; view.paint();
@@ -1244,7 +776,7 @@ function movingShare(rows) { // share that went out, by oxygen, over a 5-point w
   return out;
 }
 function draw2d() {
-  const svg = $('p2svg'), st2 = $('stage'); if (!svg || document.body.dataset.view !== '2d') return;
+  const svg = $('p2svg'), st2 = $('stage'); if (!svg) return;
   const b = st2.getBoundingClientRect(), W = Math.max(300, Math.round(b.width)), H = Math.max(260, Math.round(b.height)), narrow = W < 760;
   const ml = narrow ? 44 : 64, mr = narrow ? 14 : 352, mt = narrow ? 96 : 120, mb = narrow ? 70 : 96, pw = W - ml - mr, ph = H - mt - mb;
   if (pw < 80 || ph < 80) return;
@@ -1318,7 +850,7 @@ $('plot2d').addEventListener('pointermove', (e) => {
 });
 $('plot2d').addEventListener('pointerleave', () => { $('tip').hidden = true; });
 new ResizeObserver(() => draw2d()).observe($('stage'));
-const paint3d = view.paint; view.paint = () => { paint3d(); if (document.body.dataset.view === '2d') draw2d(); };
+view.paint = () => draw2d();
 updateCount(); draw2d();
 </script>
 </body>
