@@ -434,37 +434,39 @@
   .chat-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .chat-row input { flex: 1 1 260px; border-radius: 999px; padding-inline: 20px; }
   .reply { white-space: pre-wrap; margin-top: 14px; padding: 16px 18px; background: var(--card); border-radius: 20px; max-width: 72ch; }
-  .mission-widget { position: fixed; z-index: 20; right: 24px; bottom: 24px; }
-  .mission-launch { display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(11, 31, 63, .28); }
-  .mission-launch::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #45d2c3; box-shadow: 0 0 0 4px rgba(69, 210, 195, .18); }
-  .mission-panel { position: absolute; right: 0; bottom: 66px; display: flex; flex-direction: column; width: min(390px, calc(100vw - 32px)); height: min(560px, calc(100dvh - 110px)); padding: 20px; color: var(--on-dark); background: var(--char); border: 1px solid var(--line-dark); border-radius: 22px; box-shadow: 0 20px 60px rgba(11, 31, 63, .3); }
+  .mission-widget { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(24px, 5vw, 72px); align-items: start; margin: 0 0 30px; padding: clamp(22px, 4vw, 44px); color: var(--ink); background: #e3eaf4; border: 1px solid var(--line); border-radius: 28px; }
+  .mission-intro h2 { max-width: 10ch; font-size: clamp(34px, 5vw, 58px); line-height: .98; letter-spacing: -.055em; }
+  .mission-intro p { max-width: 38ch; margin-top: 18px; color: var(--ink-2); line-height: 1.6; }
+  .mission-panel { display: flex; flex-direction: column; min-width: 0; min-height: 540px; padding: 22px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 18px 44px rgba(11, 27, 51, .08); }
   .mission-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
   .mission-head h2 { font-size: 20px; }
-  .mission-head p, .mission-phone { color: var(--on-dark-2); font-size: 13px; }
-  .mission-close { min-height: 34px; width: 34px; padding: 0; background: transparent; color: var(--on-dark); border-color: var(--line-dark); font-size: 20px; }
+  .mission-head p, .mission-phone { color: var(--ink-2); font-size: 13px; }
   .mission-panel .chat-row { flex: 0 0 auto; flex-wrap: nowrap; margin-top: 16px; }
-  .mission-panel .chat-row input { min-width: 0; border-radius: 14px; padding-inline: 12px; background: var(--card); border: 1px solid #3d5a8c; color: var(--on-dark); }
-  .mission-panel .chat-row input::placeholder { color: #93a4c0; }
+  .mission-panel .chat-row input { min-width: 0; border-radius: 14px; padding-inline: 12px; background: #f8fafc; border: 1px solid #b4bfcf; color: var(--ink); }
+  .mission-panel .chat-row input::placeholder { color: #68768b; }
   .mission-panel .chat-row button { padding-inline: 16px; }
-  .mission-model { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 14px; color: var(--on-dark-2); }
-  .mission-model label { color: var(--on-dark-2); }
-  .mission-model select { min-height: 40px; padding: 0 12px; border-radius: 14px; background: var(--card); border: 1px solid #3d5a8c; color: var(--on-dark); font: inherit; }
-  .mission-messages { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; margin-top: 16px; }
+  .mission-model { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+  .mission-model label { color: var(--ink-2); }
+  .mission-model select { min-height: 40px; padding: 0 12px; border-radius: 14px; background: #f8fafc; border: 1px solid #b4bfcf; color: var(--ink); font: inherit; }
+  .mission-messages { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 250px; max-height: 440px; overflow-y: auto; margin-top: 16px; }
   .mission-message { max-width: 88%; padding: 10px 12px; border-radius: 15px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
-  .mission-message.user { align-self: flex-end; background: var(--sky); color: var(--char); border-bottom-right-radius: 5px; }
-  .mission-message.assistant { align-self: flex-start; background: var(--card); color: var(--on-dark); border-bottom-left-radius: 5px; }
-  .mission-message.pending { color: var(--on-dark-2); }
-  .mission-call { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 16px 10px 10px; border-radius: 999px; background: var(--paper); color: var(--ink); text-decoration: none; transition: scale .35s var(--spring), box-shadow .35s var(--spring); }
+  .mission-message.user { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 5px; }
+  .mission-message.assistant { align-self: flex-start; background: #eef1f5; color: var(--ink); border-bottom-left-radius: 5px; }
+  .mission-message.pending { color: var(--ink-2); }
+  .mission-call { display: flex; align-items: center; gap: 12px; margin-top: 24px; padding: 10px 16px 10px 10px; border-radius: 999px; background: var(--paper); color: var(--ink); text-decoration: none; transition: scale .35s var(--spring), box-shadow .35s var(--spring); }
   .mission-call:hover { scale: 1.02; box-shadow: 0 8px 22px rgba(0, 0, 0, .3); }
   .mission-call:active { scale: .98; }
   .mission-call-ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #fff; }
   .mission-call-tx { display: grid; line-height: 1.2; }
   .mission-call-tx b { font-size: 16px; font-weight: 700; }
   .mission-call-tx small { font-size: 13px; color: var(--ink-2); }
-  .mission-call:focus-visible { outline-color: var(--sky); }
-  .mission-panel .mission-call, .mission-panel .mission-call:hover, .mission-panel .mission-call b { color: var(--ink); text-decoration: none; }
-  .mission-panel .mission-call small { color: var(--ink-2); }
-  @media (max-width: 520px) { .mission-widget { right: 16px; bottom: 16px; } .mission-panel { bottom: 62px; } }
+  .mission-call:focus-visible { outline-color: var(--ink); }
+  .mission-widget .mission-call, .mission-widget .mission-call:hover, .mission-widget .mission-call b { color: var(--ink); text-decoration: none; }
+  .mission-widget .mission-call small { color: var(--ink-2); }
+  .mission-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .mission-suggestions button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: #f8fafc; color: var(--ink); font-size: 13px; }
+  .mission-suggestions button:hover { background: #fff; }
+  @media (max-width: 760px) { .mission-widget { grid-template-columns: 1fr; gap: 22px; margin-top: 0; padding: 22px; } .mission-intro h2 { max-width: none; } .mission-panel { min-height: 480px; padding: 16px; } }
   footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line-dark); font-size: 14px; color: var(--on-dark-2); max-width: 72ch; }
 
   @media (max-width: 900px) {
@@ -814,6 +816,28 @@
     </div>
   </section>
 
+    <section class="mission-widget" aria-labelledby="chat-h">
+      <div class="mission-intro">
+        <h2 id="chat-h">Talk fire science with Mission Control</h2>
+        <p>Ask about spacecraft fire safety, combustion in microgravity, NASA’s experiments, or what the results mean for the atmosphere you selected. Mission Control can explain the science and explore the data with you.</p>
+        <a class="mission-call" href="tel:+13312914794"><span class="mission-call-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l2-2 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1-2-2"/></svg></span><span class="mission-call-tx"><b>Call Mission Control</b><small>(331) 291-4794 · ask out loud</small></span></a>
+      </div>
+      <div id="missionPanel" class="mission-panel" aria-label="Mission Control conversation">
+        <div class="mission-head"><div><h2>Ask a question</h2><p>Answers use NASA data when it applies and explain when they draw on general science.</p></div></div>
+        <div class="mission-model"><label for="chatModel">Model</label><select id="chatModel"><option value="grok" selected>Grok (xAI)</option><option value="gemini">Gemini (Google)</option></select></div>
+        <div id="chatMessages" class="mission-messages" role="log" aria-live="polite" aria-relevant="additions text"><div class="mission-message assistant">Hi, I’m Mission Control. Ask me about fire behavior, spacecraft fire safety, microgravity combustion, or the NASA test data.</div></div>
+        <div class="mission-suggestions" aria-label="Suggested questions">
+          <button type="button" data-chat-prompt="Why does a flame behave differently in microgravity?">Flames in microgravity</button>
+          <button type="button" data-chat-prompt="What can NASA's Saffire experiments tell us about spacecraft fires?">NASA’s Saffire experiments</button>
+          <button type="button" data-chat-prompt="How does oxygen concentration affect fire behavior in a spacecraft cabin?">Oxygen and fire behavior</button>
+        </div>
+        <form id="chatForm" class="chat-row">
+          <input id="chatMsg" type="text" placeholder="Ask about fire science or the NASA data…" aria-label="Question for Mission Control">
+          <button type="submit" id="chatGo">Ask</button>
+        </form>
+      </div>
+    </section>
+
   <div id="mockBanner" class="banner hidden" role="status">Mock mode is on. Every number below is synthetic. Turn it off in Settings once the worker is reachable.</div>
   <section class="panel atmo feature f-atmo" data-feature="Mission atmosphere" aria-labelledby="scenario-h">
     <div class="atmo-head">
@@ -959,19 +983,7 @@
       </div>
       <div id="importResult" class="reply hidden"></div>
     </section>
-    <section class="mission-widget" aria-label="Mission Control chat">
-      <div id="missionPanel" class="mission-panel hidden" aria-labelledby="chat-h">
-        <div class="mission-head"><div><h2 id="chat-h">Ask Mission Control</h2><p>Ask about materials, oxygen, pressure, or the NASA test data.</p></div><button type="button" id="chatClose" class="mission-close" aria-label="Close chat">×</button></div>
-        <a class="mission-call" href="tel:+13312914794"><span class="mission-call-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="mission-call-tx"><b>Call Mission Control</b><small>(331) 291-4794 · ask out loud</small></span></a>
-        <div class="mission-model"><label for="chatModel">Model</label><select id="chatModel"><option value="grok" selected>Grok (xAI)</option><option value="gemini">Gemini (Google)</option></select></div>
-        <div id="chatMessages" class="mission-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
-        <form id="chatForm" class="chat-row">
-          <input id="chatMsg" type="text" placeholder="How does heptane burn in this atmosphere?" aria-label="Question for Mission Control">
-          <button type="submit" id="chatGo">Ask</button>
-        </form>
-      </div>
-      <button type="button" id="chatToggle" class="mission-launch" aria-expanded="false" aria-controls="missionPanel">Ask Mission Control</button>
-    </section>
+
     <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
 </div>
@@ -1510,7 +1522,6 @@
   });
 
   // ---------- Mission Control chat ----------
-  const missionPanel = $('missionPanel');
   const chatHistory = [];
   function appendChatMessage(role, text, extraClass = '') {
     const bubble = document.createElement('div');
@@ -1520,14 +1531,10 @@
     $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
     return bubble;
   }
-  function setChatOpen(open) {
-    missionPanel.classList.toggle('hidden', !open);
-    $('chatToggle').setAttribute('aria-expanded', String(open));
-    if (open) $('chatMsg').focus();
-  }
-  $('chatToggle').addEventListener('click', () => setChatOpen(missionPanel.classList.contains('hidden')));
-  $('chatClose').addEventListener('click', () => { setChatOpen(false); $('chatToggle').focus(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !missionPanel.classList.contains('hidden')) { setChatOpen(false); $('chatToggle').focus(); } });
+  document.querySelectorAll('[data-chat-prompt]').forEach((button) => button.addEventListener('click', () => {
+    $('chatMsg').value = button.dataset.chatPrompt;
+    $('chatForm').requestSubmit();
+  }));
   $('chatForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = $('chatMsg').value.trim(); if (!message) return;
@@ -2374,7 +2381,7 @@ ${move}`;
     { target: '#materials', title: 'Set the atmosphere', text: 'Choose a mission, adjust oxygen and pressure, then list materials separated by commas. The buttons under the box add fuels that NASA tested with both oxygen and pressure on record.' },
     { target: '#go', title: 'Rank materials', text: 'Each material is checked at nominal pressure and down to the depress floor. The ranking appears just below, with how the nearest flames ended, a map of what NASA tested, and the evidence as a CSV.' },
     { target: '#inv-h', title: 'Find the right investigations', text: 'All of NASA’s investigations, ordered for your atmosphere: those that tested at your oxygen level come first. Filter by flammability, suppression or detection.' },
-    { target: '#chatToggle', title: 'Ask Mission Control', text: 'Ask about a material in plain words. Mission Control uses the atmosphere on the page unless you give other numbers.' },
+    { target: '.mission-widget', title: 'Ask Mission Control', text: 'Ask about spacecraft fire science or NASA’s experiments. For material lookups, Mission Control uses the selected atmosphere unless you give other numbers.' },
   ];
   let index = 0, active = false, target = null;
   const seenKey = 'fireline.tour.seen';
