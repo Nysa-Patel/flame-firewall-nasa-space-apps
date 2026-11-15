@@ -156,10 +156,30 @@
   .lab-sliders output { font-weight: 400; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .lab input[type=range] { width: 100%; min-height: 40px; padding: 0; border: 0; background: transparent; accent-color: var(--accent); }
   .lab input[type=range]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
+  /* the flame lab's engine (15 Nov 2026, replaced the round porthole): an SVG rocket engine with the flame window (.chamber) in its
+     combustion chamber and an exhaust glow under the nozzle that the lab script tints */
+  .lab .orb.engine { aspect-ratio: 200 / 260; }
+  .engine-art { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 18px 26px rgba(11, 27, 51, .28)); }
+  .eg-pipe { fill: none; stroke: var(--steel-3); stroke-width: 5; stroke-linecap: round; }
+  .eg-band { fill: var(--steel-4); opacity: .55; }
+  .eg-frame { fill: var(--steel-4); }
+  .eg-bolt { fill: var(--steel-2); stroke: var(--steel-4); stroke-width: .6; }
+  .eg-tube { fill: none; stroke: var(--steel-4); stroke-width: .8; opacity: .5; }
+  .eg-exit { fill: var(--plume-c, #5f8dff); opacity: calc(var(--plume, .4) * .9); }
+  .orb.engine .chamber { position: absolute; left: 50%; top: 20%; width: 46%; height: auto; aspect-ratio: 1; translate: -50% 0; border-radius: 20px;
+    box-shadow: 0 0 0 2px var(--steel-4), inset 0 6px 16px rgba(0, 0, 0, .65); }
+  .orb.engine .chamber::after { border-radius: 20px; }
+  .engine-plume { position: absolute; left: 50%; top: 97%; width: 70%; height: 22%; translate: -50% 0; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(ellipse 50% 60% at 50% 0, var(--plume-c, #5f8dff), transparent 70%); opacity: calc(var(--plume, .4) * .7); filter: blur(6px);
+    transition: opacity .4s ease; }
+  .orb.engine .orb-hit { border-radius: 24px; }
+  .orb.engine .orb-hit:focus-visible { border-radius: 24px; }
+  .lab .orb.engine .orb-hint { top: calc(100% + 30px); }
+  .lab-state { margin-top: 72px; }
   @media (max-width: 1180px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } .hero-copy .lede, .flame-note { max-width: 60ch; } }
   @media (max-width: 680px) {
     .lab { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; }
-    .lab-view .orb { width: min(64vw, 260px); }
+    .lab-view .orb { width: min(58vw, 230px); }
     .lab-pair, .lab-sliders { grid-template-columns: minmax(0, 1fr); }
     .lab-seg label { flex: 1; } .lab-seg span { min-width: 0; width: 100%; }
   }
@@ -651,21 +671,39 @@
       </div>
       <section class="lab" aria-labelledby="lab-h">
         <div class="lab-view">
-        <div class="orb">
-          <div class="housing" aria-hidden="true">
-            <svg class="trim" viewBox="0 0 100 100">
-              <defs><g id="bolt"><circle class="bolt" r="1.9"/><circle class="bolt-hi" cx="-.4" cy="-.4" r="1.1"/></g></defs>
-              <circle class="groove" cx="50" cy="50" r="37.6"/><circle class="lip" cx="50" cy="50" r="38.3"/>
-              <circle class="groove" cx="50" cy="50" r="39.8"/><circle class="lip" cx="50" cy="50" r="40.5"/>
-              <circle class="groove" cx="50" cy="50" r="45.4"/><circle class="lip" cx="50" cy="50" r="46.1"/>
-              <use href="#bolt" x="89.3" y="66.3"/><use href="#bolt" x="66.3" y="89.3"/><use href="#bolt" x="33.7" y="89.3"/><use href="#bolt" x="10.7" y="66.3"/>
-              <use href="#bolt" x="10.7" y="33.7"/><use href="#bolt" x="33.7" y="10.7"/><use href="#bolt" x="66.3" y="10.7"/><use href="#bolt" x="89.3" y="33.7"/>
-            </svg>
-            <div class="chamber"><div id="flame"></div></div>
-            <span class="glint"><i></i></span>
-          </div>
-          <span class="flare f1" aria-hidden="true"></span><span class="flare f2" aria-hidden="true"></span>
-          <svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
+        <div class="orb engine">
+          <svg class="engine-art" viewBox="0 0 200 260" aria-hidden="true">
+            <defs>
+              <linearGradient id="egSteel" x1="0" x2="1">
+                <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".18" style="stop-color: var(--steel-3)"/>
+                <stop offset=".38" style="stop-color: var(--steel-1)"/><stop offset=".55" style="stop-color: var(--steel-2)"/>
+                <stop offset=".82" style="stop-color: var(--steel-3)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
+              </linearGradient>
+              <linearGradient id="egDark" x1="0" x2="1">
+                <stop offset="0" style="stop-color: var(--steel-4)"/><stop offset=".45" style="stop-color: var(--steel-2)"/><stop offset="1" style="stop-color: var(--steel-4)"/>
+              </linearGradient>
+              <radialGradient id="egHeat" cx=".5" cy="1" r=".9"><stop offset="0" style="stop-color: var(--plume-c, #5f8dff); stop-opacity: .55"/><stop offset="1" style="stop-color: var(--plume-c, #5f8dff); stop-opacity: 0"/></radialGradient>
+            </defs>
+            <!-- feed lines from the top plate down into the chamber -->
+            <path class="eg-pipe" d="M58 14 C 20 24, 18 70, 38 92"/><path class="eg-pipe" d="M142 14 C 180 24, 182 70, 162 92"/>
+            <!-- mounting plate and injector head -->
+            <rect x="46" y="4" width="108" height="12" rx="3" fill="url(#egDark)"/>
+            <circle class="eg-bolt" cx="56" cy="10" r="2.2"/><circle class="eg-bolt" cx="78" cy="10" r="2.2"/><circle class="eg-bolt" cx="100" cy="10" r="2.2"/><circle class="eg-bolt" cx="122" cy="10" r="2.2"/><circle class="eg-bolt" cx="144" cy="10" r="2.2"/>
+            <path d="M52 16 H148 L162 34 H38 Z" fill="url(#egSteel)"/>
+            <!-- combustion chamber: a steel cylinder with cooling bands; the window (the HTML .chamber) sits over it -->
+            <rect x="38" y="34" width="124" height="136" rx="8" fill="url(#egSteel)"/>
+            <rect class="eg-band" x="38" y="40" width="124" height="5"/><rect class="eg-band" x="38" y="155" width="124" height="5"/>
+            <rect class="eg-frame" x="49" y="46" width="102" height="106" rx="16"/>
+            <circle class="eg-bolt" cx="55" cy="52" r="2"/><circle class="eg-bolt" cx="145" cy="52" r="2"/><circle class="eg-bolt" cx="55" cy="146" r="2"/><circle class="eg-bolt" cx="145" cy="146" r="2"/>
+            <!-- throat and bell nozzle with regenerative cooling tubes -->
+            <path d="M38 170 H162 L134 190 H66 Z" fill="url(#egDark)"/>
+            <path d="M66 190 H134 C 140 214, 160 236, 184 252 H16 C 40 236, 60 214, 66 190 Z" fill="url(#egSteel)"/>
+            <path class="eg-tube" d="M78 190 C 74 214, 58 236, 42 252 M90 190 C 88 214, 82 236, 74 252 M100 190 V252 M110 190 C 112 214, 118 236, 126 252 M122 190 C 126 214, 142 236, 158 252"/>
+            <ellipse cx="100" cy="252" rx="84" ry="6" fill="url(#egDark)"/>
+            <ellipse class="eg-exit" cx="100" cy="252" rx="78" ry="4"/>
+          </svg>
+          <div class="chamber"><div id="flame"></div></div>
+          <span class="engine-plume" aria-hidden="true"></span>
           <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
           <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
         </div>
@@ -1572,6 +1610,8 @@
     st.style.setProperty('--lab-dot', dot);
     st.innerHTML = `<b>${word} · ${gName(g)}</b>${[out || shape, wind, soot, air.say].filter(Boolean).slice(0, 3).join(' ')}`;
     fallback();
+    const orb = document.querySelector('.orb.engine');   // exhaust glow under the nozzle: brighter with oxygen, gone when the flame is out
+    if (orb) { orb.style.setProperty('--plume', String((.25 + .75 * state.o2) * alive)); orb.style.setProperty('--plume-c', state.o2 > .2 || fuel.soot * (.3 + .7 * g) > .45 ? '#ff9a3c' : '#5f8dff'); }
     document.dispatchEvent(new CustomEvent('phenox:lab', { detail: state }));
   }
 
