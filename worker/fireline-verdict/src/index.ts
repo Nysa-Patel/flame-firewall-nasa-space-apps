@@ -3,8 +3,9 @@
 // It never decides PASS/CAUTION/FAIL and never writes explanations. That is Person D's layer.
 import postgres from 'postgres';
 import { handleChat } from './chat';
+import { importCsv } from './import';
 
-export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string }
+export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string; UPLOAD_KEY?: string }
 export type Sql = ReturnType<typeof postgres>;
 
 // ---- how flammability_envelope buckets work (from its view definition) ----
@@ -27,6 +28,10 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body, 
 
 const clip = (s: unknown, n = 600) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + '…' : s ?? null);
 const likePattern = (m: string) => (m ? `%${m.replace(/[\\%_]/g, (c) => '\\' + c)}%` : '%');
+// Community CSV uploads get accession ids prefixed "USER-" (see import.ts). Everything
+// else came from the original NASA PSI scrape. Callers (the page, the chat prompt) use
+// this to flag unreviewed data instead of presenting it with NASA's authority.
+const isVerified = (investigationId: string) => !investigationId.startsWith('USER-');
 
 export interface VerdictInput { o2: number; p: number; material: string }
 
@@ -70,7 +75,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
       const pc = round((c.pressure_bucket - 0.5) * P_W);
       const dO2 = round(o2 - o2c), dP = round(p - pc);
       return {
-        investigation_id: c.investigation_id, investigation_title: c.title ?? null, doi: c.doi || null,
+        investigation_id: c.investigation_id, investigation_title: c.title ?? null, doi: c.doi || null, verified: isVerified(c.investigation_id),
         fuel_material: c.fuel_material,
         o2_bucket: { index: c.o2_bucket, range: o2Range(c.o2_bucket), center: o2c },
         pressure_bucket: { index: c.pressure_bucket, range: pRange(c.pressure_bucket), center: pc },
@@ -110,7 +115,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
         : null,
       neighbors: neighbors.slice(1),
       evidence: evidenceRows.map((r: any) => ({
-        test_id: r.test_id, investigation_id: r.investigation_id, investigation_title: r.title, doi: r.doi || null,
+        test_id: r.test_id, investigation_id: r.investigation_id, investigation_title: r.title, doi: r.doi || null, verified: isVerified(r.investigation_id),
         fuel_material: r.fuel_material, o2_fraction: r.o2_fraction, pressure_atm: r.pressure_atm,
         burn_rate: r.burn_rate, outcome: r.outcome || null, test_date: r.test_date, source_file: r.source_file,
       })),
@@ -153,7 +158,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
     fallback: {
       reason,
       investigations: investigations.map((r: any) => ({
-        investigation_id: r.accession, title: r.title, doi: r.doi || null,
+        investigation_id: r.accession, title: r.title, doi: r.doi || null, verified: isVerified(r.accession),
         objective: clip(r.objective), approach: clip(r.approach), description: clip(r.description),
         n_matching_tests: r.n_matching_tests,
       })),
@@ -219,6 +224,62 @@ export default {
       } finally { ctx.waitUntil(sql.end()); }
     }
 
-    return json({ error: 'not found', routes: ['GET /health', 'POST /verdict', 'POST /chat'] }, 404);
+    if (pathname === '/import' && request.method === 'POST') {
+      if (env.UPLOAD_KEY && request.headers.get('x-upload-key') !== env.UPLOAD_KEY) {
+        return json({ error: 'missing or wrong x-upload-key header' }, 401);
+      }
+      let body: unknown;
+      try { body = await request.json(); } catch { return json({ error: 'body must be valid JSON' }, 400); }
+      const b = body as any;
+      const csvText = typeof b?.csv === 'string' ? b.csv : null;
+      const title = typeof b?.title === 'string' ? b.title.trim() : '';
+      const contributorName = typeof b?.contributor_name === 'string' ? b.contributor_name.trim() : '';
+      if (!csvText) return json({ error: 'csv (string, the raw CSV text) is required' }, 400);
+      if (!title) return json({ error: 'title is required (what this dataset is / who it is from)' }, 400);
+      if (!contributorName) return json({ error: 'contributor_name is required (who is submitting this data)' }, 400);
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'dataset';
+      const investigationId = `USER-${slug}-${Date.now().toString(36)}`;
+      const sourceFile = typeof b?.source_file === 'string' ? b.source_file : 'upload.csv';
+
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+      try {
+        return json(await importCsv(sql, { investigationId, title, csvText, sourceFile, contributorName }));
+      } catch (e) {
+        console.error(e);
+        return json({ error: 'import failed', detail: String((e as Error).message) }, 500);
+      } finally { ctx.waitUntil(sql.end()); }
+    }
+
+    // One random real test record for the page's clickable chamber. Draws only from NASA PSI
+    // rows (never community uploads) that have oxygen, pressure, a fuel and at least one result.
+    if (pathname === '/sample' && request.method === 'GET') {
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+      try {
+        const [r] = await sql`
+          SELECT t.id::text AS test_id, t.investigation_id, t.fuel_material, t.o2_fraction, t.pressure_atm,
+                 t.burn_rate, t.outcome, t.test_date, t.test_date_estimated, t.source_file,
+                 i.title, i.raw->>'doi' AS doi, count(*) OVER ()::int AS pool_size
+          FROM experimental_tests t
+          JOIN investigations i ON i.accession = t.investigation_id
+          WHERE t.o2_fraction BETWEEN 0 AND 1 AND t.pressure_atm BETWEEN 0 AND 2
+            AND t.fuel_material IS NOT NULL AND btrim(t.fuel_material) <> ''
+            AND (t.burn_rate IS NOT NULL OR t.outcome IS NOT NULL)
+            AND t.investigation_id NOT LIKE 'USER-%'
+          ORDER BY random()
+          LIMIT 1`;
+        if (!r) return json({ error: 'no records match' }, 404);
+        return new Response(JSON.stringify({
+          test_id: r.test_id, investigation_id: r.investigation_id, investigation_title: r.title, doi: r.doi || null,
+          verified: isVerified(r.investigation_id), fuel_material: r.fuel_material,
+          o2_fraction: r.o2_fraction, pressure_atm: r.pressure_atm, burn_rate: r.burn_rate, outcome: r.outcome || null,
+          test_date: r.test_date_estimated ? null : r.test_date, source_file: r.source_file, pool_size: r.pool_size,
+        }, null, 2), { headers: { ...HEADERS, 'cache-control': 'no-store' } });
+      } catch (e) {
+        console.error(e);
+        return json({ error: 'database query failed', detail: String((e as Error).message) }, 500);
+      } finally { ctx.waitUntil(sql.end()); }
+    }
+
+    return json({ error: 'not found', routes: ['GET /health', 'GET /sample', 'POST /verdict', 'POST /chat', 'POST /import'] }, 404);
   },
 };

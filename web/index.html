@@ -155,6 +155,40 @@
   @media (prefers-reduced-motion: reduce) { .glint { display: none; } .flare { animation: none; } }
   .orb .orbit { position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; }
   .hero-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 30px; }
+
+  /* clickable chamber: a transparent button over the orb opens one random real NASA test record */
+  .orb-hit { position: absolute; inset: 0; z-index: 2; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+  .orb-hit:hover:not(:disabled), .orb-hit:active:not(:disabled) { scale: 1; box-shadow: none; }
+  .orb-hit:focus-visible { border-radius: 50%; outline: 2px solid var(--ink); outline-offset: 8px; }
+  .orb-hint { position: absolute; top: calc(100% + 14px); left: 50%; translate: -50% 0; z-index: 2; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: #fff;
+    font-size: 12px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; pointer-events: none; transition: background-color .3s var(--spring); }
+  .orb:has(.orb-hit:hover) .orb-hint, .orb:has(.orb-hit:focus-visible) .orb-hint { background: var(--accent); }
+
+  dialog.log { width: min(560px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line-dark); border-radius: 28px; background: var(--char); color: var(--on-dark); box-shadow: 0 30px 80px rgba(11, 27, 51, .5); }
+  dialog.log::backdrop { background: rgba(5, 10, 20, .6); backdrop-filter: blur(4px); }
+  dialog.log[open] { animation: log-in .45s var(--spring); }
+  @keyframes log-in { from { opacity: 0; translate: 0 14px; scale: .96; } }
+  @media (prefers-reduced-motion: reduce) { dialog.log[open] { animation: none; } }
+  .log a { color: var(--sky); }
+  .log-body { padding: 26px 28px 24px; }
+  .log-kicker { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-2); }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
+  .log-dot.live { background: var(--pass); box-shadow: 0 0 0 4px var(--pass-t); }
+  .log-title { font-size: clamp(26px, 5vw, 34px); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+  .log-sub { margin-top: 8px; color: var(--on-dark-2); }
+  .log-sub b { color: var(--on-dark); font-weight: 600; }
+  .log-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 20px 0 0; border-top: 1px solid var(--line-dark); }
+  .log-grid > div { padding: 14px 0; border-bottom: 1px solid var(--line-dark); }
+  .log-grid .wide { grid-column: 1 / -1; }
+  .log-grid dt { font-size: 13px; color: var(--on-dark-2); }
+  .log-grid dt span { opacity: .8; }
+  .log-grid dd { margin: 4px 0 0; font-size: clamp(26px, 5vw, 34px); font-weight: 300; letter-spacing: -.035em; line-height: 1.1; overflow-wrap: anywhere; }
+  .log-grid dd small { margin-left: 8px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); }
+  .log-grid dd.text { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .log-grid dd.dim { font-size: 16px; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); }
+  .log-foot { margin-top: 14px; font-size: 13px; color: var(--on-dark-2); overflow-wrap: anywhere; }
+  .log-wait { padding: 28px 0; color: var(--on-dark-2); }
+  .log-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .hero h1 { font-size: clamp(30px, 3.6vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -.035em; }
   .lede { margin-top: 14px; max-width: 30rem; font-size: 17px; color: var(--ink-2); }
   .flame-note { margin-top: 10px; font-size: 14px; color: var(--ink-2); max-width: 52ch; }
@@ -264,6 +298,25 @@
   .chat-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .chat-row input { flex: 1 1 260px; border-radius: 999px; padding-inline: 20px; }
   .reply { white-space: pre-wrap; margin-top: 14px; padding: 16px 18px; background: var(--card); border-radius: 20px; max-width: 72ch; }
+  .mission-widget { position: fixed; z-index: 20; right: 24px; bottom: 24px; }
+  .mission-launch { display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(11, 31, 63, .28); }
+  .mission-launch::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #45d2c3; box-shadow: 0 0 0 4px rgba(69, 210, 195, .18); }
+  .mission-panel { position: absolute; right: 0; bottom: 66px; display: flex; flex-direction: column; width: min(390px, calc(100vw - 32px)); height: min(560px, calc(100dvh - 110px)); padding: 20px; color: var(--on-dark); background: var(--char); border: 1px solid var(--line-dark); border-radius: 22px; box-shadow: 0 20px 60px rgba(11, 31, 63, .3); }
+  .mission-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+  .mission-head h2 { font-size: 20px; }
+  .mission-head p, .mission-phone { color: var(--on-dark-2); font-size: 13px; }
+  .mission-close { min-height: 34px; width: 34px; padding: 0; background: transparent; color: var(--on-dark); border-color: var(--line-dark); font-size: 20px; }
+  .mission-panel .chat-row { flex: 0 0 auto; flex-wrap: nowrap; margin-top: 16px; }
+  .mission-panel .chat-row input { min-width: 0; border-radius: 14px; padding-inline: 12px; background: var(--card); border: 1px solid #3d5a8c; color: var(--on-dark); }
+  .mission-panel .chat-row input::placeholder { color: #93a4c0; }
+  .mission-panel .chat-row button { padding-inline: 16px; }
+  .mission-messages { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; margin-top: 16px; }
+  .mission-message { max-width: 88%; padding: 10px 12px; border-radius: 15px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+  .mission-message.user { align-self: flex-end; background: var(--sky); color: var(--char); border-bottom-right-radius: 5px; }
+  .mission-message.assistant { align-self: flex-start; background: var(--card); color: var(--on-dark); border-bottom-left-radius: 5px; }
+  .mission-message.pending { color: var(--on-dark-2); }
+  .mission-phone { margin-top: 12px; }
+  @media (max-width: 520px) { .mission-widget { right: 16px; bottom: 16px; } .mission-panel { bottom: 62px; } }
   footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line-dark); font-size: 14px; color: var(--on-dark-2); max-width: 72ch; }
 
   @media (max-width: 900px) {
@@ -272,10 +325,10 @@
   @media (max-width: 760px) {
     .topbar nav { display: none; }
     .title { font-size: 19.5vw; }
-    .orb { position: relative; left: auto; top: auto; width: 52vw; margin: 3vw auto 0; translate: none; }
+    .orb-hint { top: calc(100% + 8px); }
+    .orb { position: relative; left: auto; top: auto; width: 52vw; margin: 3vw auto 46px; translate: none; }
     .hero-row { grid-template-columns: 1fr; }
-    .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }
-    .panel { padding: 20px; border-radius: 22px; }
+    .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }    .panel { padding: 20px; border-radius: 22px; }
     .dark { border-radius: 26px 26px 0 0; padding-top: 40px; }
     .rank { padding: 18px; }
   }
@@ -290,6 +343,7 @@
     --i-stack-2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M12%204L4%208l8%204l8-4zm-8%208l8%204l8-4M4%2016l8%204l8-4%22%2F%3E%3C%2Fsvg%3E");
     --i-flask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M9%203h6m-5%206h4m-4-6v6L6%2020a.7.7%200%200%200%20.5%201h11a.7.7%200%200%200%20.5-1L14%209V3%22%2F%3E%3C%2Fsvg%3E");
     --i-headset: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M4%2014v-3a8%208%200%201%201%2016%200v3m-2%205c0%201.657-2.686%203-6%203%22%2F%3E%3Cpath%20d%3D%22M4%2014a2%202%200%200%201%202-2h1a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202H6a2%202%200%200%201-2-2zm11%200a2%202%200%200%201%202-2h1a2%202%200%200%201%202%202v3a2%202%200%200%201-2%202h-1a2%202%200%200%201-2-2z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    --i-upload: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M4%2017v2a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2v-2M7%209l5-5l5%205M12%204v12%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
     --i-list-numbers: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M11%206h9m-9%206h9m-8%206h8M4%2016a2%202%200%201%201%204%200c0%20.591-.5%201-1%201.5L4%2020h4M6%2010V4L4%206%22%2F%3E%3C%2Fsvg%3E");
     --i-gauge: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M3%2012a9%209%200%201%200%2018%200a9%209%200%201%200-18%200%22%2F%3E%3Cpath%20d%3D%22M11%2012a1%201%200%201%200%202%200a1%201%200%201%200-2%200m2.41-1.41L16%208m-9%204a5%205%200%200%201%205-5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
     --i-scale: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%23f3f3ee%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M7%2020h10M6%206l6-1l6%201m-6-3v17m-3-8L6%206l-3%206a3%203%200%200%200%206%200m12%200l-3-6l-3%206a3%203%200%200%200%206%200%22%2F%3E%3C%2Fsvg%3E");
@@ -306,7 +360,7 @@
   /* section headings */
   h2[id]::before { width: .8em; height: .8em; margin-right: .32em; vertical-align: -.06em; opacity: .75; }
   #scenario-h { --i: var(--i-planet); } #results-h { --i: var(--i-list-numbers); } #range-h { --i: var(--i-gauge); }
-  #method { --i: var(--i-scale); } #inv-h { --i: var(--i-flask); } #chat-h { --i: var(--i-headset); }
+  #method { --i: var(--i-scale); } #inv-h { --i: var(--i-flask); } #chat-h { --i: var(--i-headset); } #import-h { --i: var(--i-upload); }
   .settings summary { gap: 6px; --i: var(--i-settings); }
   /* result cards: round badge showing the kind of material (droplet = liquid fuel, stack = solid) */
   .rank h3 { display: flex; align-items: center; gap: 12px; }
@@ -342,8 +396,7 @@
   .topbar nav a { transition: background-color .3s var(--spring), scale .4s var(--spring); }
   .topbar nav a:hover { scale: 1.04; }
   @media (prefers-reduced-motion: reduce) {
-    .preset span::before, h2[id]::before, .settings summary::before, .rank h3::before, .rank, .inv, .meter i, .topbar nav a, .preset span { transition: none; animation: none; }
-    .preset input:checked + span::before { animation: none; }
+    .preset span::before, h2[id]::before, .settings summary::before, .rank h3::before, .rank, .inv, .meter i, .topbar nav a, .preset span { transition: none; }
     .rank:hover, .inv:hover, .rank:hover h3::before, .preset:hover span::before, h2[id]:hover::before { translate: none; rotate: none; scale: none; }
     .meter i, .meter i.on { scale: 1; }
     .reply, .orbit ellipse:last-of-type { animation: none; }
@@ -395,6 +448,48 @@
     .facts > div { padding: 12px 10px 0; }
     .facts span { font-size: 12px; }
   }
+
+  /* ===== mission environment: OpenSpace link. Display only; verdicts come from the app above ===== */
+  #env-h { --i: var(--i-satellite); }
+  .preset input[value=mars] + span { --i: var(--i-planet); }
+  /* These preset icon animations are intentionally exempt from prefers-reduced-motion —
+     they're small, decorative, and meant to always play regardless of that setting. */
+  .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
+  .env-block + #results { margin-top: 56px; }
+  .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
+  .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 45%, #1b3766 0%, #0a1830 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
+  .env-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
+  .env-where { font-size: 13px; color: var(--on-dark-2); }
+  .env-title { font-size: 26px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
+  .env-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    background: var(--none-t); color: var(--on-dark); }
+  .env-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
+  .env-status.connected { background: var(--pass-t); } .env-status.connected i { background: var(--pass); }
+  .env-status.connecting { background: var(--caution-t); } .env-status.connecting i { background: var(--caution); }
+  .env-svg { flex: 1; width: 100%; min-height: 0; max-height: 300px; margin: 10px auto; }
+  .env-caption { margin: 0 auto 16px; max-width: 48ch; text-align: center; font-size: 14px; color: var(--on-dark-2); }
+  .env-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
+  .env-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--card); }
+  .env-toggle button { background: transparent; border-color: transparent; color: var(--on-dark-2); padding: 8px 18px; min-height: 40px; font-weight: 600; }
+  .env-toggle button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
+  .env-toggle button:hover:not(:disabled) { box-shadow: none; }
+  button.env-link { background: none; border-color: transparent; color: var(--sky); text-decoration: underline; padding: 8px 6px; font-weight: 600; }
+  button.env-link:hover:not(:disabled) { box-shadow: none; }
+  .env-panel { background: var(--card); border-radius: 24px; padding: 6px 22px; overflow-wrap: anywhere; }
+  .env-panel > div { padding: 16px 0; border-bottom: 1px solid var(--line-dark); }
+  .env-panel > div:last-child { border-bottom: 0; }
+  .env-panel h3 { font-size: 14px; font-weight: 600; color: var(--on-dark-2); margin-bottom: 8px; }
+  .env-panel dl { margin: 0; font-size: 14px; }
+  .env-panel dl div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+  .env-panel dt { color: var(--on-dark-2); }
+  .env-panel dd { margin: 0; text-align: right; }
+  .env-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .env-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 0; }
+  .env-ev { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .env-ev li + li { margin-top: 10px; }
+  .env-ev span { display: block; color: var(--on-dark-2); }
+  @media (max-width: 900px) { .env { grid-template-columns: 1fr; } .env-stage { min-height: 400px; } }
 </style>
 </head>
 <body>
@@ -410,14 +505,14 @@
 <div class="shell">
   <header class="topbar">
     <div class="brand">FireLine.</div>
-    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#inv-h">Investigations</a><a href="#chat-h">Mission Control</a></nav>
+    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#inv-h">Investigations</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
   <section class="hero" aria-labelledby="hero-h">
     <p class="title" aria-hidden="true">FireLine.</p>
-    <div class="orb" aria-hidden="true">
-      <div class="housing">
+    <div class="orb">
+      <div class="housing" aria-hidden="true">
         <svg class="trim" viewBox="0 0 100 100">
           <defs><g id="bolt"><circle class="bolt" r="1.9"/><circle class="bolt-hi" cx="-.4" cy="-.4" r="1.1"/></g></defs>
           <circle class="groove" cx="50" cy="50" r="37.6"/><circle class="lip" cx="50" cy="50" r="38.3"/>
@@ -429,8 +524,10 @@
         <div class="chamber"><div id="flame"></div></div>
         <span class="glint"><i></i></span>
       </div>
-      <span class="flare f1"></span><span class="flare f2"></span>
-      <svg class="orbit" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
+      <span class="flare f1" aria-hidden="true"></span><span class="flare f2" aria-hidden="true"></span>
+      <svg class="orbit" viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
+      <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
+      <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
     </div>
     <div class="hero-row">
       <div>
@@ -493,6 +590,32 @@
 
 <div class="dark">
   <div class="shell">
+    <div class="block env-block">
+      <h2 id="env-h">Mission environment</h2>
+      <p class="intro">See where this atmosphere would be used. The 3D view runs in <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app; FireLine steers its camera to match the mission you pick. OpenSpace only shows the location. It plays no part in the verdicts.</p>
+      <div class="env">
+        <div class="env-stage">
+          <div class="env-top">
+            <div><div class="env-where" id="envWhere"></div><div class="env-title" id="envTitle"></div></div>
+            <span class="env-status" id="envStatus" role="status"></span>
+          </div>
+          <svg class="env-svg" id="envSvg" viewBox="0 0 200 200" role="img"></svg>
+          <p class="env-caption" id="envCaption"></p>
+          <div class="env-controls">
+            <div class="env-toggle" role="group" aria-label="Camera view">
+              <button type="button" id="envClose" aria-pressed="true"></button>
+              <button type="button" id="envWide" aria-pressed="false"></button>
+            </div>
+            <button type="button" id="envRetry" class="env-link hidden">Retry now</button>
+          </div>
+        </div>
+        <aside class="env-panel" aria-label="Mission summary">
+          <div><h3>Mission specifications</h3><dl id="envSpecs"></dl></div>
+          <div><h3>Material verdicts</h3><div id="envVerdict"></div></div>
+          <div><h3>Supporting evidence</h3><div id="envEvidence"></div></div>
+        </aside>
+      </div>
+    </div>
     <div id="results" class="hidden">
       <div class="block">
         <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
@@ -525,19 +648,55 @@
       <div id="invList" class="inv-list"></div>
     </section>
     <section>
-      
-      <h2 id="chat-h">Ask Mission Control</h2>
-      <p class="intro">Plain-English questions go to the worker's Gemini-backed assistant, which looks up the same test data.</p>
-      <form id="chatForm" class="chat-row">
-        <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen and 0.7 atm?" aria-label="Question for Mission Control">
-        <button type="submit" id="chatGo" class="secondary">Ask</button>
+
+      <h2 id="import-h">Contribute data</h2>
+      <p class="intro">Have a new NASA combustion CSV? Upload it and FireLine matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed. Uploads are marked <b>community-contributed, unverified</b> everywhere they're shown or cited, until someone reviews them; they never get presented with the same authority as the NASA PSI data.</p>
+      <form id="importForm" class="fields" style="margin-top:0">
+        <div>
+          <label for="importTitle">Dataset title <span class="quiet">(e.g. "Saffire-IV droplet trials")</span></label>
+          <input id="importTitle" type="text" required>
+        </div>
+        <div>
+          <label for="importContributor">Your name or affiliation</label>
+          <input id="importContributor" type="text" required>
+        </div>
+        <div class="wide">
+          <label for="importFile">CSV file</label>
+          <input id="importFile" type="file" accept=".csv,text/csv" required>
+        </div>
       </form>
-      <div id="chatReply" class="reply hidden"></div>
-      <p class="intro" style="margin-top:14px">Prefer to talk it through? Call <a href="tel:+13312914794">+1 (331) 291-4794</a> and ask out loud — the same Gemini-backed Mission Control answers by voice.</p>
+      <div class="actions" style="margin-top:18px">
+        <button id="importGo" type="button">Upload and merge</button>
+        <span class="hint">Up to 5,000 rows. O2/pressure values outside 0-100% or 0-5 atm are dropped rather than trusted. Columns are matched by name, same as the original PSI loader.</span>
+      </div>
+      <div id="importResult" class="reply hidden"></div>
+    </section>
+    <section class="mission-widget" aria-label="Mission Control chat">
+      <div id="missionPanel" class="mission-panel hidden" aria-labelledby="chat-h">
+        <div class="mission-head"><div><h2 id="chat-h">Ask Mission Control</h2><p>Ask about materials, oxygen, pressure, or the NASA test data.</p></div><button type="button" id="chatClose" class="mission-close" aria-label="Close chat">×</button></div>
+        <div id="chatMessages" class="mission-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <p class="mission-phone">Prefer to talk? <a href="tel:+13312914794">Call Mission Control</a>.</p>
+        <form id="chatForm" class="chat-row">
+          <input id="chatMsg" type="text" placeholder="Is PMMA safe at 30% oxygen?" aria-label="Question for Mission Control">
+          <button type="submit" id="chatGo">Ask</button>
+        </form>
+      </div>
+      <button type="button" id="chatToggle" class="mission-launch" aria-expanded="false" aria-controls="missionPanel">Ask Mission Control</button>
     </section>
     <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
 </div>
+
+<dialog id="logDialog" class="log" aria-label="Random NASA test record">
+  <div class="log-body">
+    <p class="log-kicker"><span class="log-dot" id="logDot" aria-hidden="true"></span><span id="logSource">Mission log</span></p>
+    <div id="logContent" aria-live="polite"></div>
+    <div class="log-actions">
+      <button type="button" id="logAgain">Another record</button>
+      <button type="button" id="logClose" class="secondary">Close</button>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (() => {
@@ -554,6 +713,7 @@
   const PRESETS = {
     iss:    { name: 'ISS cabin',          o2: 21,  p: 14.7, pmin: 10.2, note: 'Sea-level-equivalent cabin air. 10.2 psia is the reduced-pressure campout used before spacewalks, so the sweep covers a partial depress.' },
     lunar:  { name: 'Lunar base or rover', o2: 30, p: 10.2, pmin: 8.2,  note: 'Reduced pressure with enriched oxygen to shorten spacewalk prebreathe. NASA\'s exploration atmosphere target is 8.2 psia at 34% oxygen; adjust the fields to test it.' },
+    mars:   { name: 'Mars habitat',       o2: 34,  p: 8.2,  pmin: 7,    note: 'NASA\'s exploration atmosphere target of 8.2 psia at 34% oxygen, applied to a surface habitat. The 7 psia depress floor is a placeholder planning figure; set your own.' },
     suit:   { name: 'Spacesuit',          o2: 100, p: 4.3,  pmin: 3.5,  note: 'Pure oxygen at 4.3 psia, as in the current EMU suit. 3.5 psia is the emergency low-pressure contingency.' },
     custom: { name: 'Custom',             o2: 30,  p: 10.3, pmin: 7,    note: 'Enter any atmosphere. Pressures are psia here; the worker is queried in atm.' },
   };
@@ -670,14 +830,16 @@
 
   // ---------- run analysis ----------
   const investigationsSeen = new Map();
-  function noteInvestigation(id, title, doi, n) {
-    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true };
-    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0); investigationsSeen.set(id, cur);
+  function noteInvestigation(id, title, doi, n, verified) {
+    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true, verified: verified !== false };
+    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0);
+    if (verified === false) cur.verified = false;
+    investigationsSeen.set(id, cur);
   }
   function harvest(r) {
-    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests);
-    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests));
-    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests));
+    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests, r.nearest.verified);
+    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests, x.verified));
+    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests, x.verified));
   }
 
   $('form').addEventListener('submit', async (e) => {
@@ -744,6 +906,7 @@
     $('matrix').innerHTML = `<tr><th>Material</th>${points.map((p) => `<th>${p.psi} psia <span class="quiet">(${num(p.atm)} atm)</span></th>`).join('')}</tr>` +
       rows.map((row) => `<tr><td>${esc(row.material)}</td>${row.perPoint.map((x) => `<td class="cell ${LEVELS[x.a.level].key}">${LEVELS[x.a.level].label}${x.a.level < 3 ? ` <span class="quiet">${x.a.confidence}</span>` : ''}</td>`).join('')}</tr>`).join('');
     $('results').classList.remove('hidden');
+    document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], confidence: row.nominal.a.confidence, nearest: row.nominal.r.nearest })) } }));
   }
 
   // ---------- investigation browser ----------
@@ -767,31 +930,154 @@
   function renderInvestigations() {
     const q = $('invSearch').value.trim().toLowerCase();
     const merged = new Map(invRows.map((x) => [x.accession, { ...x }]));
-    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests) }); } else merged.set(k, v); });
+    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests), verified: v.verified === false ? false : cur.verified }); } else merged.set(k, v); });
     const list = [...merged.values()].filter((x) => !q || [x.accession, x.title, x.objective].some((f) => (f || '').toLowerCase().includes(q)))
       .sort((a, b) => (b.seen ? 1 : 0) - (a.seen ? 1 : 0) || (b.n_tests || 0) - (a.n_tests || 0) || String(a.title).localeCompare(String(b.title)));
     $('invSource').textContent = invSource;
-    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}
+    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}${x.verified === false ? '<span class="tag placeholder">Community-contributed, unverified</span>' : ''}
       <p class="meta">${esc(x.accession)}. DOI ${doiLink(x.doi)}.${x.n_tests ? ` ${x.n_tests} tests.` : ''}</p>${x.objective ? `<p class="objective">${esc(x.objective)}</p>` : ''}</div>`).join('')
       : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
   }
   $('invSearch').addEventListener('input', () => animateHeight($('invList'), renderInvestigations));
 
+  // ---------- Mission log: click the chamber for one random real test record ----------
+  const logDialog = $('logDialog');
+  const MOCK_LOG = [
+    { investigation_id: 'MOCK-1', investigation_title: 'Synthetic example', fuel_material: 'heptane (mock)', o2_fraction: 0.21, pressure_atm: 1, burn_rate: 0.52, outcome: 'Extinction' },
+    { investigation_id: 'MOCK-2', investigation_title: 'Synthetic example', fuel_material: 'methanol (mock)', o2_fraction: 0.3, pressure_atm: 0.7, burn_rate: 0.81, outcome: 'Completion' },
+    { investigation_id: 'MOCK-3', investigation_title: 'Synthetic example', fuel_material: 'pmma (mock)', o2_fraction: 0.4, pressure_atm: 0.5, burn_rate: null, outcome: 'Disruption' },
+  ];
+  async function fetchLog() {
+    if (mockOn()) return { ...MOCK_LOG[Math.floor(Math.random() * MOCK_LOG.length)], mock: true };
+    const res = await fetch(apiBase() + '/sample', { cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 404 && d.error === 'not found') throw new Error('this worker has no /sample route yet, so it needs a redeploy');
+    if (!res.ok || d.error) throw new Error(d.error || `HTTP ${res.status}`);
+    return d;
+  }
+  function renderLog(r) {
+    const readout = (label, value, { note = '', text = false, wide = false } = {}) => value == null
+      ? `<div${wide ? ' class="wide"' : ''}><dt>${label}</dt><dd class="dim">Not recorded</dd></div>`
+      : `<div${wide ? ' class="wide"' : ''}><dt>${label}</dt><dd${text ? ' class="text"' : ''}>${value}${note ? `<small>${note}</small>` : ''}</dd></div>`;
+    const when = r.test_date ? new Date(r.test_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : null;
+    return `<h2 class="log-title">${esc(r.fuel_material || 'Unnamed fuel')}</h2>
+      <p class="log-sub"><b>${esc(r.investigation_title || r.investigation_id)}</b> · ${esc(r.investigation_id)}</p>
+      <dl class="log-grid">
+        ${readout('Oxygen', `${num(r.o2_fraction * 100, 1)}%`)}
+        ${readout('Pressure', `${num(r.pressure_atm, 3)} atm`, { note: `${num(r.pressure_atm * PSI_PER_ATM, 1)} psia` })}
+        ${readout('Burn rate <span>(units vary by investigation)</span>', r.burn_rate == null ? null : num(r.burn_rate, 3))}
+        ${readout('Outcome', r.outcome ? esc(r.outcome) : null, { text: true })}
+        ${readout('Test date', when, { text: true, wide: true })}
+      </dl>
+      <p class="log-foot">${r.mock
+        ? 'Mock record: synthetic numbers for UI development only. Turn mock mode off in Settings for a real one.'
+        : `Random pick from ${Number(r.pool_size).toLocaleString()} NASA tests that have oxygen, pressure and a recorded result. DOI ${doiLink(r.doi)}${r.source_file ? `. Source file ${esc(r.source_file)}` : ''}.`}</p>`;
+  }
+  let logBusy = false;
+  async function loadLog() {
+    if (logBusy) return; logBusy = true;
+    $('logAgain').disabled = true;
+    $('logContent').innerHTML = '<p class="log-wait">Pulling a record from Tiger Data…</p>';
+    try {
+      const r = await fetchLog();
+      $('logSource').textContent = r.mock ? 'Mock data · not from NASA' : 'Live from Tiger Data';
+      $('logDot').className = 'log-dot' + (r.mock ? '' : ' live');
+      $('logContent').innerHTML = renderLog(r);
+    } catch (err) {
+      $('logSource').textContent = 'Mission log';
+      $('logDot').className = 'log-dot';
+      $('logContent').innerHTML = `<p class="log-wait">Couldn't load a test record: ${esc(err.message)}.</p>`;
+    } finally { logBusy = false; $('logAgain').disabled = false; }
+  }
+  $('orbHit').addEventListener('click', () => { if (!logDialog.open) logDialog.showModal(); loadLog(); });
+  $('logAgain').addEventListener('click', loadLog);
+  $('logClose').addEventListener('click', () => logDialog.close());
+  logDialog.addEventListener('click', (e) => { if (e.target === logDialog) logDialog.close(); });
+
+  // ---------- Contribute data (CSV upload) ----------
+  $('importGo').addEventListener('click', async () => {
+    const title = $('importTitle').value.trim();
+    const contributorName = $('importContributor').value.trim();
+    const file = $('importFile').files[0];
+    const result = $('importResult');
+    result.classList.remove('hidden');
+    if (!title) return (result.textContent = 'Give the dataset a title first.');
+    if (!contributorName) return (result.textContent = 'Say who this is from — uploads are attributed, not anonymous.');
+    if (!file) return (result.textContent = 'Choose a CSV file first.');
+    $('importGo').disabled = true;
+    result.textContent = `Reading ${file.name}…`;
+    try {
+      const csv = await file.text();
+      if (mockOn()) {
+        result.textContent = 'Mock mode is on, so this would normally reach the worker and insert into Tiger Data. Turn mock mode off in Settings to actually import.';
+        return;
+      }
+      result.textContent = 'Matching columns and inserting into Tiger Data…';
+      const res = await fetch(apiBase() + '/import', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title, csv, source_file: file.name, contributor_name: contributorName }),
+      });
+      const d = await res.json();
+      if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
+      const matchedCols = Object.entries(d.columns_matched).filter(([, v]) => v).map(([k]) => k.replace('_', ' '));
+      result.innerHTML = `Added <b>${d.rows_inserted}</b> of ${d.rows_parsed} rows to <b>${esc(d.investigation_id)}</b>, marked community-contributed and unverified. ` +
+        `${d.rows_with_o2_and_pressure} of them have both oxygen and pressure, so they'll show up in rankings and the envelope right away.` +
+        (d.rows_with_out_of_range_values ? ` ${d.rows_with_out_of_range_values} row(s) had an out-of-range O2/pressure value dropped rather than trusted.` : '') +
+        ` Matched columns: ${matchedCols.length ? esc(matchedCols.join(', ')) : 'none'}.` +
+        (d.warnings.length ? `<br><br>${d.warnings.map(esc).join('<br>')}` : '');
+      $('importForm').reset();
+      await loadInvestigations();
+    } catch (err) {
+      result.textContent = 'Import failed: ' + err.message;
+    } finally { $('importGo').disabled = false; }
+  });
+
   // ---------- Mission Control chat ----------
+  const missionPanel = $('missionPanel');
+  const chatHistory = [];
+  function appendChatMessage(role, text, extraClass = '') {
+    const bubble = document.createElement('div');
+    bubble.className = `mission-message ${role}${extraClass ? ` ${extraClass}` : ''}`;
+    bubble.textContent = text;
+    $('chatMessages').append(bubble);
+    $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+    return bubble;
+  }
+  function setChatOpen(open) {
+    missionPanel.classList.toggle('hidden', !open);
+    $('chatToggle').setAttribute('aria-expanded', String(open));
+    if (open) $('chatMsg').focus();
+  }
+  $('chatToggle').addEventListener('click', () => setChatOpen(missionPanel.classList.contains('hidden')));
+  $('chatClose').addEventListener('click', () => { setChatOpen(false); $('chatToggle').focus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !missionPanel.classList.contains('hidden')) { setChatOpen(false); $('chatToggle').focus(); } });
   $('chatForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = $('chatMsg').value.trim(); if (!message) return;
-    $('chatGo').disabled = true; $('chatReply').classList.remove('hidden'); $('chatReply').textContent = 'Asking…';
+    $('chatGo').disabled = true;
+    $('chatMsg').value = '';
+    appendChatMessage('user', message);
+    const pending = appendChatMessage('assistant', 'Asking Mission Control…', 'pending');
     try {
       let reply;
       if (mockOn()) reply = 'Mock mode is on, so Mission Control is offline. It needs the worker\'s chat route, which runs through Gemini on Cloudflare AI Gateway. Turn mock mode off in Settings to ask for real.';
       else {
-        const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message }) });
+        const transcript = chatHistory.map((turn) => `${turn.role === 'user' ? 'User' : 'Mission Control'}: ${turn.content}`).join('\n');
+        const contextualMessage = transcript
+          ? `Conversation so far:\n${transcript}\n\nUser: ${message}\nMission Control:`
+          : message;
+        const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: contextualMessage }) });
         const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
         reply = d.reply; if (d.verdict) harvest(d.verdict), renderInvestigations();
       }
-      $('chatReply').textContent = reply;
-    } catch (err) { $('chatReply').textContent = 'Mission Control did not answer: ' + err.message; }
+      pending.textContent = reply;
+      pending.classList.remove('pending');
+      chatHistory.push({ role: 'user', content: message }, { role: 'assistant', content: reply });
+    } catch (err) {
+      pending.textContent = 'Mission Control did not answer: ' + err.message;
+      pending.classList.remove('pending');
+      pending.classList.add('error');
+    }
     finally { $('chatGo').disabled = false; }
   });
 
@@ -1234,6 +1520,137 @@
     }, (k) => k);
     items.forEach(([el, ghost]) => { ghost.remove(); el.classList.remove('burn-new'); el.style.removeProperty('--b'); });
   }
+})();
+</script>
+<script>
+// ---------- Mission environment: OpenSpace link ----------
+// Display only. This block steers the camera of a locally running OpenSpace
+// (https://github.com/OpenSpace/OpenSpace) and mirrors numbers the page already
+// has. It computes nothing about combustion; verdicts arrive via the
+// 'fireline:ranked' event fired by render() above.
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Which place each preset shows. Site coordinates are reference points for aiming the camera, not mission data.
+  const ISS = { where: 'Low Earth orbit', body: 'Earth', color: '#4f8fe6', node: 'ISS', trail: 'ISS_trail',
+    asset: 'scene/solarsystem/planets/earth/satellites/misc/iss', close: 'Station', wide: 'Orbit', closeText: 'the International Space Station' };
+  const VIEWS = {
+    iss: ISS,
+    suit: { ...ISS, where: 'Spacewalk, low Earth orbit' },
+    lunar: { where: 'Lunar surface', body: 'Moon', color: '#b9c0c9', close: 'Base site', wide: 'Moon', closeText: 'the Shackleton crater rim, a reference site near the lunar south pole',
+      site: { lat: -89.5, lon: 0, alt: 150000 } },
+    mars: { where: 'Martian surface', body: 'Mars', color: '#d9703a', close: 'Habitat site', wide: 'Mars', closeText: 'Jezero crater, a reference site',
+      site: { lat: 18.38, lon: 77.58, alt: 300000 } },
+  };
+
+  // ---- OpenSpace connection (WebSocket server, default port 4682) ----
+  const HOST = new URLSearchParams(location.search).get('openspace') || 'localhost';
+  let socket = null, status = 'disconnected', topic = 0, attempts = 0, retryTimer = null;
+  function connect() {
+    clearTimeout(retryTimer);
+    setStatus('connecting');
+    let ws;
+    try { ws = new WebSocket(`ws://${HOST}:4682/websocket`); } catch { return retryLater(); }
+    socket = ws;
+    ws.onopen = () => { if (socket !== ws) return; attempts = 0; setStatus('connected'); runLua(PREPARE); sendView(); };
+    ws.onclose = () => { if (socket !== ws) return; socket = null; retryLater(); };
+    ws.onerror = () => ws.close();
+  }
+  function retryLater() {
+    setStatus('disconnected');
+    attempts += 1;
+    retryTimer = setTimeout(connect, Math.min(15000, 3000 * attempts));
+  }
+  function runLua(script) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    socket.send(JSON.stringify({ topic: topic++, type: 'luascript', payload: { script, return: false } }));
+  }
+
+  // ---- Lua sent to OpenSpace. Built only from the constants above; works with old and new function names. ----
+  const SECONDS = 4;
+  const PREPARE = `if not openspace.hasSceneGraphNode('${ISS.node}') then pcall(function() openspace.asset.add('${ISS.asset}') end) end`;
+  function viewLua(v, mode) {
+    const wide = `nav.flyTo('${v.body}', ${SECONDS})`;
+    let move = wide;
+    if (mode === 'close' && v.node) move = `if openspace.hasSceneGraphNode('${v.node}') then nav.flyTo('${v.node}', ${SECONDS}) else ${wide} end`;
+    else if (mode === 'close' && v.site) move = `if geo then geo('${v.body}', ${v.site.lat}, ${v.site.lon}, ${v.site.alt}, ${SECONDS}) else ${wide} end`;
+    const trail = v.trail ? `local t = 'Scene.${v.trail}.Renderable.Enabled'\nif openspace.hasProperty(t) then openspace.setPropertyValueSingle(t, true) end` : '';
+    return `local nav = openspace.navigation
+if not (nav and nav.flyTo) then nav = openspace.pathnavigation end
+local geo = (openspace.navigation and openspace.navigation.flyToGeo) or (openspace.globebrowsing and openspace.globebrowsing.flyToGeo)
+pcall(function() openspace.pathnavigation.stopPath() end)
+${trail}
+${move}`;
+  }
+
+  // ---- stage ----
+  let key = 'iss', mode = 'close';
+  const sendView = () => runLua(viewLua(VIEWS[key], mode));
+  function setStatus(next) {
+    status = next;
+    $('envStatus').className = 'env-status ' + next;
+    $('envStatus').innerHTML = '<i aria-hidden="true"></i>' + { connected: 'OpenSpace connected', connecting: 'Looking for OpenSpace…', disconnected: 'OpenSpace not running' }[next];
+    $('envRetry').classList.toggle('hidden', next !== 'disconnected');
+    drawStage();
+  }
+  function drawStage() {
+    const v = VIEWS[key];
+    $('envWhere').textContent = VIEWS[checked()?.value] ? v.where : `Custom atmosphere, still showing ${v.body}`;
+    $('envTitle').textContent = presetName();
+    $('envClose').textContent = v.close; $('envWide').textContent = v.wide;
+    $('envClose').setAttribute('aria-pressed', mode === 'close'); $('envWide').setAttribute('aria-pressed', mode === 'wide');
+    const target = mode === 'close' ? v.closeText : `the whole ${v.body === 'Earth' ? 'Earth with the station\'s orbit' : v.body}`;
+    $('envCaption').textContent = status === 'connected' ? `The OpenSpace window is showing ${target}.`
+      : `Start OpenSpace on this computer to see ${target} in 3D. It will follow your mission choice automatically.`;
+    const lat = v.site ? v.site.lat * Math.PI / 180 : 0;
+    const mark = v.node ? '<ellipse cx="100" cy="100" rx="84" ry="26" fill="none" stroke="#fff" stroke-opacity=".55" stroke-dasharray="3 4" transform="rotate(-20 100 100)"/><circle cx="179" cy="71" r="4" fill="#fff"/>'
+      : `<circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="4" fill="#fff"/><circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="9" fill="none" stroke="#fff" stroke-opacity=".6"/>`;
+    $('envSvg').setAttribute('aria-label', `Schematic of ${v.body}`);
+    $('envSvg').innerHTML = `<defs><radialGradient id="envShade" cx="35%" cy="35%" r="75%"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="58" fill="${v.color}"/><circle cx="100" cy="100" r="58" fill="url(#envShade)"/>${mark}`;
+  }
+  function setMode(next) { mode = next; drawStage(); sendView(); }
+  $('envClose').addEventListener('click', () => setMode('close'));
+  $('envWide').addEventListener('click', () => setMode('wide'));
+  $('envRetry').addEventListener('click', () => { attempts = 0; connect(); });
+
+  // ---- panel: mirrors the form and the latest ranking ----
+  const checked = () => document.querySelector('input[name=preset]:checked');
+  const presetName = () => checked()?.nextElementSibling?.childNodes[0]?.textContent.trim() || '';
+  const show = (x, d) => (Number.isFinite(x) ? String(Number(x.toFixed(d))) : '—');
+  function drawSpecs() {
+    const o2 = parseFloat($('o2').value), p = parseFloat($('p').value), pmin = parseFloat($('pmin').value);
+    const row = (k, val) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`;
+    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Shown in OpenSpace', VIEWS[key].body) + row('Oxygen', `${show(o2, 1)}% by volume`)
+      + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
+  }
+  function clearVerdict() {
+    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see FireLine\'s verdicts for this atmosphere.</p>';
+    $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each verdict will be listed here.</p>';
+  }
+  document.addEventListener('fireline:ranked', (e) => {
+    const items = e.detail.items;
+    $('envVerdict').innerHTML = `<p class="small quiet" style="margin-bottom:6px">At ${esc(e.detail.scenario.pNom)} psia nominal. Confidence is out of 99.</p><ul class="env-list">`
+      + items.map((it) => `<li><span>${esc(it.material)}</span><span>${it.level.key !== 'none' ? `<span class="quiet">${it.confidence}</span> ` : ''}<span class="chip ${it.level.key}"><b>${it.level.label}</b></span></span></li>`).join('') + '</ul>';
+    const seen = new Map();
+    items.forEach((it) => { const n = it.nearest; if (n && !seen.has(n.investigation_id)) seen.set(n.investigation_id, n); });
+    $('envEvidence').innerHTML = seen.size ? '<ul class="env-ev">' + [...seen.values()].map((n) => `<li><b>${esc(n.investigation_title || n.investigation_id)}</b><span>${esc(n.investigation_id)}${n.doi ? `, DOI <a href="https://doi.org/${esc(n.doi)}" target="_blank" rel="noopener">${esc(n.doi)}</a>` : ''}</span></li>`).join('') + '</ul><p class="small quiet" style="margin-top:8px">Full test records are in the ranking below.</p>'
+      : '<p class="small quiet">No quantified NASA tests near these conditions.</p>';
+  });
+
+  // Preset changed: move the camera. "Custom" keeps the current place.
+  $('presets').addEventListener('change', () => {
+    const k = checked()?.value;
+    if (VIEWS[k]) { key = k; mode = 'close'; sendView(); }
+    drawStage(); drawSpecs(); clearVerdict();
+  });
+  // Numbers edited by hand: the page switches itself to Custom, so only the panel updates.
+  $('form').addEventListener('input', (e) => { if (['o2', 'p', 'pmin'].includes(e.target.id)) { drawStage(); drawSpecs(); clearVerdict(); } });
+
+  key = VIEWS[checked()?.value] ? checked().value : 'iss';
+  drawSpecs(); clearVerdict(); connect();
 })();
 </script>
 </body>
