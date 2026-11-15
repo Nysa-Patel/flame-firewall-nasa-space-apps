@@ -132,7 +132,7 @@
   .hero-copy .accent-dot { width: auto; height: auto; min-height: 48px; border-radius: 999px; padding: 12px 24px; display: inline-grid; margin-top: 24px; }
   .lab { background: var(--paper); border: 1px solid var(--line); border-radius: 28px; padding: 26px; display: grid;
     grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); gap: 30px; box-shadow: 0 24px 60px rgba(11, 27, 51, .08); }
-  .lab-view { display: grid; align-content: start; justify-items: center; }
+  .lab-view { display: flex; flex-direction: column; align-items: center; container-type: inline-size; min-width: 0; }
   .lab .orb .orbit { inset: -9%; width: 118%; height: 118%; }
   .lab-state { margin-top: 58px; font-size: 14px; color: var(--ink-2); text-align: center; max-width: 34ch; min-height: 5.2em; }
   .lab-state b { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
@@ -169,13 +169,32 @@
   .orb.engine .chamber { position: absolute; left: 50%; top: 20%; width: 46%; height: auto; aspect-ratio: 1; translate: -50% 0; border-radius: 20px;
     box-shadow: 0 0 0 2px var(--steel-4), inset 0 6px 16px rgba(0, 0, 0, .65); }
   .orb.engine .chamber::after { border-radius: 20px; }
-  .engine-plume { position: absolute; left: 50%; top: 97%; width: 70%; height: 22%; translate: -50% 0; pointer-events: none; border-radius: 50%;
-    background: radial-gradient(ellipse 50% 60% at 50% 0, var(--plume-c, #5f8dff), transparent 70%); opacity: calc(var(--plume, .4) * .7); filter: blur(6px);
-    transition: opacity .4s ease; }
+  /* exhaust plume: length from the nearest NASA tests' burn rate, steadiness from the share that kept burning (lab script sets the vars) */
+  .orb.engine { margin-bottom: 58cqi; }
+  .plume { position: absolute; left: 50%; top: 95.5%; width: 64%; height: calc((.25 + .75 * var(--pl-len, .5)) * 44%); translate: -50% 0; pointer-events: none;
+    transform-origin: 50% 0; transform: skewX(calc(var(--pl-lean, 0) * -28deg)); opacity: var(--pl-on, 1); filter: blur(1.4px);
+    transition: height .5s ease, opacity .4s ease, transform .5s ease; }
+  .plume i { position: absolute; display: block; transform-origin: 50% 0; }
+  .pl-outer { inset: 0; clip-path: polygon(2% 0, 98% 0, 70% 55%, 54% 100%, 46% 100%, 30% 55%);
+    -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--plume-c, #5f8dff) 70%, #fff) 0%, var(--plume-c, #5f8dff) 22%, color-mix(in srgb, var(--plume-c, #5f8dff) 55%, transparent) 62%, transparent 100%);
+    animation: pl-flick var(--pl-speed, .16s) ease-in-out infinite alternate; }
+  .pl-core { left: 26%; right: 26%; top: 0; height: 64%; clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%);
+    background: linear-gradient(to bottom, #fff 0%, var(--plume-core, #cfe0ff) 45%, transparent 100%); animation: pl-flick calc(var(--pl-speed, .16s) * .7) ease-in-out infinite alternate-reverse; }
+  .pl-dia { left: 36%; right: 36%; top: 8%; bottom: 22%; opacity: var(--pl-dia, 0);
+    background: radial-gradient(ellipse 50% 7% at 50% 14%, #fff, transparent), radial-gradient(ellipse 42% 6% at 50% 40%, #fff, transparent), radial-gradient(ellipse 34% 5% at 50% 66%, #ffffffaa, transparent); }
+  @keyframes pl-flick { to { transform: scale(calc(1 - var(--pl-jit, .05)), calc(1 + var(--pl-jit, .05) * 1.8)); } }
+  .plume.sputter { animation: pl-sputter 1.6s steps(1) infinite; }
+  @keyframes pl-sputter { 0%, 100% { opacity: var(--pl-on, 1); } 18% { opacity: .25; } 24% { opacity: var(--pl-on, 1); } 61% { opacity: .4; } 66% { opacity: var(--pl-on, 1); } }
+  @media (prefers-reduced-motion: reduce) { .plume i, .plume.sputter { animation: none; } .plume { transition: none; } }
+  .lab-data { margin-top: 10px; font-size: 13px; color: var(--ink-2); text-align: center; max-width: 36ch; }
+  .lab-data b { color: var(--ink); }
+  .lab-check { margin-top: 12px; min-height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .lab-check:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   .orb.engine .orb-hit { border-radius: 24px; }
   .orb.engine .orb-hit:focus-visible { border-radius: 24px; }
-  .lab .orb.engine .orb-hint { top: calc(100% + 30px); }
-  .lab-state { margin-top: 72px; }
+  .lab .orb.engine .orb-hint { top: calc(100% + 56cqi); }
+  .lab-state { margin-top: 52px; }
   @media (max-width: 1180px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } .hero-copy .lede, .flame-note { max-width: 60ch; } }
   @media (max-width: 680px) {
     .lab { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; }
@@ -703,11 +722,13 @@
             <ellipse class="eg-exit" cx="100" cy="252" rx="78" ry="4"/>
           </svg>
           <div class="chamber"><div id="flame"></div></div>
-          <span class="engine-plume" aria-hidden="true"></span>
+          <span class="plume" aria-hidden="true"><i class="pl-outer"></i><i class="pl-core"></i><i class="pl-dia"></i></span>
           <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
           <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
         </div>
           <p class="lab-state" id="labState" role="status" aria-live="polite"></p>
+          <p class="lab-data" id="labData">Loading NASA tests…</p>
+          <button type="button" class="lab-check" id="labCheck">Check this in the NASA data</button>
         </div>
         <div class="lab-controls">
           <div class="lab-head">
@@ -1076,7 +1097,9 @@
     const c = Object.fromEntries(d.columns.map((k, i) => [k, i]));
     const rows = d.rows.map((r) => ({ id: r[c.test_id], inv: r[c.investigation_id], fuel: r[c.fuel_material] || '', o2: Number(r[c.o2_fraction]), p: r[c.pressure_atm] == null ? null : Number(r[c.pressure_atm]),
       burn: r[c.burn_rate], bh: r[c.burn_header] || null, outcome: r[c.outcome], date: r[c.test_date], cls: classify(r[c.outcome]) }));
-    return (POINTS = { rows, investigations: d.investigations || {}, source });
+    POINTS = { rows, investigations: d.investigations || {}, source };
+    window.phenoxPoints = POINTS; document.dispatchEvent(new CustomEvent('phenox:points', { detail: POINTS }));   // read only, for the flame lab
+    return POINTS;
   })();
   const count = (list) => { const c = { out: 0, disrupt: 0, burn: 0, unknown: 0 }; list.forEach((t) => c[t.cls]++); return c; };
   // How the tests in the nearest bucket ended. Counted from the test table when it holds the whole bucket, otherwise from the tests the worker sent.
@@ -1547,13 +1570,13 @@
   if (!$('labO2')) return;
   // rough lowest oxygen (%) each fuel keeps burning at in normal air pressure, and how much soot it makes (sooty flames glow yellow)
   const FUELS = {
-    heptane:  { name: 'heptane',  limit: 13, soot: .55 },
-    methanol: { name: 'methanol', limit: 15, soot: .05 },
-    dodecane: { name: 'dodecane', limit: 14, soot: .7 },
-    ethylene: { name: 'ethylene', limit: 12, soot: .8 },
-    pmma:     { name: 'PMMA',     limit: 17, soot: .5 },
-    cotton:   { name: 'cotton',   limit: 18, soot: .35 },
-    nomex:    { name: 'Nomex',    limit: 28, soot: .3 },
+    heptane:  { name: 'heptane',  limit: 13, soot: .55, re: /heptane/i },
+    methanol: { name: 'methanol', limit: 15, soot: .05, re: /methanol/i },
+    dodecane: { name: 'dodecane', limit: 14, soot: .7, re: /dodecane|c12h26/i },
+    ethylene: { name: 'ethylene', limit: 12, soot: .8, re: /ethylene|c2h4/i },
+    pmma:     { name: 'PMMA',     limit: 17, soot: .5, re: /pmma|\brod\b/i },
+    cotton:   { name: 'cotton',   limit: 18, soot: .35, re: /cotton|sibal/i },
+    nomex:    { name: 'Nomex',    limit: 28, soot: .3, re: /nomex/i },
   };
   // missions: gravity (g), oxygen (%), pressure (psia), air. Mars habitat figures are the page's placeholders.
   const MISSIONS = {
@@ -1577,6 +1600,29 @@
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
   const gName = (g) => g < .02 ? 'Microgravity' : g > .98 ? 'Earth gravity' : Math.abs(g - .165) < .03 ? 'Moon gravity' : Math.abs(g - .38) < .03 ? 'Mars gravity' : 'Partial gravity';
+
+  // ---- the NASA tests behind the plume: the same test table the ranking uses (window.phenoxPoints, read only) and the same outcome
+  // classes. For the lab's fuel, oxygen and pressure it takes the nearest tested conditions (in the worker's bucket widths, 5 points of
+  // oxygen and 0.1 atm) and everything within one width of them; more than 2 widths away counts as no nearby tests, as in the ranking.
+  let PTS = window.phenoxPoints || null;
+  document.addEventListener('phenox:points', (e) => { PTS = e.detail; update(); });
+  function nasa(fuel, o2pct, psia) {
+    if (!PTS) return null;
+    // fuels whose tests never recorded pressure (PMMA, ethylene, cotton/SIBAL and others) are matched on oxygen alone
+    const atm = psia / 14.696, mine = PTS.rows.filter((t) => fuel.re.test(t.fuel)), withP = mine.filter((t) => t.p != null);
+    const usesP = withP.length > 0, all = usesP ? withP : mine;
+    if (!all.length) return { none: true, all: 0 };
+    const dist = (t) => usesP ? Math.hypot((t.o2 - o2pct / 100) / .05, (t.p - atm) / .1) : Math.abs(t.o2 - o2pct / 100) / .05;
+    const dmin = Math.min(...all.map(dist));
+    if (dmin > 2) return { far: true, all: all.length, usesP };
+    const near = all.filter((t) => dist(t) <= dmin + 1), c = { out: 0, burn: 0, disrupt: 0, unknown: 0 };
+    near.forEach((t) => { c[t.cls] = (c[t.cls] || 0) + 1; });
+    const rate = (list) => list.map((t) => Number(t.burn)).filter((v) => Number.isFinite(v) && v > 0);
+    const r = rate(near), top = Math.max(...rate(all), 0);
+    const o2s = near.map((t) => t.o2 * 100), ps = usesP ? near.map((t) => t.p) : null;
+    return { n: near.length, out: c.out, burn: c.burn, rateN: r.length && top ? r.reduce((a, b) => a + b, 0) / r.length / top : null,
+      o2: [Math.min(...o2s), Math.max(...o2s)], p: ps && [Math.min(...ps), Math.max(...ps)], exact: dmin < .5 };
+  }
 
   function update() {
     const o2 = Number(ui.o2.value), p = Number(ui.p.value), flow = Number(ui.flow.value), g = Number(ui.g.value);
@@ -1610,8 +1656,32 @@
     st.style.setProperty('--lab-dot', dot);
     st.innerHTML = `<b>${word} · ${gName(g)}</b>${[out || shape, wind, soot, air.say].filter(Boolean).slice(0, 3).join(' ')}`;
     fallback();
-    const orb = document.querySelector('.orb.engine');   // exhaust glow under the nozzle: brighter with oxygen, gone when the flame is out
-    if (orb) { orb.style.setProperty('--plume', String((.25 + .75 * state.o2) * alive)); orb.style.setProperty('--plume-c', state.o2 > .2 || fuel.soot * (.3 + .7 * g) > .45 ? '#ff9a3c' : '#5f8dff'); }
+    // exhaust plume. With nearby NASA tests: length from their average burn rate (against the fastest burn on record for this fuel),
+    // steadiness from the share of conclusive tests that kept burning. Without them it follows the rules of thumb above.
+    const d = nasa(fuel, o2, p), orb = document.querySelector('.orb.engine'), plume = orb?.querySelector('.plume');
+    const conclusive = d && d.n ? d.out + d.burn : 0, share = conclusive ? d.burn / conclusive : null;
+    const drive = d && d.n ? (d.rateN ?? share ?? .5) : .3 + .5 * state.o2;
+    const len = clamp((.3 + .7 * drive) * (.6 + .4 * state.o2) * (1 + air.heat * .1)) * alive;
+    const steady = share ?? alive;
+    if (orb) {
+      const warm = state.o2 > .2 || fuel.soot * (.3 + .7 * g) > .45;
+      orb.style.setProperty('--plume-c', warm ? '#ff9a3c' : '#5f8dff');
+      orb.style.setProperty('--plume-core', warm ? '#ffe2a8' : '#cfe0ff');
+      orb.style.setProperty('--pl-len', len.toFixed(3));
+      orb.style.setProperty('--pl-on', alive > .05 ? String(.55 + .45 * alive) : '0');
+      orb.style.setProperty('--pl-lean', (state.flow * 1.2).toFixed(3));
+      orb.style.setProperty('--pl-jit', (.03 + (1 - steady) * .12 + state.flow * .05).toFixed(3));
+      orb.style.setProperty('--pl-speed', `${(.12 + (1 - g) * .14).toFixed(2)}s`);
+      orb.style.setProperty('--pl-dia', String(len > .6 && p > 8 ? ((len - .6) * 2).toFixed(2) : 0));
+      plume?.classList.toggle('sputter', alive > .05 && (alive < .6 || (share != null && share < .34)));
+    }
+    const pct = (v) => `${Math.round(v * 100)}%`;
+    $('labData').innerHTML = !PTS ? 'NASA tests are still loading.'
+      : d.none ? `NASA has no tests of ${fuel.name} with oxygen on record, so the plume follows the rules of thumb.`
+      : d.far ? `No NASA tests of ${fuel.name} near ${fmt(o2)}% oxygen${d.usesP ? ` and ${fmt(p, 1)} psia` : ''} (${d.all} tests elsewhere), so the plume follows the rules of thumb.`
+      : `<b>NASA data:</b> ${d.n} ${fuel.name} test${d.n === 1 ? '' : 's'} ${d.exact ? 'at' : 'nearest to'} these conditions (${fmt(d.o2[0])}${d.o2[1] - d.o2[0] >= 1 ? `–${fmt(d.o2[1])}` : ''}% oxygen, ${d.p ? `${fmt(d.p[0] * 14.696, 1)}${d.p[1] - d.p[0] >= .01 ? `–${fmt(d.p[1] * 14.696, 1)}` : ''} psia` : 'pressure not recorded'}, in microgravity): `
+        + (conclusive ? `${d.out} went out, ${d.burn} kept burning (${pct(share)}).` : 'none with a clear outcome.')
+        + (d.rateN != null ? ` Burn rate ${pct(d.rateN)} of this fuel's fastest on record sets the plume length.` : '');
     document.dispatchEvent(new CustomEvent('phenox:lab', { detail: state }));
   }
 
@@ -1642,7 +1712,7 @@
   ui.air.addEventListener('change', () => { const a = AIR[ui.air.value]; if (a.flow != null) ui.flow.value = a.flow; update(); });
   [ui.o2, ui.p, ui.flow, ui.g].forEach((el) => el.addEventListener('input', update));
   ui.fuel.addEventListener('change', update);
-  // follow the ranking form's oxygen and pressure when the user changes them there (read only; the lab never writes to the form)
+  // follow the ranking form's oxygen and pressure when the user changes them there (read only; the lab writes to the form only when the user presses "Check this in the NASA data")
   const follow = () => {
     const o2 = Number($('o2')?.value), p = Number($('p')?.value);
     if (o2 >= 10 && o2 <= 100) ui.o2.value = o2;
@@ -1651,6 +1721,17 @@
   };
   ['o2', 'p'].forEach((id) => $(id)?.addEventListener('input', follow));
   $('presets')?.addEventListener('change', () => setTimeout(follow, 0));
+  // "Check this in the NASA data": copies the lab's oxygen, pressure and fuel into the ranking form on the user's click (never on its
+  // own), the same as typing them, then moves focus to Rank materials. It does not run the ranking.
+  $('labCheck').addEventListener('click', () => {
+    const set = (id, v) => { const el = $(id); if (!el) return; el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+    const p = Number(ui.p.value);
+    set('o2', ui.o2.value); set('p', p);
+    if (Number($('pmin')?.value) >= p) set('pmin', Math.round(p * .7 * 10) / 10);
+    set('materials', FUELS[ui.fuel.value].name);
+    $('scenario-h')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    $('go')?.focus({ preventScroll: true });
+  });
   mission('iss');
 })();
 </script>
