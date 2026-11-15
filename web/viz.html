@@ -56,6 +56,8 @@
   .finding .b { display: none; grid-column: 1 / -1; margin-top: 12px; font-size: 14px; color: var(--ink); }
   .finding[aria-pressed=true] { background: var(--paper); box-shadow: inset 3px 0 0 var(--accent); }
   .finding[aria-pressed=true] .b { display: block; }
+  .research-note { margin: 18px 12px 0 0; padding: 14px 16px; border-radius: 18px; background: var(--paper); font-size: 14px; color: var(--ink-2); }
+  .research-note a { display: inline-block; margin-bottom: 4px; font-weight: 700; color: var(--ink); }
   .read { margin-top: 10px; padding-left: 18px; color: var(--ink-2); font-size: 13px; display: grid; gap: 6px; }
 
   .stage { grid-area: stage; position: relative; min-height: 0; overflow: hidden; margin: 16px 16px 16px 0; border-radius: 28px; background: var(--char); color: var(--on-dark); }
@@ -309,6 +311,7 @@
   <div class="q"><p class="eyebrow">The question</p><p class="qt">At what oxygen level and pressure does a flame in microgravity go out, and how many real tests back that up?</p><button class="btn" id="investBtn" type="button">Investigate it yourself ↑</button></div>
   <h2 id="findings-h">Key findings</h2>
   <ol id="findings" aria-labelledby="findings-h"></ol>
+  <p class="research-note"><a href="research.html">Backed by published research →</a> NASA’s own FLEX experiment reported that methanol droplets cannot keep burning below about 12–13% oxygen, which our methanol rows agree with.</p>
   <div class="how">
     <h2>How to read it</h2>
     <ul class="read" id="read"></ul>

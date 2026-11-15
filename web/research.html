@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The research behind Phenox</title>
+<meta name="description" content="The NASA experiments and published papers behind Phenox: where the tests come from, why oxygen and pressure matter, and how our readings compare with the published limits.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+
+  /* Tokens from web/index.html. Light section for reading; navy cards wherever the verdict colours appear, as on the main page. */
+  :root {
+    --grey: #eef1f5; --paper: #ffffff; --ink: #0b1b33; --ink-2: #47556b; --line: #d5dbe5;
+    --char: #0b1f3f; --card: #132b52; --card-2: #1b3766; --on-dark: #f2f5fa; --on-dark-2: #b6c3d8; --line-dark: #2c4878;
+    --accent: #d42a1c; --accent-ink: #ffffff; --sky: #9cc4ff;
+    --pass: #45d2c3; --caution: #f6b445; --fail: #ff8a7a; --none: #a9b4c6;
+    --r-out: #3987e5; --r-disrupt: #199e70; --r-burn: #d95926; --r-unknown: #8a97ad;
+    --spring: linear(0, 0.012 1%, 0.05 2.2%, 0.39 7.2%, 0.73 12.8%, 0.96 18%, 1.07 23%, 1.11 28%, 1.07 34%, 1.01 44%, 0.99 56%, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grey); color: var(--ink); font: 17px/1.6 "Space Grotesk", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 8px; }
+  .dark :focus-visible { outline-color: var(--sky); }
+  .shell { max-width: 1060px; margin: 0 auto; padding: 0 16px; }
+  .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; background: var(--paper); border-radius: 0 0 20px 20px; padding: 12px 16px 12px 22px; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.02em; margin-right: auto; text-decoration: none; display: inline-flex; align-items: center; min-height: 40px; }
+  .topbar a:not(.brand):not(.pill) { display: inline-flex; align-items: center; min-height: 40px; font-weight: 600; font-size: 15px; }
+  .pill { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 700; font-size: 15px; transition: scale .45s var(--spring); }
+  .pill:hover { scale: 1.04; } .pill:active { scale: .97; }
+
+  header.hero { padding: 54px 0 20px; }
+  .hero h1 { max-width: 20ch; font-size: clamp(36px, 6vw, 68px); font-weight: 700; line-height: 1; letter-spacing: -.045em; }
+  .hero p { max-width: 62ch; margin-top: 18px; font-size: 19px; color: var(--ink-2); }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; }
+  .toc a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border-radius: 999px; background: var(--paper); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .toc b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px; }
+
+  section.step { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 18px; padding: 44px 0; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+  .num { font-size: 44px; font-weight: 300; line-height: 1; letter-spacing: -.04em; color: var(--ink-2); }
+  .step h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 600; line-height: 1.15; letter-spacing: -.025em; }
+  .step p { max-width: 68ch; margin-top: 12px; }
+  .step .quiet, .quiet { color: var(--ink-2); }
+  .small { font-size: 14px; }
+  code { font-size: .9em; padding: 1px 6px; border-radius: 6px; background: var(--paper); }
+
+  
+  .dark { margin-top: 20px; padding: 24px 26px; border-radius: 24px; background: var(--char); color: var(--on-dark); }
+  .dark .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-2); font-weight: 600; }
+  .check { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 12px; }
+  .check h3 { font-size: 15px; font-weight: 600; color: var(--on-dark-2); }
+  .check .big { margin-top: 4px; font-size: 40px; font-weight: 300; letter-spacing: -.035em; line-height: 1.05; }
+  .check p { margin-top: 6px; font-size: 15px; color: var(--on-dark); max-width: none; }
+  .dark .fine { margin-top: 16px; font-size: 13px; color: var(--on-dark-2); max-width: 70ch; }
+  .dark a { color: var(--sky); }
+  .refs { display: grid; gap: 12px; margin-top: 16px; padding: 0; list-style: none; }
+  .ref { padding: 16px 18px; border-radius: 18px; background: var(--paper); max-width: 72ch; }
+  .ref h3 { font-size: 17px; font-weight: 600; line-height: 1.3; }
+  .ref .by { margin-top: 4px; font-size: 14px; color: var(--ink-2); }
+  .ref .says { margin-top: 8px; font-size: 15px; }
+  .ref .use { margin-top: 6px; font-size: 14px; color: var(--ink-2); }
+  .ref .link { display: inline-flex; align-items: center; min-height: 40px; margin-top: 6px; font-weight: 600; font-size: 14px; }
+  .tag { display: inline-block; margin-right: 8px; padding: 1px 9px; border-radius: 999px; background: var(--grey); font-size: 12px; font-weight: 600; color: var(--ink-2); vertical-align: 2px; }
+  .allrefs { margin-top: 16px; padding-left: 22px; font-size: 14px; color: var(--ink-2); max-width: 78ch; }
+  .allrefs li { margin: 0 0 8px; }
+  @media (max-width: 640px) { .check { grid-template-columns: minmax(0, 1fr); } section.step { grid-template-columns: minmax(0, 1fr); } .num { font-size: 30px; margin-bottom: 6px; } }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="index.html">Project Phenox</a>
+    <a href="methods.html">How it works</a>
+    <a href="viz.html">Visualize the data</a>
+    <a class="pill" href="index.html#scenario-h">Rank materials</a>
+  </header>
+
+  <header class="hero">
+    <h1>The research behind Phenox</h1>
+    <p>Phenox reads NASA’s own test records. This page lists the experiments those tests came from and what published research says about the same questions, so you can check our readings against it. Every link goes to the paper or to NASA’s report.</p>
+    <ol class="toc">
+      <li><a href="#r1"><b>1</b>Where the tests come from</a></li>
+      <li><a href="#r2"><b>2</b>Oxygen and pressure</a></li>
+      <li><a href="#r3"><b>3</b>Fire at spacecraft scale</a></li>
+      <li><a href="#r4"><b>4</b>Why flames look different</a></li>
+      <li><a href="#r5"><b>5</b>What this does not claim</a></li>
+    </ol>
+
+    <section class="dark" aria-labelledby="chk-h">
+      <p class="eyebrow">A check against the published limit</p>
+      <h2 id="chk-h" style="font-size:24px;font-weight:600;letter-spacing:-.02em;margin-top:6px">Do our methanol rows agree with NASA’s paper?</h2>
+      <div class="check">
+        <div><h3>Published (Nayagam et al., 2013)</h3><div class="big">12–13% oxygen</div><p>The limiting oxygen index NASA’s FLEX experiment reported for methanol droplets in these gas mixtures. Below it, methanol could not keep burning.</p></div>
+        <div><h3>Our table, same experiment</h3><div class="big" id="ours">…</div><p id="oursText">Loading the test table…</p></div>
+      </div>
+      <p class="fine">This is a consistency check, not a proof. Our rows record how each test ended, not the limiting oxygen index itself, and the published figure is for particular gas mixtures and droplet sizes. We show it so you can see the two agree in direction and in size.</p>
+    </section>
+  </header>
+
+  <main>
+    <section class="step" id="r1" aria-labelledby="r1-h">
+      <span class="num" aria-hidden="true">1</span>
+      <div>
+        <h2 id="r1-h">Where the tests come from</h2>
+        <p>Most of the tests with a burn rate in our table come from the Flame Extinguishment Experiment (FLEX), which burned small fuel droplets on the International Space Station. The experiment was designed to find how little oxygen a flame needs, and how much inert gas it takes to put one out.</p>
+        <ul class="refs">
+        <li class="ref"><h3><span class="tag">NASA report</span>Methanol Droplet Combustion in Oxygen-Inert Environments in Microgravity</h3><p class="by">Nayagam, Dietrich, Hicks and Williams · 2013 · NASA Technical Reports Server</p><p class="says">Droplets of alkanes and alcohols were burned in still microgravity air with different amounts of oxygen and inert gas, to find each fuel’s limiting oxygen index. For methanol, the reported limit is around 12% to 13% oxygen by volume.</p><p class="use">How Phenox uses it: it is the best published check on our own methanol rows. See the comparison above.</p><a class="link" href="https://ntrs.nasa.gov/citations/20130014061" target="_blank" rel="noopener">Read it on NASA’s report server<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">Journal paper</span>Cool-flame extinction during n-alkane droplet combustion in microgravity</h3><p class="by">Nayagam, Dietrich, Hicks and Williams · 2015 · Combustion and Flame</p><p class="says">Studies how n-alkane droplets, the family heptane belongs to, go out in microgravity.</p><p class="use">How Phenox uses it: context for the heptane rows, which are more mixed than the methanol rows.</p><a class="link" href="https://doi.org/10.1016/j.combustflame.2015.01.012" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">Journal paper</span>Methanol droplet extinction in carbon-dioxide-enriched environments in microgravity</h3><p class="by">Hicks, Nayagam and Williams · 2010 · Combustion and Flame</p><p class="says">Looks at methanol droplets going out when carbon dioxide is added to the air, in microgravity.</p><p class="use">How Phenox uses it: shows that the extinction rows in our table are an established way to study flammability limits.</p><a class="link" href="https://doi.org/10.1016/j.combustflame.2010.05.007" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">Journal paper</span>Isolated n-heptane droplet combustion in microgravity: “Cool Flames” – Two-stage combustion</h3><p class="by">Farouk and Dryer · 2014 · Combustion and Flame</p><p class="says">A study of n-heptane droplets in microgravity that examines “cool flames” and two-stage burning.</p><p class="use">How Phenox uses it: one reason heptane results near the limit can be mixed.</p><a class="link" href="https://doi.org/10.1016/j.combustflame.2013.09.011" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        </ul>
+      </div>
+    </section>
+    <section class="step" id="r2" aria-labelledby="r2-h">
+      <span class="num" aria-hidden="true">2</span>
+      <div>
+        <h2 id="r2-h">Why oxygen and pressure move the result</h2>
+        <p>Spacecraft cabins do not have to match Earth air, so the oxygen level and the pressure are the two settings that matter most. Phenox maps tests by exactly those two numbers.</p>
+        <ul class="refs">
+        <li class="ref"><h3><span class="tag">Conference paper</span>Microgravity Flame Spread over Non-Charring Materials in Exploration Atmospheres: Pressure, Oxygen, and Velocity Effects on Concurrent Flame Spread</h3><p class="by">Olson and Ruff · 2009 · SAE Technical Paper 2009-01-2489</p><p class="says">Tested a thin plastic fuel in microgravity across 21% to 85% oxygen and 5 to 16 psia, in air flows like a spacecraft’s ventilation. Flame spread depended on flow, oxygen and pressure. For this fuel the dependence on oxygen was weaker (a square-root relationship) than for a charring fuel tested earlier.</p><p class="use">How Phenox uses it: it supports mapping tests by both oxygen and pressure, and shows different materials respond differently, which is why Phenox reads one fuel at a time.</p><a class="link" href="https://doi.org/10.4271/2009-01-2489" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">Conference paper</span>Fire Safety in the Low-Gravity Spacecraft Environment</h3><p class="by">Friedman · 1999 · SAE Technical Paper 1999-01-1937</p><p class="says">Reports that material flammability and fire spread in microgravity are significantly affected by air flow, oxygen concentration and the mix of other gases, and that this can be used to correct standard material tests.</p><p class="use">How Phenox uses it: the reason a reading is tied to a stated oxygen level and pressure, never to a material alone.</p><a class="link" href="https://doi.org/10.4271/1999-01-1937" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">NASA report</span>Solid Fuel Ignition and Extinction (SoFIE) Project on ISS</h3><p class="by">Ferkul, Brown, Mroczka, Bhattacharjee, Fernandez-Pello, Miller, Olson and T’ien · 2019 · NASA Technical Reports Server</p><p class="says">A newer ISS facility that tests solid spacecraft materials at oxygen levels and pressures planned for NASA’s exploration cabins, partly to check whether the usual 1-g flammability tests predict low-gravity fires.</p><p class="use">How Phenox uses it: shows where new data on solid materials will come from. Phenox accepts community uploads so that data can be added.</p><a class="link" href="https://ntrs.nasa.gov/citations/20200000361" target="_blank" rel="noopener">Read it on NASA’s report server<span class="sr"> (opens in a new tab)</span></a></li>
+        </ul>
+      </div>
+    </section>
+    <section class="step" id="r3" aria-labelledby="r3-h">
+      <span class="num" aria-hidden="true">3</span>
+      <div>
+        <h2 id="r3-h">Fire at spacecraft scale</h2>
+        <p>Small droplet tests are not the whole story. NASA also burned larger samples inside an uncrewed spacecraft, to see how a real fire grows and how it affects the vehicle.</p>
+        <ul class="refs">
+        <li class="ref"><h3><span class="tag">NASA report</span>Saffire: A Novel Approach to Study of Spacecraft Fire Safety Using Un-Manned Spacecraft</h3><p class="by">Urban, Ferkul, Olson, Ruff and Easton · 2017 · NASA Technical Reports Server</p><p class="says">The first test of spacecraft fires at a scale relevant to real spacecraft, run aboard a Cygnus cargo vehicle after it left the station. The flame reached a steady size, and the size of the enclosure around the sample affected flame spread more than expected.</p><p class="use">How Phenox uses it: a reminder that small-scale readings do not scale directly to a real cabin, which is why every Phenox reading is a starting point and not a clearance.</p><a class="link" href="https://ntrs.nasa.gov/citations/20180005168" target="_blank" rel="noopener">Read it on NASA’s report server<span class="sr"> (opens in a new tab)</span></a></li>
+        <li class="ref"><h3><span class="tag">NASA report</span>Fire Safety Implications of Preliminary Results from Saffire IV and V Experiments on Large Scale Spacecraft Fires</h3><p class="by">Urban, Ruff, Ferkul, Easton, Owens and Olson · 2021 · NASA Technical Reports Server</p><p class="says">Follow-up experiments that burned plastic and cotton-fabric samples inside the Cygnus spacecraft and looked at the safety implications, including the gases produced.</p><a class="link" href="https://ntrs.nasa.gov/citations/20210017780" target="_blank" rel="noopener">Read it on NASA’s report server<span class="sr"> (opens in a new tab)</span></a></li>
+        </ul>
+      </div>
+    </section>
+    <section class="step" id="r4" aria-labelledby="r4-h">
+      <span class="num" aria-hidden="true">4</span>
+      <div>
+        <h2 id="r4-h">Why flames look different in space</h2>
+        <p>On Earth, hot gas rises and pulls fresh air in, so a flame is a tall teardrop. With no gravity there is no rising, so a flame can be a round ball. The fire page on this site uses NASA’s own photograph of a candle burning in Earth gravity next to the same candle in microgravity (NASA Glenn, image GRC-1998-C-00486) to show this. Moon and Mars gravity have no photograph, so that page blends the two and says so.</p>
+        <ul class="refs">
+        <li class="ref"><h3><span class="tag">Journal paper</span>Can cool flames support candle flame burning in microgravity?</h3><p class="by">Dietrich and T’ien · 2022 · Combustion and Flame</p><p class="says">A recent paper that asks this question about candle flames in microgravity.</p><a class="link" href="https://doi.org/10.1016/j.combustflame.2022.112367" target="_blank" rel="noopener">Open the paper (DOI)<span class="sr"> (opens in a new tab)</span></a></li>
+        </ul>
+      </div>
+    </section>
+    <section class="step" id="r5" aria-labelledby="r5-h">
+      <span class="num" aria-hidden="true">5</span>
+      <div>
+        <h2 id="r5-h">What this page does not claim</h2>
+        <p>These papers give the reading context. They are not inputs to it: every Phenox verdict is computed only from the NASA test rows, by the rule on the <a href="methods.html">method page</a>. A reading is a summary of how past tests ended. It is not a NASA flammability certification, and “goes out” never means safe to fly. For material selection, NASA’s own standard is <a href="https://standards.nasa.gov/standard/nasa/nasa-std-6001" target="_blank" rel="noopener">NASA-STD-6001<span class="sr"> (opens in a new tab)</span></a>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>All papers and reports are linked from their publisher or from NASA’s Technical Reports Server. Summaries here are our own short paraphrases of the published abstracts or titles; open the source for the full text and for anything we have not quoted. The candle photograph is NASA Glenn Research Center, image GRC-1998-C-00486. Phenox is a student project and has not been reviewed by NASA.</footer>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const DEPLOYED = 'https://fireline-verdict.fireline-team.workers.dev';
+const params = new URLSearchParams(location.search);
+const servedByWorker = /\.workers\.dev$/.test(location.hostname) || location.port === '8787';
+let savedApi = null; try { savedApi = localStorage.getItem('fireline.api'); } catch {}
+const API = (params.get('api') || savedApi || (servedByWorker ? location.origin : DEPLOYED)).trim().replace(/\/+$/, '');
+async function get(u) { const c = new AbortController(), t = setTimeout(() => c.abort(), 8000); try { const r = await fetch(u, { signal: c.signal }); if (!r.ok) throw 0; const d = await r.json(); if (!Array.isArray(d.rows)) throw 0; return d; } finally { clearTimeout(t); } }
+function classify(o) {
+  const s = String(o ?? '').trim().toLowerCase();
+  if (!s || s === '-') return 'unknown';
+  if (s.startsWith('disrupt')) return 'disrupt';
+  if (s === 'se' || s.includes('extinct') || s.includes('self-ext') || s.includes('self ext')) return 'out';
+  if (s === 'ft' || s.includes('complet') || s.includes('flow term')) return 'burn';
+  return 'unknown';
+}
+(async () => {
+  let d = null;
+  try { d = await get(API + '/points'); } catch {}
+  if (!d) try { d = await get('points.json'); } catch {}
+  if (!d) { $('ours').textContent = '—'; $('oursText').textContent = 'The test table could not be loaded, so the comparison is unavailable right now.'; return; }
+  const c = Object.fromEntries(d.columns.map((k, i) => [k, i]));
+  const m = d.rows.map((r) => ({ fuel: String(r[c.fuel_material] ?? '').toLowerCase(), o2: r[c.o2_fraction] == null ? null : Number(r[c.o2_fraction]), cls: classify(r[c.outcome]) })).filter((r) => r.fuel.includes('methanol') && r.o2 != null);
+  const low = m.filter((r) => r.o2 < 0.17), lowOut = low.filter((r) => r.cls === 'out').length;
+  const burn = m.filter((r) => r.cls === 'burn'), minBurn = burn.length ? Math.min(...burn.map((r) => r.o2)) : null;
+  const outs = m.filter((r) => r.cls === 'out'), minOut = outs.length ? Math.min(...outs.map((r) => r.o2)) : null;
+  $('ours').textContent = low.length ? `${lowOut} of ${low.length}` : '—';
+  $('oursText').textContent = low.length
+    ? `methanol tests below 17% oxygen went out on their own.` + (minBurn != null ? ` The lowest oxygen at which any methanol flame in our table kept burning is ${Math.round(minBurn * 100)}%.` : '') + (minOut != null ? ` Methanol flames went out at oxygen levels as low as ${Math.round(minOut * 100)}%.` : '')
+    : 'No methanol tests with an oxygen level were found in the table.';
+})();
+</script>
+</body>
+</html>
