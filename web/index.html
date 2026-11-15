@@ -327,8 +327,7 @@
   .topbar nav a { transition: background-color .3s var(--spring), scale .4s var(--spring); }
   .topbar nav a:hover { scale: 1.04; }
   @media (prefers-reduced-motion: reduce) {
-    .preset span::before, h2[id]::before, .settings summary::before, .rank h3::before, .rank, .inv, .meter i, .topbar nav a, .preset span { transition: none; animation: none; }
-    .preset input:checked + span::before { animation: none; }
+    .preset span::before, h2[id]::before, .settings summary::before, .rank h3::before, .rank, .inv, .meter i, .topbar nav a, .preset span { transition: none; }
     .rank:hover, .inv:hover, .rank:hover h3::before, .preset:hover span::before, h2[id]:hover::before { translate: none; rotate: none; scale: none; }
     .meter i, .meter i.on { scale: 1; }
     .reply, .orb svg ellipse:last-of-type { animation: none; }
@@ -374,17 +373,9 @@
   /* ===== mission environment: OpenSpace link. Display only; verdicts come from the app above ===== */
   #env-h { --i: var(--i-satellite); }
   .preset input[value=mars] + span { --i: var(--i-planet); }
+  /* These preset icon animations are intentionally exempt from prefers-reduced-motion —
+     they're small, decorative, and meant to always play regardless of that setting. */
   .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
-  /* Each preset's per-icon rule above is more specific than the generic reduced-motion
-     override earlier in the file, so it was winning the cascade and animating anyway.
-     Same selectors, same specificity, placed after them: this is the one that wins. */
-  @media (prefers-reduced-motion: reduce) {
-    .preset input[value=iss]:checked + span::before,
-    .preset input[value=lunar]:checked + span::before,
-    .preset input[value=suit]:checked + span::before,
-    .preset input[value=custom]:checked + span::before,
-    .preset input[value=mars]:checked + span::before { animation: none; }
-  }
   .env-block + #results { margin-top: 56px; }
   .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
   .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
