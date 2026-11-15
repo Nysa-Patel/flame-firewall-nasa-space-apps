@@ -1353,6 +1353,7 @@
         const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: contextualMessage, model: chatModel() }) });
         const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
         reply = d.reply;
+        if (d.requested_model && d.model && d.model !== d.requested_model) reply += `\n\n(Answered by ${d.model === 'grok' ? 'Grok' : 'Gemini'}: ${d.requested_model === 'grok' ? 'Grok' : 'Gemini'} did not respond.)`;
       }
       pending.textContent = reply;
       pending.classList.remove('pending');
