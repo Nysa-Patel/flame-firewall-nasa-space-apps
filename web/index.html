@@ -2215,14 +2215,15 @@
     new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(canvas);
   }).catch(() => {});
 
-  // ---- Hero background: a ribbon of fire-dust. One flowing, twisting sheet made of fine stippled dots runs across the hero through the
-  // chamber: dense where the sheet faces you, thin at the twists, with loose dust around it. It swells, twists faster and thickens with
+  // ---- Hero background: a ribbon of fire-dust. One flowing, twisting sheet made of fine stippled dots runs across the hero through a
+  // hot spot right of the headline ("the chamber" below means that spot): dense where the sheet faces you, thin at the twists, with loose dust around it. It swells, twists faster and thickens with
   // oxygen, takes the flame's colour near the chamber (blue in cabin air, orange in rich oxygen) and gold further out, flickers with the
   // flame. It follows the flame lab's fire (window.phenoxLab, read only): heat rings breathe out of the
   // porthole and push the grain, the flicker keeps the flame's pace (steady in microgravity, quick with gravity or wind), airflow
   // carries the hot part downstream, gravity lifts it, and when the flame goes out the dust by the chamber cools to ash. ----
   libs.then(async ([THREE]) => {
-    const hero = document.querySelector('.hero'), orb = document.querySelector('.chamber') || document.querySelector('.orb'), canvas = document.createElement('canvas');
+    // the hot spot sits in the hero itself (beside the headline), not on the chamber, since the Flame lab is its own section below
+    const hero = document.querySelector('.hero'), head = hero.querySelector('h1') || hero, canvas = document.createElement('canvas');
     const T = THREE.TSL, r = await gpu(THREE, canvas, true), scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const res = T.uniform(new THREE.Vector2(1, 1)), src = T.uniform(new THREE.Vector2()), heat = T.uniform(0);
     // the chamber's fire, read from the same window.phenoxLab the porthole shader follows (read only): alive, gravity, airflow
@@ -2273,9 +2274,9 @@
     function fit() {
       const hh = Math.round(hero.getBoundingClientRect().bottom + scrollY + 40);
       if (canvas.style.height !== hh + 'px') canvas.style.height = hh + 'px';
-      const c = canvas.getBoundingClientRect(), o = orb.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
+      const c = canvas.getBoundingClientRect(), h = head.getBoundingClientRect(), dpr = Math.min(1.5, devicePixelRatio || 1);
       r.setPixelRatio(dpr); r.setSize(c.width, c.height, false); res.value.set(c.width * dpr, c.height * dpr);
-      src.value.set((o.left + o.width / 2 - c.left) * dpr, (c.bottom - o.top - o.height / 2) * dpr);
+      src.value.set(c.width * (c.width > 900 ? .78 : .7) * dpr, (c.bottom - h.bottom) * dpr);
     }
     const draw = (dt) => {
       const e = reduce() ? 1 : 1 - Math.exp(-dt * 3), w = lab() || { alive: 1, g: 0, flow: 0 };
