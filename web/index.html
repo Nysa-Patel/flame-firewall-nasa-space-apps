@@ -471,7 +471,7 @@
   /* These preset icon animations are intentionally exempt from prefers-reduced-motion —
      they're small, decorative, and meant to always play regardless of that setting. */
   .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
-  .env-block + #results { margin-top: 56px; }
+  #results:not(.hidden) + .env-block { margin-top: 56px; }
   .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
   .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
     background: radial-gradient(ellipse at 50% 45%, var(--card-2) 0%, var(--char) 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
@@ -631,6 +631,27 @@
 
 <div class="dark">
   <div class="shell">
+    <div id="results" class="hidden">
+      <div class="block">
+        <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
+        <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
+      </div>
+      <div class="block">
+        <h2 id="range-h">Across the operational range</h2>
+      <p class="intro" id="rangeIntro"></p>
+      <div class="wrap matrix-wrap"><table id="matrix" aria-labelledby="range-h"></table></div>
+      </div>
+      <div class="block">
+        <h2 id="method">How the verdicts are made</h2>
+      <div class="method">
+        <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
+        <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
+        <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
+        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
+        <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
+      </div>
+      </div>
+    </div>
     <div class="block env-block">
       <h2 id="env-h">Mission environment</h2>
       <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and Phenox steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
@@ -656,27 +677,6 @@
           <div><h3>Material verdicts</h3><div id="envVerdict"></div></div>
           <div><h3>Supporting evidence</h3><div id="envEvidence"></div></div>
         </aside>
-      </div>
-    </div>
-    <div id="results" class="hidden">
-      <div class="block">
-        <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
-        <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
-      </div>
-      <div class="block">
-        <h2 id="range-h">Across the operational range</h2>
-      <p class="intro" id="rangeIntro"></p>
-      <div class="wrap matrix-wrap"><table id="matrix" aria-labelledby="range-h"></table></div>
-      </div>
-      <div class="block">
-        <h2 id="method">How the verdicts are made</h2>
-      <div class="method">
-        <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
-        <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
-        <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
-        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
-        <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
-      </div>
       </div>
     </div>
     <section>
