@@ -53,6 +53,9 @@ spoken aloud or read as plain text — no markdown, bullets, or symbols:
    extinction/disruption counts if present.
 4. If "quantified" is false, summarize what the closest matching research actually found instead of just
    saying there's no data.
+5. If the evidence has "verified": false, say plainly that this is community-contributed data, not
+   reviewed NASA PSI data, and weigh the verdict accordingly — don't give it the same confidence as
+   verified evidence.
 Never invent numbers not present in the JSON. Never pad with disclaimers beyond what the data supports.`;
 
 export async function handleChat(sql: Sql, env: ChatEnv, message: string) {

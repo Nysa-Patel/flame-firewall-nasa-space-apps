@@ -471,11 +471,15 @@
     <section>
 
       <h2 id="import-h">Contribute data</h2>
-      <p class="intro">Have a new NASA combustion CSV? Upload it and FireLine matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed.</p>
+      <p class="intro">Have a new NASA combustion CSV? Upload it and FireLine matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed. Uploads are marked <b>community-contributed, unverified</b> everywhere they're shown or cited, until someone reviews them; they never get presented with the same authority as the NASA PSI data.</p>
       <form id="importForm" class="fields" style="margin-top:0">
-        <div class="wide">
-          <label for="importTitle">Dataset title <span class="quiet">(e.g. "Saffire-IV droplet trials, JSC 2026")</span></label>
+        <div>
+          <label for="importTitle">Dataset title <span class="quiet">(e.g. "Saffire-IV droplet trials")</span></label>
           <input id="importTitle" type="text" required>
+        </div>
+        <div>
+          <label for="importContributor">Your name or affiliation</label>
+          <input id="importContributor" type="text" required>
         </div>
         <div class="wide">
           <label for="importFile">CSV file</label>
@@ -484,7 +488,7 @@
       </form>
       <div class="actions" style="margin-top:18px">
         <button id="importGo" type="button">Upload and merge</button>
-        <span class="hint">Up to 5,000 rows. Columns are matched by name, same as the original PSI loader — unmatched columns just come along in the raw record.</span>
+        <span class="hint">Up to 5,000 rows. O2/pressure values outside 0-100% or 0-5 atm are dropped rather than trusted. Columns are matched by name, same as the original PSI loader.</span>
       </div>
       <div id="importResult" class="reply hidden"></div>
     </section>
@@ -634,14 +638,16 @@
 
   // ---------- run analysis ----------
   const investigationsSeen = new Map();
-  function noteInvestigation(id, title, doi, n) {
-    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true };
-    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0); investigationsSeen.set(id, cur);
+  function noteInvestigation(id, title, doi, n, verified) {
+    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true, verified: verified !== false };
+    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0);
+    if (verified === false) cur.verified = false;
+    investigationsSeen.set(id, cur);
   }
   function harvest(r) {
-    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests);
-    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests));
-    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests));
+    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests, r.nearest.verified);
+    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests, x.verified));
+    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests, x.verified));
   }
 
   $('form').addEventListener('submit', async (e) => {
@@ -731,11 +737,11 @@
   function renderInvestigations() {
     const q = $('invSearch').value.trim().toLowerCase();
     const merged = new Map(invRows.map((x) => [x.accession, { ...x }]));
-    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests) }); } else merged.set(k, v); });
+    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests), verified: v.verified === false ? false : cur.verified }); } else merged.set(k, v); });
     const list = [...merged.values()].filter((x) => !q || [x.accession, x.title, x.objective].some((f) => (f || '').toLowerCase().includes(q)))
       .sort((a, b) => (b.seen ? 1 : 0) - (a.seen ? 1 : 0) || (b.n_tests || 0) - (a.n_tests || 0) || String(a.title).localeCompare(String(b.title)));
     $('invSource').textContent = invSource;
-    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}
+    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}${x.verified === false ? '<span class="tag placeholder">Community-contributed, unverified</span>' : ''}
       <p class="meta">${esc(x.accession)}. DOI ${doiLink(x.doi)}.${x.n_tests ? ` ${x.n_tests} tests.` : ''}</p>${x.objective ? `<p class="objective">${esc(x.objective)}</p>` : ''}</div>`).join('')
       : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
   }
@@ -744,10 +750,12 @@
   // ---------- Contribute data (CSV upload) ----------
   $('importGo').addEventListener('click', async () => {
     const title = $('importTitle').value.trim();
+    const contributorName = $('importContributor').value.trim();
     const file = $('importFile').files[0];
     const result = $('importResult');
     result.classList.remove('hidden');
     if (!title) return (result.textContent = 'Give the dataset a title first.');
+    if (!contributorName) return (result.textContent = 'Say who this is from — uploads are attributed, not anonymous.');
     if (!file) return (result.textContent = 'Choose a CSV file first.');
     $('importGo').disabled = true;
     result.textContent = `Reading ${file.name}…`;
@@ -760,14 +768,15 @@
       result.textContent = 'Matching columns and inserting into Tiger Data…';
       const res = await fetch(apiBase() + '/import', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ title, csv, source_file: file.name }),
+        body: JSON.stringify({ title, csv, source_file: file.name, contributor_name: contributorName }),
       });
       const d = await res.json();
       if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
       const matchedCols = Object.entries(d.columns_matched).filter(([, v]) => v).map(([k]) => k.replace('_', ' '));
-      result.innerHTML = `Added <b>${d.rows_inserted}</b> of ${d.rows_parsed} rows to <b>${esc(d.investigation_id)}</b>. ` +
-        `${d.rows_with_o2_and_pressure} of them have both oxygen and pressure, so they'll show up in rankings and the envelope right away. ` +
-        `Matched columns: ${matchedCols.length ? esc(matchedCols.join(', ')) : 'none'}.` +
+      result.innerHTML = `Added <b>${d.rows_inserted}</b> of ${d.rows_parsed} rows to <b>${esc(d.investigation_id)}</b>, marked community-contributed and unverified. ` +
+        `${d.rows_with_o2_and_pressure} of them have both oxygen and pressure, so they'll show up in rankings and the envelope right away.` +
+        (d.rows_with_out_of_range_values ? ` ${d.rows_with_out_of_range_values} row(s) had an out-of-range O2/pressure value dropped rather than trusted.` : '') +
+        ` Matched columns: ${matchedCols.length ? esc(matchedCols.join(', ')) : 'none'}.` +
         (d.warnings.length ? `<br><br>${d.warnings.map(esc).join('<br>')}` : '');
       $('importForm').reset();
       await loadInvestigations();

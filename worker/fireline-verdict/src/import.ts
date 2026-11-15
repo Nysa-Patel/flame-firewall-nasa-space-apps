@@ -32,21 +32,27 @@ function parseFloatLoose(val: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// Physically plausible bounds — matches what /verdict itself accepts. A value
+// outside this range is almost certainly a unit mismatch or a parsing error,
+// not a real microgravity combustion test, so it's dropped rather than trusted.
+const O2_BOUNDS: [number, number] = [0, 1];
+const PRESSURE_BOUNDS: [number, number] = [0, 5];
+const inBounds = (v: number | null, [lo, hi]: [number, number]) => v != null && v >= lo && v <= hi;
+
 function normalizeO2(raw: unknown, header: string): number | null {
   const v = parseFloatLoose(raw);
   if (v == null) return null;
   const h = header.toLowerCase();
-  if (h.includes('percent') || header.includes('%') || v > 1.5) return v / 100;
-  return v;
+  const frac = h.includes('percent') || header.includes('%') || v > 1.5 ? v / 100 : v;
+  return inBounds(frac, O2_BOUNDS) ? frac : null;
 }
 
 function normalizePressure(raw: unknown, header: string): number | null {
   const v = parseFloatLoose(raw);
   if (v == null) return null;
   const h = header.toLowerCase();
-  if (h.includes('mmhg')) return v / 760;
-  if (h.includes('bar')) return v * 0.986923;
-  return v;
+  const atm = h.includes('mmhg') ? v / 760 : h.includes('bar') ? v * 0.986923 : v;
+  return inBounds(atm, PRESSURE_BOUNDS) ? atm : null;
 }
 
 const DATE_FORMATS: Array<(s: string) => Date | null> = [
@@ -137,12 +143,14 @@ export interface ImportResult {
   rows_inserted: number;
   columns_matched: { fuel_material: boolean; o2_fraction: boolean; pressure_atm: boolean; burn_rate: boolean; outcome: boolean; test_date: boolean };
   rows_with_o2_and_pressure: number;
+  rows_with_out_of_range_values: number;
   warnings: string[];
 }
 
 export async function importCsv(
   sql: Sql,
-  { investigationId, title, csvText, sourceFile }: { investigationId: string; title: string; csvText: string; sourceFile: string },
+  { investigationId, title, csvText, sourceFile, contributorName }:
+    { investigationId: string; title: string; csvText: string; sourceFile: string; contributorName: string },
 ): Promise<ImportResult> {
   const rawRows = parseCsv(csvText);
   const warnings: string[] = [];
@@ -150,7 +158,17 @@ export async function importCsv(
   if (rawRows.length > 5000) throw new Error(`CSV has ${rawRows.length} rows; 5000 is the limit per upload.`);
 
   const fallbackDate = new Date();
-  const normalized = rawRows.map((r) => ({ raw: r, norm: normalizeRow(r, fallbackDate) }));
+  const normalized = rawRows.map((r) => {
+    const norm = normalizeRow(r, fallbackDate);
+    const dropped =
+      (findCol(r, O2_PATTERNS) != null && norm.o2_fraction == null) ||
+      (findCol(r, PRESSURE_PATTERNS) != null && norm.pressure_atm == null);
+    return { raw: r, norm, dropped };
+  });
+  const rowsWithOutOfRange = normalized.filter((r) => r.dropped).length;
+  if (rowsWithOutOfRange > 0) {
+    warnings.push(`${rowsWithOutOfRange} row(s) had an O2 or pressure value outside the physically plausible range (0-100% O2, 0-5 atm) and were recorded without that number rather than trusted as-is.`);
+  }
 
   const matched = {
     fuel_material: normalized.some((r) => r.norm.fuel_material != null),
@@ -164,10 +182,14 @@ export async function importCsv(
     if (!matched[k]) warnings.push(`Couldn't find a "${k.replace('_', ' ')}" column in this CSV — it will be blank for every row.`);
   });
 
-  // Upsert the investigation this upload belongs to (user-attributed, not from PSI).
+  // Upsert the investigation this upload belongs to. research_area/project_type and
+  // raw.verified=false mark it as community-contributed everywhere it's read back out
+  // (/verdict, /chat, investigation listing), so it's never presented with the same
+  // authority as the NASA PSI data without someone actually reviewing it.
   await sql`
     INSERT INTO investigations (accession, title, research_area, project_type, raw)
-    VALUES (${investigationId}, ${title}, 'User-contributed', 'Community upload', ${sql.json({ source: 'user_upload', uploaded_at: new Date().toISOString(), title })})
+    VALUES (${investigationId}, ${title}, 'User-contributed', 'Community upload',
+      ${sql.json({ source: 'user_upload', verified: false, contributor: contributorName, uploaded_at: new Date().toISOString(), title })})
     ON CONFLICT (accession) DO UPDATE SET title = EXCLUDED.title`;
 
   const values = normalized.map(({ raw, norm }) => ({
@@ -190,6 +212,7 @@ export async function importCsv(
     rows_inserted: values.length,
     columns_matched: matched,
     rows_with_o2_and_pressure: rowsWithBoth,
+    rows_with_out_of_range_values: rowsWithOutOfRange,
     warnings,
   };
 }

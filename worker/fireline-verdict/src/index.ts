@@ -28,6 +28,10 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body, 
 
 const clip = (s: unknown, n = 600) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + '…' : s ?? null);
 const likePattern = (m: string) => (m ? `%${m.replace(/[\\%_]/g, (c) => '\\' + c)}%` : '%');
+// Community CSV uploads get accession ids prefixed "USER-" (see import.ts). Everything
+// else came from the original NASA PSI scrape. Callers (the page, the chat prompt) use
+// this to flag unreviewed data instead of presenting it with NASA's authority.
+const isVerified = (investigationId: string) => !investigationId.startsWith('USER-');
 
 export interface VerdictInput { o2: number; p: number; material: string }
 
@@ -71,7 +75,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
       const pc = round((c.pressure_bucket - 0.5) * P_W);
       const dO2 = round(o2 - o2c), dP = round(p - pc);
       return {
-        investigation_id: c.investigation_id, investigation_title: c.title ?? null, doi: c.doi || null,
+        investigation_id: c.investigation_id, investigation_title: c.title ?? null, doi: c.doi || null, verified: isVerified(c.investigation_id),
         fuel_material: c.fuel_material,
         o2_bucket: { index: c.o2_bucket, range: o2Range(c.o2_bucket), center: o2c },
         pressure_bucket: { index: c.pressure_bucket, range: pRange(c.pressure_bucket), center: pc },
@@ -111,7 +115,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
         : null,
       neighbors: neighbors.slice(1),
       evidence: evidenceRows.map((r: any) => ({
-        test_id: r.test_id, investigation_id: r.investigation_id, investigation_title: r.title, doi: r.doi || null,
+        test_id: r.test_id, investigation_id: r.investigation_id, investigation_title: r.title, doi: r.doi || null, verified: isVerified(r.investigation_id),
         fuel_material: r.fuel_material, o2_fraction: r.o2_fraction, pressure_atm: r.pressure_atm,
         burn_rate: r.burn_rate, outcome: r.outcome || null, test_date: r.test_date, source_file: r.source_file,
       })),
@@ -154,7 +158,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
     fallback: {
       reason,
       investigations: investigations.map((r: any) => ({
-        investigation_id: r.accession, title: r.title, doi: r.doi || null,
+        investigation_id: r.accession, title: r.title, doi: r.doi || null, verified: isVerified(r.accession),
         objective: clip(r.objective), approach: clip(r.approach), description: clip(r.description),
         n_matching_tests: r.n_matching_tests,
       })),
@@ -229,15 +233,17 @@ export default {
       const b = body as any;
       const csvText = typeof b?.csv === 'string' ? b.csv : null;
       const title = typeof b?.title === 'string' ? b.title.trim() : '';
+      const contributorName = typeof b?.contributor_name === 'string' ? b.contributor_name.trim() : '';
       if (!csvText) return json({ error: 'csv (string, the raw CSV text) is required' }, 400);
       if (!title) return json({ error: 'title is required (what this dataset is / who it is from)' }, 400);
+      if (!contributorName) return json({ error: 'contributor_name is required (who is submitting this data)' }, 400);
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'dataset';
       const investigationId = `USER-${slug}-${Date.now().toString(36)}`;
       const sourceFile = typeof b?.source_file === 'string' ? b.source_file : 'upload.csv';
 
       const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
       try {
-        return json(await importCsv(sql, { investigationId, title, csvText, sourceFile }));
+        return json(await importCsv(sql, { investigationId, title, csvText, sourceFile, contributorName }));
       } catch (e) {
         console.error(e);
         return json({ error: 'import failed', detail: String((e as Error).message) }, 500);
