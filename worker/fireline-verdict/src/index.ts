@@ -287,6 +287,12 @@ export default {
     // Every test that recorded an oxygen level, for the 3D model page (web/viz.html). Pressure and
     // burn rate come back null when the test did not record them; the page shows that, it never fills them in.
     // burn_header is the source column the burn rate came from, so the page can tell the units apart.
+    // extra is for the page's model estimate: for tests whose outcome the page can classify (went out or kept
+    // burning; the first regex mirrors classify() in web/index.html), the conditions that were set before the
+    // test, copied from the original row under their original headers and as their original text (the flame
+    // type, the rest of the atmosphere, the starting droplet size, the pressure column the loader missed, the
+    // fuel dilution and the flow rates). Nothing measured during or after the test is included, so the model
+    // cannot learn from the answer. It is null for every other row.
     // Rows are arrays in `columns` order to keep the payload small. Keep this query in sync with
     // web/points.json, the bundled snapshot the page falls back to.
     if (pathname === '/points' && request.method === 'GET') {
@@ -298,7 +304,11 @@ export default {
                  CASE WHEN t.test_date_estimated THEN NULL ELSE to_char(t.test_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') END AS test_date,
                  CASE WHEN t.burn_rate IS NOT NULL AND jsonb_typeof(t.raw) = 'object' THEN
                    (SELECT k FROM jsonb_object_keys(t.raw) k WHERE k ~* 'burn(ing)?\\s*rate|weight loss rate' ORDER BY k LIMIT 1)
-                 END AS burn_header
+                 END AS burn_header,
+                 CASE WHEN t.outcome ~* '^(se|ft)$|extinct|self.ext|complet|flow term' AND jsonb_typeof(t.raw) = 'object' THEN
+                   (SELECT jsonb_object_agg(k, t.raw->k) FROM jsonb_object_keys(t.raw) k
+                     WHERE k ~* 'flame type|ambient composition|initial diameter|approx p|^\\s*xo2\\s*(before|$)|^\\s*xf\\s*(before|$)|^\\s*mhc|flow rate|burnrate')
+                 END AS extra
           FROM experimental_tests t
           WHERE t.o2_fraction BETWEEN 0 AND 1
             AND (t.pressure_atm IS NULL OR t.pressure_atm BETWEEN 0 AND 5)
@@ -311,7 +321,7 @@ export default {
         const invs = await sql`SELECT accession, title, raw->>'doi' AS doi FROM investigations`;
         const investigations: Record<string, { title: string | null; doi: string | null; verified: boolean }> = {};
         for (const i of invs) investigations[i.accession] = { title: i.title ?? null, doi: i.doi || null, verified: isVerified(i.accession) };
-        const columns = ['test_id', 'investigation_id', 'fuel_material', 'o2_fraction', 'pressure_atm', 'burn_rate', 'outcome', 'test_date', 'burn_header'];
+        const columns = ['test_id', 'investigation_id', 'fuel_material', 'o2_fraction', 'pressure_atm', 'burn_rate', 'outcome', 'test_date', 'burn_header', 'extra'];
         return new Response(JSON.stringify({
           generated_at: new Date().toISOString(), summary: totals, investigations, columns,
           rows: rows.map((r: any) => columns.map((c) => r[c] ?? null)),

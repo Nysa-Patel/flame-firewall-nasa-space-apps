@@ -923,7 +923,7 @@
         <p>Every test here was lit on purpose, so the question is how the flame ended. For each material and pressure, Phenox takes the nearest oxygen-and-pressure conditions NASA tested and counts the outcomes: went out on its own, kept burning, droplet broke apart, or no result recorded.</p>
         <p>Only the first two are conclusive. Goes out means at least two thirds of them went out on their own, Mixed at least one third, and Keeps burning fewer. Goes out drops to Mixed outside the range tested for that material. No data means nothing close was tested (more than two bucket widths away) or no result was conclusive.</p>
         <p>Each share has a 95% range that widens when few tests back it. This is a reading of historical results, not a NASA flammability certification, and Goes out never means safe to fly. All of the evidence is from microgravity.</p>
-        <p id="modelNote">Under each reading is a model estimate: a logistic regression trained in this page on every NASA test that went out or kept burning, using the fuel, oxygen, pressure where it was recorded, and dilution. It fills in between tested conditions and gives no estimate for fuels it has too few tests of or atmospheres outside the tested range. The reading above it stays the answer.</p>
+        <p id="modelNote">Under each reading is a model estimate: a logistic regression trained in this page on NASA tests that went out or kept burning. It uses only what was set before each test: the fuel, oxygen and pressure, plus the carbon dioxide or helium in the atmosphere and the starting droplet size for droplet tests, and the fuel's flow rate and dilution for gas-flame tests. The estimate is for an oxygen and nitrogen atmosphere, averaged over the droplet sizes or flow rates NASA tested, so it fills in between tested conditions. Each estimate says how many tests were near the atmosphere, meaning within 5 points of oxygen and a factor of 1.5 in pressure. It gives no estimate when none were, for fuels it has too few tests of, or for atmospheres outside the tested range, and it leaves out inverse gas flames, where the oxidizer is blown into the fuel. The reading above it stays the answer.</p>
         <p><a href="methods.html">Every formula, with a worked example and an interval you can try</a></p>
         <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
       </div>
@@ -1154,8 +1154,21 @@
     try { if (mockOn()) throw 0; d = await get(apiBase() + '/points'); } catch { try { d = await get('points.json'); source = 'snapshot'; } catch {} }
     if (!d) return null;
     const c = Object.fromEntries(d.columns.map((k, i) => [k, i]));
+    // `extra` holds the conditions set before a test, for the model estimate. A worker response from before that column existed has
+    // none, so they come from the bundled snapshot instead, matched by test id and only where the rest of the row agrees.
+    const asObj = (v) => { if (typeof v === 'string') { try { v = JSON.parse(v); } catch { return null; } } return v && typeof v === 'object' && !Array.isArray(v) ? v : null; };
+    let extraOf = c.extra == null ? null : (r) => asObj(r[c.extra]);
+    if (!extraOf && source === 'live') {
+      try {
+        const s = await get('points.json'), sc = Object.fromEntries(s.columns.map((k, i) => [k, i]));
+        if (sc.extra != null) {
+          const byId = new Map(s.rows.map((r) => [String(r[sc.test_id]), r])), same = ['investigation_id', 'fuel_material', 'o2_fraction', 'outcome'];
+          extraOf = (r) => { const m = byId.get(String(r[c.test_id])); return m && same.every((k) => m[sc[k]] === r[c[k]]) ? asObj(m[sc.extra]) : null; };
+        }
+      } catch {}
+    }
     const rows = d.rows.map((r) => ({ id: r[c.test_id], inv: r[c.investigation_id], fuel: r[c.fuel_material] || '', o2: Number(r[c.o2_fraction]), p: r[c.pressure_atm] == null ? null : Number(r[c.pressure_atm]),
-      burn: r[c.burn_rate], bh: r[c.burn_header] || null, outcome: r[c.outcome], date: r[c.test_date], cls: classify(r[c.outcome]) }));
+      burn: r[c.burn_rate], bh: r[c.burn_header] || null, outcome: r[c.outcome], date: r[c.test_date], cls: classify(r[c.outcome]), x: extraOf ? extraOf(r) : null }));
     POINTS = { rows, investigations: d.investigations || {}, source };
     window.phenoxPoints = POINTS; document.dispatchEvent(new CustomEvent('phenox:points', { detail: POINTS }));   // read only, for the flame lab
     return POINTS;
@@ -1192,36 +1205,56 @@
     : a.why === 'far' ? `The nearest tests are ${num(a.dist, 1)} bucket widths from this atmosphere, too far to read across. Treat it as untested here.`
     : a.why === 'inconclusive' ? 'The nearest tests do not say how the flame ended: droplets broke apart or no result was recorded. Treat it as untested here.'
     : 'No NASA test of this material records both oxygen and pressure. Treat it as untested; the closest research is listed below.';
-  // ---------- model estimate: a logistic regression trained in this page on every NASA test with a clear ending (went out or kept
-  // burning). Inputs: the fuel (its own baseline and its own oxygen slope), oxygen, pressure where the tests recorded it (log atm; the gas
-  // tests did not, so pressure does not move their estimate), and dilution ("30% butane"). Fitted by Newton's method with a light ridge
-  // penalty; 200 bootstrap refits (fixed seed) give the 95% range; 5-fold cross-validation on held-out tests is reported on the page. It
-  // sits under the reading as an estimate between tested conditions, never replaces it, and never says safe. It only answers for fuels with
-  // at least MODEL_MIN conclusive tests and inside the oxygen and pressure they were tested at. Keep "How the readings are made" in sync. ----
-  const MODEL_MIN = 15, RIDGE = .5, BOOT = 200;
+  // ---------- model estimate: a logistic regression trained in this page on NASA tests with a clear ending (went out or kept burning),
+  // using the conditions that were set before each test. The worker's /points sends those in `extra` (original headers, original text);
+  // nothing measured during or after a test is used, so the model cannot learn from the answer. Two kinds of test, each with its own fit:
+  //   droplet (FLEX): fuel, oxygen, pressure, the carbon dioxide and helium in the rest of the atmosphere, starting droplet size
+  //   jet (CFI-G normal flames): fuel, oxygen, pressure, fuel flow rate, fuel dilution
+  // Inverse flames (oxidizer blown into fuel) are left out: their oxygen figure is the injected gas, not the atmosphere around the flame,
+  // and training on them made the normal-flame estimates worse. Community uploads are left out too. Newton's method with a light ridge
+  // penalty; 200 bootstrap refits (fixed seed) give the 95% range; repeated 5-fold cross-validation on held-out tests is reported on the
+  // page. The estimate is for an oxygen and nitrogen atmosphere, averaged over the droplet sizes, or the flow rates and dilutions, that
+  // NASA tested for that fuel. It sits under the reading, never replaces it, never says safe, and only answers for fuels with at least
+  // MODEL_MIN usable tests, inside the oxygen and pressure they were tested at. Keep "How the readings are made" (#modelNote) in sync. ----
+  const MODEL_MIN = 15, RIDGE = .1, BOOT = 200, CV_REPS = 5, BAR = 0.986923;   // BAR: atmospheres per bar
+  const NEAR_O2 = .05, NEAR_P = 1.5, NEAR_FEW = 5;   // a test is near a scenario within 5 points of oxygen and a factor of 1.5 in pressure; under NEAR_FEW the line says so
   const fuelKey = (name) => { const m = String(name).trim().toLowerCase().match(/^(?:(\d+)\s*%\s*)?(.+)$/); return { fam: m[2], dil: m[1] ? m[1] / 100 : 1 }; };
+  // a value from a test's `extra` by its header (headers come as NASA wrote them, so they are matched loosely)
+  const xval = (x, re) => { const k = Object.keys(x).find((h) => re.test(h)); return k == null || x[k] == null ? '' : String(x[k]).trim(); };
+  const xnum = (x, re) => { const t = xval(x, re), n = Number(t); return t === '' || !Number.isFinite(n) ? null : n; };
   let MODEL = null;
   const modelReady = pointsReady.then((P) => {
-    try { if (P) MODEL = trainModel(P.rows); } catch { MODEL = null; }
+    try { if (P) MODEL = trainModel(P.rows, P.investigations); } catch { MODEL = null; }
     const note = $('modelNote');
     if (note && MODEL) {
-      const c = MODEL.cv, outMore = MODEL.data.filter((s) => s.y).length * 2 >= MODEL.n;
-      note.append(` It learned from ${MODEL.n} tests of ${MODEL.names.length} fuels (${MODEL.names.join(', ')}). Checked on tests it had not seen (5-fold cross-validation), it called ${Math.round(c.acc * 100)}% of endings right, against ${Math.round(c.base * 100)}% for always guessing "${outMore ? 'went out' : 'kept burning'}"; its squared error was ${num(c.brier, 3)}, against ${num(c.baseBrier, 3)} for always giving the overall share.`);
-    } else if (note) note.append(' The model could not be trained because the test table did not load, so no estimates are shown.');
+      const c = MODEL.cv, r = (v) => Math.round(v * 100);
+      note.append(` It learned from ${MODEL.n} tests of ${MODEL.names.length} fuels (${MODEL.names.join(', ')}). Checked on tests it had not seen (5-fold cross-validation, repeated ${CV_REPS} times), it called ${r(c.acc)}% of endings right, against ${r(c.base)}% for always guessing "${c.outMore ? 'went out' : 'kept burning'}"${c.outMore ? `, and it caught ${r(c.burnCaught)}% of the flames that kept burning, which that guess never does` : ''}.`);
+    } else if (note) note.append(' The model could not be trained because the test conditions did not load, so no estimates are shown.');
     return MODEL;
   });
-  function trainModel(rows) {
-    const data = rows.filter((t) => (t.cls === 'out' || t.cls === 'burn') && t.o2 > 0 && t.o2 <= 1 && !(t.p != null && !(t.p > 0)))
-      .map((t) => ({ ...fuelKey(t.fuel), raw: t.fuel, o2: t.o2, p: t.p, y: t.cls === 'out' ? 1 : 0 }));   // y = went out
-    const fams = {};
-    data.forEach((d) => { const f = fams[d.fam] ||= { n: 0, o2: [1, 0], p: null }; f.n++; f.o2 = [Math.min(f.o2[0], d.o2), Math.max(f.o2[1], d.o2)];
-      if (d.p != null) f.p = f.p ? [Math.min(f.p[0], d.p), Math.max(f.p[1], d.p)] : [d.p, d.p]; });
-    const names = Object.keys(fams).filter((k) => fams[k].n >= MODEL_MIN).sort(), K = names.length * 2 + 2;
-    if (!names.length) return null;
-    const feats = (fam, o2, p, dil) => { const i = names.indexOf(fam); return [[2 * i, 1], [2 * i + 1, (o2 - .3) * 10], [K - 2, p == null ? 0 : Math.log(p)], [K - 1, 1 - dil]]; };
-    const S = data.filter((d) => names.includes(d.fam)).map((d) => ({ ...d, x: feats(d.fam, d.o2, d.p, d.dil) }));
-    const z = (w, x) => x.reduce((a, [i, v]) => a + w[i] * v, 0), sig = (v) => 1 / (1 + Math.exp(-v));
-    function solve(A, b) {   // Gaussian elimination with partial pivoting; A is K x K
+  // one record per usable test: its kind, fuel, ending (y = went out) and the conditions set before it
+  function modelRows(rows, investigations) {
+    const out = [];
+    for (const t of rows) {
+      if ((t.cls !== 'out' && t.cls !== 'burn') || !t.x || investigations[t.inv]?.verified === false || !(t.o2 > 0 && t.o2 <= 1)) continue;
+      const x = t.x, y = t.cls === 'out' ? 1 : 0;
+      if (Object.keys(x).some((h) => /initial diameter/i.test(h))) {
+        // FLEX headers lost their subscripts: "CO initial ambient composition" is carbon dioxide, as "O" is oxygen and "N" nitrogen
+        const co2 = xnum(x, /^\s*CO\b.*composition/i), he = xnum(x, /^\s*He\b.*composition/i);
+        if (!(t.p > 0) || co2 == null || he == null) continue;
+        out.push({ kind: 'droplet', fam: fuelKey(t.fuel).fam, raw: t.fuel, y, o2: t.o2, p: t.p, co2, he, d0: xnum(x, /initial diameter/i) });
+      } else if (xval(x, /flame type/i).toLowerCase() === 'normal') {
+        const bar = xnum(x, /approx p/i), xf = xnum(x, /^\s*xf/i), flow = xnum(x, /^\s*mhc/i);   // the loader missed this pressure column, so it comes from extra
+        if (!(bar > 0) || !(xf > 0) || !(flow > 0)) continue;
+        out.push({ kind: 'jet', fam: fuelKey(t.fuel).fam, raw: t.fuel, y, o2: t.o2, p: bar * BAR, xf, flow });
+      }
+    }
+    return out;
+  }
+  function trainModel(rows, investigations) {
+    const data = modelRows(rows, investigations || {}); if (!data.length) return null;
+    const sig = (v) => 1 / (1 + Math.exp(-v)), dot = (w, x) => { let a = 0; for (let i = 0; i < x.length; i++) a += w[i] * x[i]; return a; };
+    function solve(A, b) {   // Gaussian elimination with partial pivoting
       const n = b.length, M = A.map((r, i) => [...r, b[i]]);
       for (let c = 0; c < n; c++) {
         let piv = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
@@ -1232,13 +1265,13 @@
       for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
       return x;
     }
-    function fit(sample) {
-      let w = new Array(K).fill(0);
-      for (let it = 0; it < 30; it++) {
-        const g = w.map((v) => RIDGE * v), H = Array.from({ length: K }, (_, a) => { const r = new Array(K).fill(0); r[a] = RIDGE; return r; });
-        for (const s of sample) {
-          const q = sig(z(w, s.x)), r = q * (1 - q);
-          for (const [a, va] of s.x) { if (!va) continue; g[a] += (q - s.y) * va; for (const [b, vb] of s.x) H[a][b] += r * va * vb; }
+    function fit(X, Y) {   // Newton's method; ridge on every term but the first (the baseline)
+      const K = X[0].length; let w = new Array(K).fill(0);
+      for (let it = 0; it < 60; it++) {
+        const g = w.map((v, a) => (a ? RIDGE * v : 0)), H = Array.from({ length: K }, (_, a) => { const r = new Array(K).fill(0); r[a] = a ? RIDGE : 1e-6; return r; });
+        for (let j = 0; j < X.length; j++) {
+          const x = X[j], q = sig(dot(w, x)), r = q * (1 - q);
+          for (let a = 0; a < K; a++) { if (!x[a]) continue; g[a] += (q - Y[j]) * x[a]; for (let b = 0; b < K; b++) H[a][b] += r * x[a] * x[b]; }
         }
         const step = solve(H, g); w = w.map((v, a) => v - step[a]);
         if (Math.max(...step.map(Math.abs)) < 1e-7) break;
@@ -1246,37 +1279,69 @@
       return w;
     }
     let seed = 20261115; const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const w = fit(S), boots = Array.from({ length: BOOT }, () => fit(Array.from({ length: S.length }, () => S[Math.floor(rnd() * S.length)])));
-    // 5-fold cross-validation: how often the held-out endings are called right, against always guessing the commoner ending
-    const order = S.map((s, i) => [rnd(), i]).sort((a, b) => a[0] - b[0]).map((a) => a[1]);
-    let right = 0, brier = 0;
-    for (let f = 0; f < 5; f++) {
-      const test = order.filter((_, j) => j % 5 === f), train = order.filter((_, j) => j % 5 !== f), wf = fit(train.map((i) => S[i]));
-      test.forEach((i) => { const q = sig(z(wf, S[i].x)); right += (q >= .5) === (S[i].y === 1); brier += (q - S[i].y) ** 2; });
+    const kinds = {};
+    for (const kind of ['droplet', 'jet']) {
+      const all = data.filter((d) => d.kind === kind), count = {}; all.forEach((d) => { count[d.fam] = (count[d.fam] || 0) + 1; });
+      const names = Object.keys(count).filter((k) => count[k] >= MODEL_MIN).sort(), S = all.filter((d) => names.includes(d.fam));
+      if (!names.length || !S.some((d) => d.y) || !S.some((d) => !d.y)) continue;
+      const sizes = S.map((d) => d.d0).filter((v) => v != null).sort((a, b) => a - b), mid = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 3;   // a missing droplet size takes the median
+      // terms: the baseline; each further fuel's own baseline; oxygen; pressure; then the kind's own conditions. Droplet fuels also get their own oxygen and size slopes.
+      const ind = (fam) => names.slice(1).map((n) => (n === fam ? 1 : 0));
+      const feats = kind === 'droplet'
+        ? (d) => { const f = ind(d.fam), o = (d.o2 - .21) * 10, s = (d.d0 ?? mid) - 3; return [1, ...f, o, ...f.map((v) => v * o), Math.log(d.p), d.co2 * 3, d.he * 3, s, ...f.map((v) => v * s)]; }
+        : (d) => [1, ...ind(d.fam), (d.o2 - .21) * 10, Math.log(d.p), Math.log(d.flow), Math.log(d.xf)];
+      const X = S.map(feats), Y = S.map((d) => d.y), w = fit(X, Y);
+      const boots = Array.from({ length: BOOT }, () => { const ix = Array.from({ length: S.length }, () => Math.floor(rnd() * S.length)); return fit(ix.map((i) => X[i]), ix.map((i) => Y[i])); });
+      const fams = {};
+      for (const n of names) {
+        const r = S.filter((d) => d.fam === n), span = (v) => [Math.min(...v), Math.max(...v)];
+        fams[n] = { n: r.length, o2: span(r.map((d) => d.o2)), p: span(r.map((d) => d.p)), rows: r, d0: kind === 'droplet' ? span(r.map((d) => d.d0 ?? mid)) : null };
+      }
+      kinds[kind] = { kind, names, fams, S, X, Y, w, boots, feats };
     }
-    const outShare = S.filter((s) => s.y).length / S.length, base = Math.max(outShare, 1 - outShare);
-    const cv = { acc: right / S.length, brier: brier / S.length, base, baseBrier: outShare * (1 - outShare) };
-    return { names, fams, n: S.length, w, boots, cv, feats, z, sig, data: S };
+    const used = Object.values(kinds); if (!used.length) return null;
+    // repeated 5-fold cross-validation, split within each kind and ending: every test is predicted by a fit that never saw it
+    const t = { n: 0, right: 0, brier: 0, burn: 0, caught: 0, out: 0 };
+    for (const g of used) for (let rep = 0; rep < CV_REPS; rep++) {
+      const fold = new Array(g.S.length);
+      for (const y of [0, 1]) g.S.map((d, i) => [d.y === y ? rnd() : -1, i]).filter((a) => a[0] >= 0).sort((a, b) => a[0] - b[0]).forEach(([, i], j) => { fold[i] = j % 5; });
+      for (let f = 0; f < 5; f++) {
+        const tr = g.S.map((_, i) => i).filter((i) => fold[i] !== f), wf = fit(tr.map((i) => g.X[i]), tr.map((i) => g.Y[i]));
+        g.S.forEach((d, i) => { if (fold[i] !== f) return; const q = sig(dot(wf, g.X[i])); t.n++; t.right += (q >= .5) === (d.y === 1); t.brier += (q - d.y) ** 2; if (d.y) t.out++; else { t.burn++; t.caught += q < .5; } });
+      }
+    }
+    const outShare = t.out / t.n;
+    return { kinds, n: used.reduce((a, g) => a + g.S.length, 0), names: used.flatMap((g) => g.names), data: used.flatMap((g) => g.S), sig, dot,
+      cv: { acc: t.right / t.n, base: Math.max(outShare, 1 - outShare), outMore: outShare >= .5, brier: t.brier / t.n, baseBrier: outShare * (1 - outShare), burnCaught: t.burn ? t.caught / t.burn : 0 } };
   }
-  // the model's estimate for one material at one condition, or why it gives none
+  // the estimate for one material in an oxygen and nitrogen atmosphere at one pressure, or why there is none. What a cabin scenario does
+  // not fix (droplet size; fuel flow rate and dilution) is averaged over the values NASA tested for that fuel.
   function modelFor(material, o2, p) {
     const M = MODEL; if (!M) return null;
-    const re = wordStart(material), hit = [...new Set(M.data.filter((d) => re.test(d.raw)).map((d) => d.fam))];
+    const re = wordStart(material), hit = [...new Set(M.data.filter((d) => re.test(d.raw)).map((d) => d.kind + '|' + d.fam))];
     if (hit.length !== 1) return { why: hit.length ? 'several' : 'untrained' };
-    const fam = hit[0], f = M.fams[fam], usesP = !!f.p;
-    if (o2 < f.o2[0] - .025 || o2 > f.o2[1] + .025 || (usesP && (p < f.p[0] * .9 || p > f.p[1] * 1.1))) return { why: 'outside', fam, f, usesP };
-    const x = M.feats(fam, o2, usesP ? p : null, 1), est = M.sig(M.z(M.w, x));
-    const bs = M.boots.map((w) => M.sig(M.z(w, x))).sort((a, b) => a - b);
-    return { fam, f, usesP, est, lo: bs[Math.floor(bs.length * .025)], hi: bs[Math.ceil(bs.length * .975) - 1] };
+    const [kind, fam] = hit[0].split('|'), g = M.kinds[kind], f = g.fams[fam];
+    if (o2 < f.o2[0] - .025 || o2 > f.o2[1] + .025 || p < f.p[0] * .9 || p > f.p[1] * 1.1) return { why: 'outside', kind, fam, f };
+    // support: how many of this fuel's tests are near the scenario. With none there is nothing to check a trend against, so no estimate.
+    const near = f.rows.filter((t) => Math.abs(t.o2 - o2) <= NEAR_O2 + 1e-9 && Math.abs(Math.log(t.p / p)) <= Math.log(NEAR_P) + 1e-9).length;
+    if (!near) return { why: 'far', kind, fam, f };
+    const at = (d) => g.feats({ ...d, fam, o2, p, co2: 0, he: 0 }), X = f.rows.map(at);
+    const mean = (w) => X.reduce((a, x) => a + M.sig(M.dot(w, x)), 0) / X.length, bs = g.boots.map(mean).sort((a, b) => a - b);
+    const r = { kind, fam, f, near, est: mean(g.w), lo: bs[Math.floor(bs.length * .025)], hi: bs[Math.ceil(bs.length * .975) - 1] };
+    if (kind === 'droplet' && f.d0[0] <= 2 && f.d0[1] >= 4) { r.small = M.sig(M.dot(g.w, at({ d0: 2 }))); r.large = M.sig(M.dot(g.w, at({ d0: 4 }))); }
+    return r;
   }
-  const famName = (fam) => fam.charAt(0).toUpperCase() + fam.slice(1);
   function modelLine(material, o2, p) {
     const m = modelFor(material, o2, p); if (!m) return '';
-    const tag = '<span class="tag model-tag">Model</span> ', pc = (v) => `${Math.round(v * 100)}%`;
-    if (m.why === 'untrained') return `<p class="model">${tag}No model estimate: the model only learned from fuels with at least ${MODEL_MIN} NASA tests that went out or kept burning (${MODEL.names.join(', ')}).</p>`;
+    const tag = '<span class="tag model-tag">Model</span> ', pc = (v) => (v < .01 ? 'under 1%' : v > .99 ? 'over 99%' : `${Math.round(v * 100)}%`);   // never a flat 0% or 100%
+    if (m.why === 'untrained') return `<p class="model">${tag}No model estimate: the model only learned from fuels with at least ${MODEL_MIN} usable NASA tests that went out or kept burning (${MODEL.names.join(', ')}).</p>`;
     if (m.why === 'several') return `<p class="model">${tag}No model estimate: this name matches more than one fuel the model learned from. Use a more specific name.</p>`;
-    if (m.why === 'outside') return `<p class="model">${tag}No model estimate: NASA tested ${esc(m.fam)} at ${pct(m.f.o2[0])} to ${pct(m.f.o2[1])} oxygen${m.usesP ? ` and ${num(m.f.p[0])} to ${num(m.f.p[1])} atm` : ''}, and this atmosphere is outside that.</p>`;
-    return `<p class="model">${tag}Estimate between tested conditions: <b>${pc(m.est)}</b> of lit ${esc(m.fam)} flames would go out on their own here (95% range ${pc(m.lo)} to ${pc(m.hi)}). From a logistic regression on ${m.f.n} ${esc(m.fam)} tests and ${MODEL.n} in all${m.usesP ? '' : '; these tests did not record pressure, so pressure does not move this estimate'}.</p>`;
+    if (m.why === 'outside') return `<p class="model">${tag}No model estimate: NASA tested ${esc(m.fam)} at ${pct(m.f.o2[0])} to ${pct(m.f.o2[1])} oxygen and ${num(m.f.p[0])} to ${num(m.f.p[1])} atm, and this atmosphere is outside that.</p>`;
+    if (m.why === 'far') return `<p class="model">${tag}No model estimate: no ${esc(m.fam)} test is near this atmosphere (within ${NEAR_O2 * 100} points of oxygen and a factor of ${NEAR_P} in pressure), so there is nothing to check a trend against.</p>`;
+    const drop = m.kind === 'droplet';
+    const support = m.near >= NEAR_FEW ? `From a logistic regression on ${m.f.n} ${esc(m.fam)} tests, ${m.near} of them near this oxygen and pressure.`
+      : `From a logistic regression on ${m.f.n} ${esc(m.fam)} tests. Only ${m.near} of them ${m.near === 1 ? 'is' : 'are'} near this oxygen and pressure, so this mostly follows the trend across the others.`;
+    return `<p class="model">${tag}Estimate between tested conditions: <b>${pc(m.est)}</b> of lit ${esc(m.fam)} ${drop ? 'droplets' : 'gas flames'} would go out on their own in this oxygen and nitrogen atmosphere (95% range ${pc(m.lo)} to ${pc(m.hi)}), averaged over the ${drop ? 'droplet sizes' : 'fuel flow rates and dilutions'} NASA tested.${m.small != null ? ` Droplet size matters: ${pc(m.small)} at 2 mm and ${pc(m.large)} at 4 mm.` : ''} ${support}</p>`;
   }
   const obar = (t) => `<span class="obar" role="img" aria-label="${CLS.map((k) => `${t[k]} ${CLS_TEXT[k]}`).join(', ')}">${CLS.map((k) => (t[k] ? `<i class="o-${k}" style="flex:${t[k]}"></i>` : '')).join('')}</span>`;
 
