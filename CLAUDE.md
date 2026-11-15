@@ -12,6 +12,11 @@ Will a material burn in a given spacecraft atmosphere? Answered from real NASA P
   - Investigation browser calls `GET /investigations` and expects `[{ accession, title, doi, objective, n_tests }]`. The worker does not have that route yet; until it does the page shows a placeholder list plus investigations cited by the analysis.
   - Mission Control box calls `POST /chat` with `{ message }` and shows `reply`.
 
+- `web/viz.html` — the 3D model of the data, opened in a new tab by the hero's "Launch 3D model" button. One static file, three.js from jsDelivr at the same pinned version as the main page. It plots every test that recorded oxygen: left to right is oxygen, front to back is pressure, height is burn rate. Tests with no pressure on record sit in a flat strip in front. Data order: the worker's `GET /points` (live), then `web/points.json` (a real-data snapshot of the same query, so the page works before a redeploy), then a labeled mock set (`?mock=1`).
+  - Every number in its "Key findings" is computed in the page from the loaded rows. Never hardcode a statistic there.
+  - Result colors (blue went out, orange kept burning, green droplet broke apart, grey not recorded) are test results, not verdicts, so they deliberately do not reuse the pass/caution/fail colors. Each also has its own shape.
+  - If the data is reloaded, regenerate `web/points.json` from the `/points` response.
+
 ## Rules for the front end
 
 - Keep it a single `web/index.html` unless there is a strong reason not to. Touch as few files as possible.

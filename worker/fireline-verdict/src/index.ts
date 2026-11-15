@@ -280,6 +280,44 @@ export default {
       } finally { ctx.waitUntil(sql.end()); }
     }
 
-    return json({ error: 'not found', routes: ['GET /health', 'GET /sample', 'POST /verdict', 'POST /chat', 'POST /import'] }, 404);
+    // Every test that recorded an oxygen level, for the 3D model page (web/viz.html). Pressure and
+    // burn rate come back null when the test did not record them; the page shows that, it never fills them in.
+    // burn_header is the source column the burn rate came from, so the page can tell the units apart.
+    // Rows are arrays in `columns` order to keep the payload small. Keep this query in sync with
+    // web/points.json, the bundled snapshot the page falls back to.
+    if (pathname === '/points' && request.method === 'GET') {
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+      try {
+        const rows = await sql`
+          SELECT t.id::text AS test_id, t.investigation_id, t.fuel_material, t.o2_fraction, t.pressure_atm,
+                 t.burn_rate, t.outcome,
+                 CASE WHEN t.test_date_estimated THEN NULL ELSE to_char(t.test_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') END AS test_date,
+                 CASE WHEN t.burn_rate IS NOT NULL AND jsonb_typeof(t.raw) = 'object' THEN
+                   (SELECT k FROM jsonb_object_keys(t.raw) k WHERE k ~* 'burn(ing)?\\s*rate|weight loss rate' ORDER BY k LIMIT 1)
+                 END AS burn_header
+          FROM experimental_tests t
+          WHERE t.o2_fraction BETWEEN 0 AND 1
+            AND (t.pressure_atm IS NULL OR t.pressure_atm BETWEEN 0 AND 5)
+          ORDER BY t.id`;
+        const [totals] = await sql`
+          SELECT count(*)::int AS tests_total,
+                 count(*) FILTER (WHERE investigation_id LIKE 'USER-%')::int AS tests_unverified,
+                 count(DISTINCT investigation_id)::int AS investigations_with_tests
+          FROM experimental_tests`;
+        const invs = await sql`SELECT accession, title, raw->>'doi' AS doi FROM investigations`;
+        const investigations: Record<string, { title: string | null; doi: string | null; verified: boolean }> = {};
+        for (const i of invs) investigations[i.accession] = { title: i.title ?? null, doi: i.doi || null, verified: isVerified(i.accession) };
+        const columns = ['test_id', 'investigation_id', 'fuel_material', 'o2_fraction', 'pressure_atm', 'burn_rate', 'outcome', 'test_date', 'burn_header'];
+        return new Response(JSON.stringify({
+          generated_at: new Date().toISOString(), summary: totals, investigations, columns,
+          rows: rows.map((r: any) => columns.map((c) => r[c] ?? null)),
+        }), { headers: { ...HEADERS, 'cache-control': 'public, max-age=300' } });
+      } catch (e) {
+        console.error(e);
+        return json({ error: 'database query failed', detail: String((e as Error).message) }, 500);
+      } finally { ctx.waitUntil(sql.end()); }
+    }
+
+    return json({ error: 'not found', routes: ['GET /health', 'GET /sample', 'GET /points', 'POST /verdict', 'POST /chat', 'POST /import'] }, 404);
   },
 };
