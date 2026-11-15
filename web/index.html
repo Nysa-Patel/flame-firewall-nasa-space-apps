@@ -619,7 +619,7 @@
      they're small, decorative, and meant to always play regardless of that setting. */
   .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
   #results:not(.hidden) + .env-block { margin-top: 56px; }
-  .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
+  .env { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; }
   .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
     background: radial-gradient(ellipse at 50% 45%, var(--card-2) 0%, var(--char) 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
   .env-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
@@ -630,9 +630,9 @@
   .env-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
   .env-status.connected { background: var(--pass-t); } .env-status.connected i { background: var(--pass); }
   .env-status.connecting { background: var(--caution-t); } .env-status.connecting i { background: var(--caution); }
-  .env-view { position: relative; flex: 1; display: flex; min-height: 340px; margin: 14px 0; border-radius: 16px; overflow: hidden; }
+  .env-view { position: relative; flex: 1; display: flex; min-height: clamp(420px, 72vh, 820px); margin: 14px 0; border-radius: 16px; overflow: hidden; }
   .env-view iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--char); }
-  .env-svg { flex: 1; width: 100%; min-height: 0; max-height: 300px; margin: auto; }
+  .env-svg { flex: 1; width: 100%; min-height: 0; max-height: 560px; margin: auto; }
   .env-caption { margin: 0 auto 16px; max-width: 52ch; text-align: center; font-size: 14px; color: var(--on-dark-2); }
   .env-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
   .env-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--card); }
@@ -647,8 +647,8 @@
   }
   button.env-link { background: none; border-color: transparent; color: var(--sky); text-decoration: underline; padding: 8px 6px; font-weight: 600; }
   button.env-link:hover:not(:disabled) { box-shadow: none; }
-  .env-panel { background: var(--card); border-radius: 24px; padding: 6px 22px; overflow-wrap: anywhere; }
-  .env-panel > div { padding: 16px 0; border-bottom: 1px solid var(--line-dark); }
+  .env-panel { background: var(--card); border-radius: 24px; padding: 6px 22px; overflow-wrap: anywhere; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; }
+  .env-panel > div { padding: 16px 0; }
   .env-panel > div:last-child { border-bottom: 0; }
   .env-panel h3 { font-size: 14px; font-weight: 600; color: var(--on-dark-2); margin-bottom: 8px; }
   .env-panel dl { margin: 0; font-size: 14px; }
@@ -660,7 +660,8 @@
   .env-ev { list-style: none; margin: 0; padding: 0; font-size: 14px; }
   .env-ev li + li { margin-top: 10px; }
   .env-ev span { display: block; color: var(--on-dark-2); }
-  @media (max-width: 900px) { .env { grid-template-columns: 1fr; } .env-stage { min-height: 400px; } }
+  @media (max-width: 760px) { .env-stage { padding: 16px 10px; } .env-view { margin: 12px -4px; } }
+  @media (max-width: 900px) { .env-panel { grid-template-columns: 1fr; } .env-panel > div + div { border-top: 1px solid var(--line-dark); } .env-view { min-height: clamp(320px, 60vh, 520px); } }
 
   /* ===== test results: how each flame ended. These are results, not readings, so they use their own colours (the same as the
      3D page) and always sit in the same order: went out, broke apart, kept burning, not recorded ===== */
