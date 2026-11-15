@@ -360,7 +360,7 @@
   /* section headings */
   h2[id]::before { width: .8em; height: .8em; margin-right: .32em; vertical-align: -.06em; opacity: .75; }
   #scenario-h { --i: var(--i-planet); } #results-h { --i: var(--i-list-numbers); } #range-h { --i: var(--i-gauge); }
-  #method { --i: var(--i-scale); } #inv-h { --i: var(--i-flask); } #chat-h { --i: var(--i-headset); } #import-h { --i: var(--i-upload); }
+  #method { --i: var(--i-scale); } #chat-h { --i: var(--i-headset); } #import-h { --i: var(--i-upload); }
   .settings summary { gap: 6px; --i: var(--i-settings); }
   /* result cards: round badge showing the kind of material (droplet = liquid fuel, stack = solid) */
   .rank h3 { display: flex; align-items: center; gap: 12px; }
@@ -505,7 +505,7 @@
 <div class="shell">
   <header class="topbar">
     <div class="brand">FireLine.</div>
-    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#inv-h">Investigations</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
+    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
@@ -637,16 +637,6 @@
       </div>
       </div>
     </div>
-    <section style="margin-top:56px">
-      
-      <h2 id="inv-h">NASA investigations</h2>
-      <div class="inv-search">
-        <label for="invSearch">Search by title, id or objective</label>
-        <input id="invSearch" type="search" placeholder="Saffire, droplet, fabric">
-      </div>
-      <p class="inv-source" id="invSource"></p>
-      <div id="invList" class="inv-list"></div>
-    </section>
     <section>
 
       <h2 id="import-h">Contribute data</h2>
@@ -735,7 +725,7 @@
   const mockOn = () => $('mock').checked;
   const syncMock = () => $('mockBanner').classList.toggle('hidden', !mockOn());
   $('api').addEventListener('change', () => { try { localStorage.setItem('fireline.api', apiBase()); } catch {} });
-  $('mock').addEventListener('change', () => { try { localStorage.setItem('fireline.mock', mockOn() ? '1' : '0'); } catch {} syncMock(); loadInvestigations(); });
+  $('mock').addEventListener('change', () => { try { localStorage.setItem('fireline.mock', mockOn() ? '1' : '0'); } catch {} syncMock(); });
   syncMock();
 
   // ---------- the flame in the viewport reacts to oxygen ----------
@@ -829,19 +819,6 @@
   ][level];
 
   // ---------- run analysis ----------
-  const investigationsSeen = new Map();
-  function noteInvestigation(id, title, doi, n, verified) {
-    if (!id) return; const cur = investigationsSeen.get(id) || { accession: id, title, doi, n_tests: 0, seen: true, verified: verified !== false };
-    cur.title = cur.title || title; cur.doi = cur.doi || doi; cur.n_tests = Math.max(cur.n_tests, n || 0);
-    if (verified === false) cur.verified = false;
-    investigationsSeen.set(id, cur);
-  }
-  function harvest(r) {
-    if (r.nearest) noteInvestigation(r.nearest.investigation_id, r.nearest.investigation_title, r.nearest.doi, r.nearest.n_tests, r.nearest.verified);
-    (r.neighbors || []).forEach((x) => noteInvestigation(x.investigation_id, x.investigation_title, x.doi, x.n_tests, x.verified));
-    (r.fallback?.investigations || []).forEach((x) => noteInvestigation(x.investigation_id, x.title, x.doi, x.n_matching_tests, x.verified));
-  }
-
   $('form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const o2 = Number($('o2').value) / 100, pNom = Number($('p').value), pMin = Number($('pmin').value);
@@ -857,14 +834,13 @@
       const tasks = []; materials.forEach((m) => points.forEach((pt) => tasks.push(() => verdict(o2, pt.atm, m))));
       const flat = await pool(tasks);
       const rows = materials.map((m, i) => {
-        const perPoint = points.map((pt, j) => { const r = flat[i * points.length + j]; harvest(r); return { pt, r, a: assess(r) }; });
+        const perPoint = points.map((pt, j) => { const r = flat[i * points.length + j]; return { pt, r, a: assess(r) }; });
         return { material: m, nominal: perPoint[0], perPoint, worst: Math.max(...perPoint.map((x) => x.a.level === 3 ? -1 : x.a.level)) };
       });
       rows.sort((x, y) => x.nominal.a.level - y.nominal.a.level || x.worst - y.worst || y.nominal.a.confidence - x.nominal.a.confidence);
       await withTransition(() => render(rows, points, { o2, pNom, pMin, name: PRESETS[preset].name }));
       $('raw').textContent = JSON.stringify(flat, null, 2);
       setStatus('');
-      renderInvestigations();
     } catch (err) {
       setStatus('The worker request failed: ' + err.message + (err.name === 'TypeError' ? `. Check that the worker is running at ${apiBase()}, or turn on mock mode in Settings.` : ''), true);
     } finally { $('go').disabled = false; }
@@ -908,37 +884,6 @@
     $('results').classList.remove('hidden');
     document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], confidence: row.nominal.a.confidence, nearest: row.nominal.r.nearest })) } }));
   }
-
-  // ---------- investigation browser ----------
-  // Expects GET /investigations -> [{ accession, title, doi, objective, n_tests }] once the worker has it.
-  // Until then it shows investigations harvested from verdict responses, plus a placeholder list.
-  let invRows = [], invSource = '';
-  async function loadInvestigations() {
-    invRows = []; invSource = '';
-    if (!mockOn()) {
-      try {
-        const res = await fetch(apiBase() + '/investigations');
-        if (res.ok) { const d = await res.json(); if (Array.isArray(d)) { invRows = d; invSource = `${d.length} investigations from the worker.`; } }
-      } catch {}
-    }
-    if (!invRows.length) {
-      if (mockOn()) { invRows = MOCK_INVESTIGATIONS.map((x) => ({ ...x, placeholder: true })); invSource = 'Mock mode: a placeholder list of known PSI combustion investigations, without DOIs or test counts.'; }
-      else invSource = 'Investigations cited by the ranking above, with DOIs and test counts from the worker. The full catalogue appears once the worker has an investigations route.';
-    }
-    renderInvestigations();
-  }
-  function renderInvestigations() {
-    const q = $('invSearch').value.trim().toLowerCase();
-    const merged = new Map(invRows.map((x) => [x.accession, { ...x }]));
-    investigationsSeen.forEach((v, k) => { const cur = merged.get(k); if (cur) { Object.assign(cur, { doi: cur.doi || v.doi, title: cur.title || v.title, seen: true, n_tests: Math.max(cur.n_tests || 0, v.n_tests), verified: v.verified === false ? false : cur.verified }); } else merged.set(k, v); });
-    const list = [...merged.values()].filter((x) => !q || [x.accession, x.title, x.objective].some((f) => (f || '').toLowerCase().includes(q)))
-      .sort((a, b) => (b.seen ? 1 : 0) - (a.seen ? 1 : 0) || (b.n_tests || 0) - (a.n_tests || 0) || String(a.title).localeCompare(String(b.title)));
-    $('invSource').textContent = invSource;
-    $('invList').innerHTML = list.length ? list.map((x) => `<div class="inv"><h3>${esc(x.title || x.accession)}</h3>${x.seen ? '<span class="tag cited">Cited above</span> ' : ''}${x.placeholder ? '<span class="tag placeholder">Placeholder</span>' : ''}${x.verified === false ? '<span class="tag placeholder">Community-contributed, unverified</span>' : ''}
-      <p class="meta">${esc(x.accession)}. DOI ${doiLink(x.doi)}.${x.n_tests ? ` ${x.n_tests} tests.` : ''}</p>${x.objective ? `<p class="objective">${esc(x.objective)}</p>` : ''}</div>`).join('')
-      : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
-  }
-  $('invSearch').addEventListener('input', () => animateHeight($('invList'), renderInvestigations));
 
   // ---------- Mission log: click the chamber for one random real test record ----------
   const logDialog = $('logDialog');
@@ -1026,7 +971,6 @@
         ` Matched columns: ${matchedCols.length ? esc(matchedCols.join(', ')) : 'none'}.` +
         (d.warnings.length ? `<br><br>${d.warnings.map(esc).join('<br>')}` : '');
       $('importForm').reset();
-      await loadInvestigations();
     } catch (err) {
       result.textContent = 'Import failed: ' + err.message;
     } finally { $('importGo').disabled = false; }
@@ -1068,7 +1012,7 @@
           : message;
         const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: contextualMessage }) });
         const d = await res.json(); if (!res.ok || d.error) throw new Error(d.error + (d.detail ? ': ' + d.detail : ''));
-        reply = d.reply; if (d.verdict) harvest(d.verdict), renderInvestigations();
+        reply = d.reply;
       }
       pending.textContent = reply;
       pending.classList.remove('pending');
@@ -1119,7 +1063,6 @@
       fallback: null, notes };
   }
 
-  loadInvestigations();
 })();
 </script>
 <script>
