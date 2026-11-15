@@ -275,7 +275,8 @@
   /* ===== 2D plot with trend lines ===== */
   .plot2d { position: absolute; inset: 0; display: none; }
   body[data-view="2d"] .plot2d { display: block; }
-  body[data-view="2d"] :is(#scene, #labels) { visibility: hidden; pointer-events: none; }
+  body[data-view="2d"] #scene { visibility: hidden; pointer-events: none; }
+  body[data-view="2d"] #labels { display: none; }
   body[data-view="2d"] :is(#rotateBtn, #resetBtn) { display: none; }
   body[data-view="2d"] .count { top: auto; bottom: 14px; right: 18px; }
   body[data-view="2d"] .ov { left: auto; right: 16px; top: 54px; width: min(320px, calc(100% - 32px)); }
@@ -286,7 +287,7 @@
   .p2bar button { min-height: 32px; padding: 3px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--on-dark); font-weight: 600; font-size: 14px; cursor: pointer; }
   .p2bar button:hover { background: var(--card-2); }
   .p2bar button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
-  .p2sum { position: absolute; left: 16px; bottom: 62px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 360px); }
+  .p2sum { position: absolute; left: 16px; top: 54px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 370px); }
   .p2sum .chip { background: var(--card); border: 1px solid var(--line-dark); color: var(--on-dark); font-size: 13px; }
   .p2sum .chip i { display: inline-block; width: 18px; height: 3px; margin-right: 6px; vertical-align: 3px; border-radius: 2px; }
   @media (max-width: 760px) { body[data-view="2d"] .ov { left: 8px; right: auto; top: 50px; } .p2sum { display: none; } }
@@ -874,6 +875,8 @@ function highlight3D(key, label) {
 $('hlClear').addEventListener('click', () => { st.hi = null; hideHl(); view.paint(); });
 
 let lastStage = '2d';
+const p2 = { y: 'burn', trend: true, byFuel: true };
+const cap1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 function setView(v) {
   if (v !== 'charts') lastStage = v;
   document.body.dataset.view = v; $('stage').hidden = v === 'charts'; $('charts').hidden = v !== 'charts'; ctip.hidden = true;
@@ -1224,8 +1227,6 @@ run(params.has('o2') || params.has('p'), 'A');
 // ---------- 2D plot with trend lines ----------
 // One view of the same rows: oxygen across, and either burn rate or the share that went out up the side.
 // Trend lines are least-squares fits (burn rate) or a moving share with a Wilson 95% band (chance it goes out), on the tests shown.
-const p2 = { y: 'burn', trend: true, byFuel: true };
-const svgNS = 'http://www.w3.org/2000/svg';
 function linFit(pts) {
   const n = pts.length; if (n < 8) return null;
   const mx = mean(pts.map((q) => q[0])), my = mean(pts.map((q) => q[1]));
@@ -1245,7 +1246,7 @@ function movingShare(rows) { // share that went out, by oxygen, over a 5-point w
 function draw2d() {
   const svg = $('p2svg'), st2 = $('stage'); if (!svg || document.body.dataset.view !== '2d') return;
   const b = st2.getBoundingClientRect(), W = Math.max(300, Math.round(b.width)), H = Math.max(260, Math.round(b.height)), narrow = W < 760;
-  const ml = narrow ? 44 : 64, mr = narrow ? 14 : 352, mt = narrow ? 96 : 64, mb = narrow ? 70 : 118, pw = W - ml - mr, ph = H - mt - mb;
+  const ml = narrow ? 44 : 64, mr = narrow ? 14 : 352, mt = narrow ? 96 : 120, mb = narrow ? 70 : 96, pw = W - ml - mr, ph = H - mt - mb;
   if (pw < 80 || ph < 80) return;
   const mode = p2.y, ymax = mode === 'burn' ? B_MAX : 1;
   const X = (o) => ml + (o - X0) / (X1 - X0) * pw, Y = (v) => mt + ph - v / ymax * ph;
@@ -1304,7 +1305,6 @@ function draw2d() {
   let sm = $('p2sum'); if (!sm) { sm = document.createElement('div'); sm.id = 'p2sum'; sm.className = 'p2sum'; $('plot2d').append(sm); }
   sm.innerHTML = sums.join('');
 }
-const cap1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 $('plot2d').addEventListener('click', (e) => {
   const bt = e.target.closest('#p2bar button');
   if (bt) { if (bt.dataset.y) p2.y = bt.dataset.y; else if (bt.dataset.t) p2.trend = !p2.trend; else if (bt.dataset.f) p2.byFuel = !p2.byFuel; draw2d(); return; }
