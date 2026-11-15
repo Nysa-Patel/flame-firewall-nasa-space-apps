@@ -286,27 +286,25 @@ const TOTAL = Number(data.summary?.tests_total) || P.length;
 const UNVERIFIED = P.filter((p) => !p.verified).length;
 
 // ---------- scene geometry (data units -> scene units) ----------
-const W = 12, D = 8, H = 4.5;
+const W = 10, D = 6, H = 4.2;
 const niceMax = (v, step) => Math.max(step, Math.ceil(v / step - 1e-9) * step);
 const P_MAX = niceMax(Math.max(1, ...WP.map((p) => p.p)), 1);
 const B_MAX = niceMax(Math.max(0.2, ...F.map((p) => p.burn)), 0.2);
-const sx = (o2) => o2 * W, sz = (p) => -(p / P_MAX) * D, sy = (b) => (b / B_MAX) * H;
+// The oxygen axis covers only the range the plotted tests span, so the points fill the box instead of
+// huddling in one corner. Anything outside it (the 100% spacesuit atmosphere) is called out in words.
+const XS = 0.05;
+const X0 = WP.length ? Math.max(0, Math.floor(Math.min(...WP.map((p) => p.o2)) / XS + 1e-9) * XS) : 0;
+const X1 = WP.length ? Math.min(1, Math.ceil(Math.max(...WP.map((p) => p.o2)) / XS - 1e-9) * XS) : 1;
+const sx = (o2) => ((o2 - X0) / (X1 - X0)) * W, sz = (p) => -(p / P_MAX) * D, sy = (b) => (b / B_MAX) * H;
+const xLabelStep = (X1 - X0) / XS > 8 ? 0.1 : XS;
+const xTicks = []; for (let t = X0; t <= X1 + 1e-9; t += xLabelStep) xTicks.push(Math.round(t * 1000) / 1000);
 const jit = (i, k) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return (s - Math.floor(s)) - 0.5; };
-const SHELF_Z0 = 1.05, SHELF_STEP = 0.082, BIN = 0.025, SHELF_COLS = 4;
-let shelfDepth = 0;
-{ // Tests with no pressure on record are laid flat in front of the floor as a dot histogram by oxygen.
-  const bins = new Map();
-  SHELF.forEach((p) => { const b = Math.min(Math.round(1 / BIN) - 1, Math.floor(p.o2 / BIN + 1e-9)); (bins.get(b) || bins.set(b, []).get(b)).push(p); });
-  bins.forEach((list, b) => {
-    list.sort((a, c) => CLS.indexOf(a.cls) - CLS.indexOf(c.cls) || String(a.inv).localeCompare(String(c.inv)) || a.i - c.i);
-    list.forEach((p, k) => { const row = Math.floor(k / SHELF_COLS), c = k % SHELF_COLS; p.pos = [(b + 0.5) * BIN * W + (c - (SHELF_COLS - 1) / 2) * 0.068, 0.05, SHELF_Z0 + row * SHELF_STEP];
-      shelfDepth = Math.max(shelfDepth, (row + 1) * SHELF_STEP); });
-  });
-}
+// Tests with no pressure on record cannot be placed in 3D; they stay reachable in Table view.
 P.forEach((p) => {
-  if (p.zone === 'cloud') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.07, sy(p.burn), sz(p.p) + jit(p.i, 2) * 0.09];
-  else if (p.zone === 'floor') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.14, 0.05, sz(p.p) + jit(p.i, 2) * 0.14];
+  if (p.zone === 'cloud') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.16, sy(p.burn), sz(p.p) + jit(p.i, 2) * 0.2];
+  else if (p.zone === 'floor') p.pos = [sx(p.o2) + jit(p.i, 1) * 0.22, 0.04, sz(p.p) + jit(p.i, 2) * 0.22];
 });
+const PLOT = P.filter((p) => p.pos);
 
 // ---------- findings (all computed from P) ----------
 const mean = (a) => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : null);
@@ -321,12 +319,12 @@ const invTitle = (id) => INV[id]?.title || id;
 const share = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '—');
 function buildFindings() {
   const out = [];
-  const overview = { target: [W * 0.42, 0.8, -0.6], theta: -0.5, phi: 1.0, radius: 22 };
+  const overview = { target: [W * 0.52, H * 0.22, -D * 0.42], theta: -0.42, phi: 1.12, radius: 19.5 };
 
   { // 1. coverage
     const invs = [...new Set(F.map((p) => p.inv))].map((id) => `${id} (${invTitle(id)})`);
     out.push({ title: 'Most tests did not record everything', stat: `${int(F.length)} of ${int(TOTAL)} tests have oxygen, pressure and burn rate`,
-      body: `The database holds ${int(TOTAL)} tests. ${int(P.length)} recorded an oxygen level, so they can be placed here. ${int(WP.length)} of those also recorded pressure, and ${int(F.length)} recorded a comparable burn rate too. Those ${int(F.length)} are the floating points${invs.length ? ', all from ' + invs.join(' and ') : ''}. `
+      body: `The database holds ${int(TOTAL)} tests. ${int(P.length)} recorded an oxygen level. ${int(WP.length)} of those also recorded pressure, so only they are plotted here, and ${int(F.length)} recorded a comparable burn rate too. Those ${int(F.length)} are the floating points${invs.length ? ', all from ' + invs.join(' and ') : ''}. `
         + (source === 'mock' ? 'These are synthetic mock points, not NASA records.' : UNVERIFIED ? `${int(UNVERIFIED)} plotted tests are unverified community uploads, drawn as outlines.` : 'Every plotted test is a NASA PSI record; none are community uploads.'),
       view: overview, hi: null });
   }
@@ -336,7 +334,7 @@ function buildFindings() {
       const ml = mean(lo.map((p) => p.burn)), mh = mean(hi.map((p) => p.burn));
       out.push({ title: mh > ml ? 'More oxygen, faster burn' : 'Oxygen and burn rate', stat: `${num(ml)} → ${num(mh)} ${UNIT} from low to high oxygen`,
         body: `At ${pct(HIGH)} oxygen and above, flames burned at ${num(mh)} ${UNIT} on average (${int(hi.length)} tests). Below ${pct(LOW)}, the average was ${num(ml)} ${UNIT} (${int(lo.length)} tests). Across all ${int(F.length)} tests with a burn rate, the link between oxygen and burn rate is ${num(r)} on a scale where 0 is no link and 1 is a perfect one.`,
-        view: { target: [sx(mean(F.map((p) => p.o2))), H * 0.45, sz(mean(F.map((p) => p.p)))], theta: 0, phi: 1.42, radius: 12 }, hi: new Set([...lo, ...hi].map((p) => p.i)) });
+        view: { target: [sx(mean(F.map((p) => p.o2))), H * 0.45, sz(mean(F.map((p) => p.p)))], theta: 0, phi: 1.4, radius: 10 }, hi: new Set([...lo, ...hi].map((p) => p.i)) });
     }
   }
   { // 3. low oxygen puts flames out
@@ -383,7 +381,7 @@ function buildFindings() {
     });
     out.push({ title: empty ? 'Where the tests run out' : 'Mission atmospheres are covered', stat: `${empty} of ${MISSIONS.length} mission atmospheres have no nearby test`,
       body: `Counting tests within 2% oxygen and 0.1 atm of each planning atmosphere. ${parts.join(' ')} No test with pressure on record goes above ${pct(maxO2)} oxygen.`,
-      view: { target: [sx(0.45), 0.2, sz(0.8)], theta: -0.25, phi: 0.62, radius: 19 }, hi });
+      view: { target: [W * 0.55, 0.3, sz(0.8)], theta: -0.25, phi: 0.7, radius: 14 }, hi });
   }
   return { list: out, overview };
 }
@@ -404,7 +402,7 @@ if (source === 'mock') $('legendUnv').lastChild.textContent = 'Outline: mock dat
 $('read').innerHTML = [
   `Left to right is oxygen. Front to back is pressure. Height is burn rate${UNIT ? ' in ' + UNIT : ''}.`,
   `Floating points recorded all three (${int(F.length)} tests). Points on the floor recorded oxygen and pressure but no comparable burn rate (${int(WP.length - F.length)}).`,
-  `The strip in front holds the ${int(SHELF.length)} tests with no pressure on record, lined up by oxygen in 2.5% steps.`,
+  `${int(SHELF.length)} of the tests that recorded oxygen have no pressure on record, so they cannot be placed here. Open Table view to see them.`,
   'Points are nudged slightly so tests at the same condition do not hide each other.',
   MAIN_HEADER ? `Burn rate is the column NASA labels “${esc(MAIN_HEADER)}”${UNIT === 'mm²/s' ? '; its values match a droplet burning-rate constant in mm²/s' : ''}.` : '',
   'Rings mark planning atmospheres from the FireLine presets. They are not test results.',
@@ -426,7 +424,10 @@ $('fFuel').innerHTML = '<option value="">All fuels and materials</option>' + cou
 $('fInv').innerHTML = '<option value="">All investigations</option>' + countBy('inv').map(([k, n]) => `<option value="${esc(k)}">${esc(k)} · ${esc(String(invTitle(k)).slice(0, 48))} (${n})</option>`).join('');
 // "Not recorded" has an empty key, which would read as "all"; give it its own value.
 [...$('fFuel').options].forEach((o, i) => { if (i > 0 && o.value === '') o.value = '\u0000'; });
-function updateCount() { const n = P.filter(passesAll).length; $('count').textContent = n === P.length ? `${int(n)} tests shown` : `${int(n)} of ${int(P.length)} tests shown`; }
+function updateCount() {
+  const a = P.filter(passesAll), np = a.filter((p) => p.pos).length, ns = a.length - np;
+  $('count').textContent = `${int(np)} tests plotted` + (ns ? ` · ${int(ns)} more have no pressure (Table view)` : '');
+}
 function filtersChanged() {
   const f = $('fFuel').value; st.fuel = f === '\u0000' ? '' : f; st.fuelNone = f === '\u0000';
   st.inv = $('fInv').value; st.verifiedOnly = $('fVerified').checked;
@@ -461,7 +462,7 @@ function select(i, fly) {
   d.hidden = false;
   $('detailClose').addEventListener('click', () => select(-1));
   view.select(); view.paint();
-  if (fly) view.fly({ target: p.pos, radius: 7 });
+  if (fly && p.pos) view.fly({ target: p.pos, radius: 7 });
 }
 
 // ---------- table view (the keyboard route to every test) ----------
@@ -469,7 +470,7 @@ const dlg = $('tableDialog');
 $('tableBtn').addEventListener('click', () => {
   const rows = P.filter(passesAll);
   $('table-h').textContent = `${int(rows.length)} tests`;
-  $('tableBody').innerHTML = rows.map((p) => `<tr><td>${esc(p.fuel || 'Not recorded')}</td><td class="num">${pct(p.o2)}</td><td class="num">${p.p == null ? '—' : num(p.p) + ' atm'}</td><td class="num">${p.burn == null ? '—' : burnText(p)}</td><td>${CLS_LABEL[p.cls]}</td><td>${esc(p.inv)}</td><td>${source === 'mock' ? 'Mock' : p.verified ? 'NASA PSI' : 'Unverified'}</td><td><button class="btn" type="button" data-i="${p.i}">Show</button></td></tr>`).join('');
+  $('tableBody').innerHTML = rows.map((p) => `<tr><td>${esc(p.fuel || 'Not recorded')}</td><td class="num">${pct(p.o2)}</td><td class="num">${p.p == null ? '—' : num(p.p) + ' atm'}</td><td class="num">${p.burn == null ? '—' : burnText(p)}</td><td>${CLS_LABEL[p.cls]}</td><td>${esc(p.inv)}</td><td>${source === 'mock' ? 'Mock' : p.verified ? 'NASA PSI' : 'Unverified'}</td><td>${p.pos ? `<button class="btn" type="button" data-i="${p.i}">Show</button>` : ''}</td></tr>`).join('');
   dlg.showModal();
 });
 $('tableClose').addEventListener('click', () => dlg.close());
@@ -508,14 +509,12 @@ function start3d() {
   const plane = (x0, x1, z0, z1, color, opacity) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, Math.abs(z1 - z0)), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false }));
     m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, -0.01, (z0 + z1) / 2); scene.add(m); return m; };
   plane(0, W, 0, -D, '#1b3766', 0.42);
-  const shelfEnd = SHELF_Z0 + Math.max(shelfDepth, 0.6) + 0.2;
-  if (SHELF.length) plane(0, W, SHELF_Z0 - 0.2, shelfEnd, '#132b52', 0.5);
   const grid = [], wall = [];
-  for (let i = 0; i <= 10; i++) grid.push([sx(i / 10), 0, 0], [sx(i / 10), 0, -D]);
+  xTicks.forEach((t) => grid.push([sx(t), 0, 0], [sx(t), 0, -D]));
   for (let a = 0; a <= P_MAX; a++) grid.push([0, 0, sz(a)], [W, 0, sz(a)]);
   const bStep = B_MAX / Math.round(B_MAX / 0.2);
   for (let b = bStep; b <= B_MAX + 1e-9; b += bStep) wall.push([0, sy(b), -D], [W, sy(b), -D], [0, sy(b), 0], [0, sy(b), -D]);
-  for (let i = 0; i <= 10; i += 2) wall.push([sx(i / 10), 0, -D], [sx(i / 10), H, -D]);
+  xTicks.forEach((t) => wall.push([sx(t), 0, -D], [sx(t), H, -D]));
   wall.push([0, 0, 0], [0, H, 0]);
   segs(grid, lineMat('#3b5a94', 0.55)); segs(wall, lineMat('#3b5a94', 0.3));
   segs([[0, 0, 0], [W, 0, 0], [W, 0, 0], [W, 0, -D], [0, 0, -D], [0, H, -D]], lineMat('#b6c3d8', 0.8));
@@ -524,29 +523,29 @@ function start3d() {
   const labels = [];
   const label = (text, pos, cls = '', anchor = 'c') => { const el = document.createElement('span'); el.className = 'lab ' + cls; el.textContent = text; labelsEl.append(el);
     const l = { el, pos: new THREE.Vector3(...pos), anchor, on: true, w: 0, h: 0, pri: cls === 'axis' ? 0 : cls === 'zone' ? 1 : cls === 'mission' ? 2 : 3 }; labels.push(l); return l; };
-  for (let i = 0; i <= 10; i += 2) label(i * 10 + '%', [sx(i / 10), 0, 0.42]);
-  label('Oxygen', [sx(0.5), 0, 0.42], 'axis');
+  xTicks.forEach((t) => label(Math.round(t * 100) + '%', [sx(t), 0, 0.4]));
+  label('Oxygen in the air', [W / 2, 0, 1.0], 'axis');
   for (let a = 1; a <= P_MAX; a++) label(a + ' atm', [W + 0.3, 0, sz(a)], '', 'l');
   label('Pressure', [W + 0.3, 0, sz(P_MAX) - 0.7], 'axis');
   for (let k = 2; k * bStep <= B_MAX + 1e-9; k += 2) label(num(k * bStep, 1), [-0.3, sy(k * bStep), -D], '', 'r');
   label(`Burn rate${UNIT ? ', ' + UNIT : ''}`, [0, H + 0.4, -D], 'axis');
-  if (SHELF.length) label(`No pressure on record · ${int(SHELF.length)} tests`, [W / 2, 0, shelfEnd + 0.45], 'zone');
 
   // --- mission atmosphere markers ---
   const missionGroup = new THREE.Group(); scene.add(missionGroup); const missionLabels = [];
-  MISSIONS.filter((m) => m.p <= P_MAX).forEach((m, k) => { const top = H * (0.5 + 0.13 * k);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.26, 40), new THREE.MeshBasicMaterial({ color: '#f2f5fa', side: THREE.DoubleSide, transparent: true, opacity: 0.9, fog: false }));
+  const inScale = (m) => m.o2 >= X0 - 1e-9 && m.o2 <= X1 + 1e-9 && m.p <= P_MAX;
+  MISSIONS.filter(inScale).forEach((m) => {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.17, 0.23, 40), new THREE.MeshBasicMaterial({ color: '#f2f5fa', side: THREE.DoubleSide, transparent: true, opacity: 0.95, fog: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(sx(m.o2), 0.02, sz(m.p)); missionGroup.add(ring);
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([sx(m.o2), 0, sz(m.p), sx(m.o2), top, sz(m.p)], 3));
-    missionGroup.add(new THREE.Line(g, lineMat('#f2f5fa', 0.35)));
-    missionLabels.push(label(m.name, [sx(m.o2), top + 0.18, sz(m.p)], 'mission'));
+    missionLabels.push(label(m.name, [sx(m.o2) + 0.3, 0.02, sz(m.p)], 'mission', 'l'));
   });
+  const off = MISSIONS.filter((m) => !inScale(m));
+  if (off.length) missionLabels.push(label(`Off this scale: ${off.map((m) => `${m.name} (${pct(m.o2)} oxygen)`).join(', ')}`, [W / 2, 0, 2.0], 'zone'));
 
   // --- points: one instanced mesh per result shape, a wireframe copy for unverified uploads ---
   const geo = { out: new THREE.SphereGeometry(0.075, 16, 12), burn: new THREE.BoxGeometry(0.125, 0.125, 0.125), disrupt: new THREE.OctahedronGeometry(0.105), unknown: new THREE.SphereGeometry(0.05, 10, 8) };
   const groups = [];
   CLS.forEach((c) => [true, false].forEach((v) => {
-    const idx = P.filter((p) => p.cls === c && p.verified === v).map((p) => p.i); if (!idx.length) return;
+    const idx = PLOT.filter((p) => p.cls === c && p.verified === v).map((p) => p.i); if (!idx.length) return;
     const mat = v ? new THREE.MeshLambertMaterial() : new THREE.MeshBasicMaterial({ wireframe: true });
     const mesh = new THREE.InstancedMesh(geo[c], mat, idx.length); mesh.frustumCulled = false; scene.add(mesh);
     groups.push({ mesh, idx, base: new THREE.Color(CLS_COLOR[c]) });
@@ -588,7 +587,7 @@ function start3d() {
     camera.position.set(cam.target.x + cam.radius * sp * Math.sin(cam.theta), cam.target.y + cam.radius * Math.cos(cam.phi), cam.target.z + cam.radius * sp * Math.cos(cam.theta));
     camera.lookAt(cam.target);
   }
-  const OVERVIEW_TALL = { target: [W * 0.2, 1.2, -1.6], theta: -0.9, phi: 1.06, radius: 15 };
+  const OVERVIEW_TALL = { target: [W * 0.5, H * 0.25, -D * 0.45], theta: -1.0, phi: 1.1, radius: 14 };
   const fit = (v) => (v === OVERVIEW && camera.aspect < 1 ? OVERVIEW_TALL : v);
   let flight = null;
   function fly(v) {
