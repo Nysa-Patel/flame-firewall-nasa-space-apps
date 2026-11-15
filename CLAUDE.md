@@ -75,3 +75,5 @@ Will a material burn in a given spacecraft atmosphere? Answered from real NASA P
 
 - Do not put credentials in the repo. The Tiger Data password lives in the Cloudflare Hyperdrive binding and in the gitignored `.env` / `.dev.vars`.
 - Keep the response shape stable; the front end depends on it. If a field is added, update `web/index.html` in the same change.
+
+- `web/fire-places.html`: opened from the Mission environment section (the "See fire on the ISS" button). A clickable 3D ISS (NASA model in `web/assets/fire/`) where you pick a module or an atmosphere from the tested data, and see the verdict, a real NASA flame photograph placed in a NASA photo of the place, and the properties computed from the test data. The flames are illustrations; Moon and Mars gravity are a blend of the two real photos.

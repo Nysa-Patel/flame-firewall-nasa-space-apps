@@ -629,7 +629,8 @@
   a.env-open { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 22px; border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 700; font-size: 15px; text-decoration: none; }
   @media (prefers-reduced-motion: no-preference) {
     a.env-open { transition: scale .45s var(--spring); }
-    a.env-open:hover { scale: 1.04; } a.env-open:active { scale: .97; }
+    a.env-fire { gap: 8px; box-shadow: 0 0 0 3px rgba(212, 42, 28, .55); }
+  a.env-open:hover { scale: 1.04; } a.env-open:active { scale: .97; }
   }
   button.env-link { background: none; border-color: transparent; color: var(--sky); text-decoration: underline; padding: 8px 6px; font-weight: 600; }
   button.env-link:hover:not(:disabled) { box-shadow: none; }
@@ -925,6 +926,7 @@
               <button type="button" id="envClose" aria-pressed="true"></button>
               <button type="button" id="envWide" aria-pressed="false"></button>
             </div>
+            <a id="envFire" class="env-open env-fire" href="fire-places.html"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.2 4.5 5 4.5 9.3A4.5 4.5 0 0 1 12 17a4.5 4.5 0 0 1-4.5-4.7C7.5 10 9 8.7 9.7 7c.6 1.2 1.2 1.7 1.8 1.9C11.8 7 12 5.3 12 3z"/><path d="M8 21h8"/></svg><span id="envFireText">See how fire burns here</span></a>
             <a id="envOpen" class="env-open" target="_blank" rel="noopener">Open 3D view in new tab</a>
             <button type="button" id="envConnect" class="env-link">Connect OpenSpace</button>
           </div>
@@ -2302,6 +2304,9 @@ ${move}`;
     $('envClose').setAttribute('aria-pressed', mode === 'close'); $('envWide').setAttribute('aria-pressed', mode === 'wide');
     const target = mode === 'close' ? v.closeText : `the whole ${v.body === 'Earth' ? 'Earth with the station\'s orbit' : v.body}`;
     $('envOpen').href = v.eyes[mode];
+    const o2n = parseFloat($('o2').value), pn = parseFloat($('p').value), fireKey = VIEWS[checked()?.value] ? key : 'iss';
+    $('envFire').href = `fire-places.html?place=${fireKey}${Number.isFinite(o2n) ? '&o2=' + o2n : ''}${Number.isFinite(pn) ? '&p=' + pn : ''}`;
+    $('envFireText').textContent = { iss: 'Click to see fire on the ISS', suit: 'See fire in a spacesuit', lunar: 'See fire on the Moon', mars: 'See fire on Mars' }[fireKey] || 'See how fire burns here';
     if (frame) { frame.title = `NASA's Eyes on the Solar System, 3D view of ${v.body}`; if (frame.getAttribute('src') !== eyesUrl()) frame.src = eyesUrl(); }
     $('envCaption').textContent = status === 'connected' ? `The OpenSpace window is showing ${target}.`
       : status === 'failed' ? `OpenSpace did not answer on this computer. Start it and try again, or open ${target} in 3D in a new tab.`
