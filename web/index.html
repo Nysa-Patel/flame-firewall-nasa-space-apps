@@ -146,6 +146,7 @@
   .lab-seg label { position: relative; margin: 0; font-size: 14px; flex: 1 1 120px; }
   .lab-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
   .lab-seg span { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-weight: 600; background: var(--paper); }
+  .lab-chips label { flex: 1 1 auto; }
   .lab-seg input:checked + span { background: var(--ink); color: #fff; border-color: var(--ink); }
   .lab-seg input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 3px; }
   .lab-sliders { display: grid; gap: 6px; }
@@ -774,6 +775,13 @@
             </div>
           </div>
           <div class="lab-controls">
+            <fieldset class="lab-seg lab-chips">
+              <legend>Mission</legend>
+              <label><input type="radio" name="labMission" value="iss" checked><span>ISS</span></label>
+              <label><input type="radio" name="labMission" value="moon"><span>Moon base</span></label>
+              <label><input type="radio" name="labMission" value="mars"><span>Mars habitat</span></label>
+              <label><input type="radio" name="labMission" value="suit"><span>Spacesuit</span></label>
+            </fieldset>
             <fieldset class="lab-seg">
               <legend>Gravity</legend>
               <label><input type="radio" name="labG" value="0" checked><span>Microgravity</span></label>
@@ -1609,12 +1617,22 @@
     dodecane: { name: 'dodecane', limit: 14, soot: .7, re: /dodecane|c12h26/i },
     pmma:     { name: 'PMMA',     limit: 17, soot: .5, re: /pmma|\brod\b/i },
   };
+  // missions: gravity (g), oxygen (%), pressure (psia). Mars habitat figures are the page's placeholders.
+  const MISSIONS = {
+    iss:  { g: 0,    o2: 21,  p: 14.7 },
+    moon: { g: .165, o2: 30,  p: 10.2 },
+    mars: { g: .38,  o2: 34,  p: 8.2 },
+    suit: { g: 0,    o2: 100, p: 4.3 },
+  };
   const ui = { o2: $('labO2'), p: $('labP'), fuel: $('labFuel') };
   // flow, heat and haze stay at 0: the shader still reads them, the lab no longer sets them
   const state = window.phenoxLab = { o2: .07, g: 0, flow: 0, press: .74, soot: .55, heat: 0, haze: 0, alive: 1 };
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
-  const gravity = () => Number(document.querySelector('input[name="labG"]:checked')?.value || 0);
+  // gravity comes from the toggle, or from a mission (Moon and Mars sit between the toggle's two ends, so neither is checked then)
+  let grav = 0;
+  const gravity = () => grav;
+  const gName = (g) => g < .02 ? 'Microgravity' : g > .98 ? 'Earth gravity' : Math.abs(g - .165) < .03 ? 'Moon gravity' : Math.abs(g - .38) < .03 ? 'Mars gravity' : 'Partial gravity';
 
   // ---- the NASA tests behind the burn-rate meter: the same test table the ranking uses (window.phenoxPoints, read only) and the same
   // outcome classes. For the lab's fuel, oxygen and pressure it takes the nearest tested conditions (in the worker's bucket widths, 5
@@ -1657,12 +1675,13 @@
     const word = margin < -2 ? 'Flame out' : margin < 2 ? 'Barely burning' : 'Burning';
     const dot = margin < -2 ? 'var(--none)' : margin < 2 ? 'var(--caution)' : 'var(--accent)';
     const shape = g < .02 ? 'With no rising hot air, the flame is a slow sphere fed only by oxygen drifting in.'
+      : g < .6 ? 'Weak gravity lets hot gas rise slowly, so the flame is a tall, lazy dome.'
       : 'Hot gas rises and pulls in fresh air, so the flame is a flickering teardrop.';
     const out = margin < -2 ? `${fmt(o2)}% oxygen is not enough to keep ${fuel.name} burning here.` : '';
     const soot = margin >= -2 && fuel.soot > .5 && g > .1 ? `Sooty ${fuel.name} glows yellow.` : '';
     const st = $('labState');
     st.style.setProperty('--lab-dot', dot);
-    st.innerHTML = `<b>${word} · ${g < .02 ? 'Microgravity' : 'Earth gravity'}</b>${[out || shape, soot].filter(Boolean).join(' ')}`;
+    st.innerHTML = `<b>${word} · ${gName(g)}</b>${[out || shape, soot].filter(Boolean).join(' ')}`;
     fallback();
     // burn-rate meter. With nearby NASA tests: fill from their average burn rate (against the fastest burn on record for this fuel); it
     // flickers when the share of conclusive tests that kept burning is low. Without them it follows the rules of thumb.
@@ -1703,7 +1722,14 @@
     f.style.opacity = String(.25 + .75 * s.alive);
   }
 
-  document.querySelectorAll('input[name="labG"]').forEach((r) => r.addEventListener('change', update));
+  document.querySelectorAll('input[name="labG"]').forEach((r) => r.addEventListener('change', () => { if (r.checked) { grav = Number(r.value); update(); } }));
+  function mission(k) {
+    const m = MISSIONS[k]; if (!m) return;
+    ui.o2.value = m.o2; ui.p.value = m.p; grav = m.g;
+    document.querySelectorAll('input[name="labG"]').forEach((r) => { r.checked = (r.value === '0' && grav < .02) || (r.value === '1' && grav > .98); });
+    update();
+  }
+  document.querySelectorAll('input[name="labMission"]').forEach((r) => r.addEventListener('change', () => r.checked && mission(r.value)));
   [ui.o2, ui.p].forEach((el) => el.addEventListener('input', update));
   ui.fuel.addEventListener('change', update);
   // follow the ranking form's oxygen and pressure when the user changes them there (read only; the lab writes to the form only when the user presses "Check this in the NASA data")
