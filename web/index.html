@@ -376,6 +376,26 @@
   .dark .quiet, .dark .intro, .dark .inv-source, .dark .scenario-label { color: var(--on-dark-2); }
   .dark a { color: var(--sky); }
   .dark section + section, .dark .block + .block { margin-top: 56px; }
+  /* one colour per feature (15 Nov 2026), so each part of the page reads as its own tool: a tinted panel, a stripe and a name tag in the
+     feature's colour, and the heading icon in it too. These hues are only for telling features apart; they avoid the reading colours
+     (teal, amber, coral) and keep red to the light section. */
+  :root { --f-lab: #ff8a2a; --f-atmo: var(--accent); --f-rank: #9cc4ff; --f-map: #c9a7ff; --f-method: #e4e9f2; --f-inv: #f49ac1; --f-env: #b5e655; --f-import: #7fd6ff; }
+  .f-lab { --f: var(--f-lab); } .f-atmo { --f: var(--f-atmo); } .f-rank { --f: var(--f-rank); } .f-map { --f: var(--f-map); }
+  .f-method { --f: var(--f-method); } .f-inv { --f: var(--f-inv); } .f-env { --f: var(--f-env); } .f-import { --f: var(--f-import); }
+  .feature { position: relative; }
+  .feature::before { content: ''; position: absolute; top: 0; left: 28px; right: 28px; height: 4px; border-radius: 0 0 4px 4px; background: var(--f); pointer-events: none; }
+  .feature[data-feature]::after { content: attr(data-feature); position: absolute; top: 0; left: 28px; translate: 0 -50%; padding: 4px 12px; border-radius: 999px;
+    background: var(--f); color: var(--char); font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; pointer-events: none; }
+  .feature h2[id]::before { background: var(--f); opacity: 1; }
+  .dark .feature { padding: 40px 32px 32px; border-radius: 28px; background: color-mix(in srgb, var(--f) 8%, var(--char)); border: 1px solid color-mix(in srgb, var(--f) 32%, transparent); }
+  .dark .feature + .feature, .dark #results + .feature, .dark .feature + section.feature { margin-top: 40px; }
+  #results:not(.hidden) + .env-block { margin-top: 40px; }
+  .hero .lab.feature { border-color: color-mix(in srgb, var(--f) 45%, var(--line)); }
+  .atmo.feature { border-color: color-mix(in srgb, var(--f) 35%, var(--line)); }
+  .atmo.feature[data-feature]::after, .lab.feature[data-feature]::after { color: #fff; }
+  .lab.feature[data-feature]::after { color: var(--ink); }
+  .atmo .atmo-step { color: var(--f); }
+  @media (max-width: 760px) { .dark .feature { padding: 34px 18px 22px; border-radius: 22px; } .feature::before, .feature[data-feature]::after { left: 18px; } .feature::before { right: 18px; } }
   .results-head { text-align: center; margin-bottom: 26px; }
   .results-head h2 { margin-bottom: 10px; }
   .scenario-label { display: inline-block; background: var(--paper); color: var(--ink) !important; font-weight: 700; padding: 4px 14px; border-radius: 999px; }
@@ -732,7 +752,7 @@
         <p class="flame-note" id="flameNote"></p>
         <a class="accent-dot" href="viz.html">Visualize the data</a>
       </div>
-      <section class="lab" aria-labelledby="lab-h">
+      <section class="lab feature f-lab" data-feature="Flame lab" aria-labelledby="lab-h">
         <div class="lab-view">
         <div class="orb engine">
           <svg class="engine-art" viewBox="0 0 200 260" aria-hidden="true">
@@ -834,7 +854,7 @@
   </section>
 
   <div id="mockBanner" class="banner hidden" role="status">Mock mode is on. Every number below is synthetic. Turn it off in Settings once the worker is reachable.</div>
-  <section class="panel atmo" aria-labelledby="scenario-h">
+  <section class="panel atmo feature f-atmo" data-feature="Mission atmosphere" aria-labelledby="scenario-h">
     <div class="atmo-head">
       <p class="atmo-step">Step 1 of 2</p>
       <h2 id="scenario-h">Mission atmosphere</h2>
@@ -890,7 +910,7 @@
 <div class="dark">
   <div class="shell">
     <div id="results" class="hidden">
-      <div class="block">
+      <div class="block feature f-rank" data-feature="Material ranking">
         <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span>
           <ul class="legend" aria-label="How each test ended"><li><i class="o-out"></i>Went out on its own</li><li><i class="o-disrupt"></i>Droplet broke apart</li><li><i class="o-burn"></i>Kept burning</li><li><i></i>Result not recorded</li></ul>
           <div class="results-tools"><button type="button" id="csv" class="secondary">Download the evidence as CSV</button><button type="button" id="aiBriefing" class="secondary">AI briefing</button></div>
@@ -898,17 +918,17 @@
         <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
         <section id="briefing" class="briefing hidden" aria-live="polite" aria-labelledby="briefing-h"><h3 id="briefing-h"><span class="tag">AI-written</span> Ranking briefing</h3><p id="briefingText"></p></section>
       </div>
-      <div class="block" id="mapBlock">
+      <div class="block feature f-map" id="mapBlock" data-feature="Test map">
         <h2 id="map-h">Where NASA tested each fuel</h2>
         <p class="intro">Columns are oxygen, rows are pressure. Each filled cell is a set of conditions NASA actually tested: the bar shows how those tests ended and the number is how many there were. Empty cells were never tested, and pressures with no tests at all are left out. The solid outline is your nominal atmosphere and the dashed outline runs down to the depress floor.</p>
         <div class="maps" id="maps"></div>
       </div>
-      <div class="block">
+      <div class="block feature f-rank" data-feature="Material ranking · pressure sweep">
         <h2 id="range-h">Across the operational range</h2>
       <p class="intro" id="rangeIntro"></p>
       <div class="wrap matrix-wrap"><table id="matrix" aria-labelledby="range-h"></table></div>
       </div>
-      <div class="block">
+      <div class="block feature f-method" data-feature="How it works">
         <h2 id="method">How the readings are made</h2>
       <div class="method">
         <p>Every test here was lit on purpose, so the question is how the flame ended. For each material and pressure, Phenox takes the nearest oxygen-and-pressure conditions NASA tested and counts the outcomes: went out on its own, kept burning, droplet broke apart, or no result recorded.</p>
@@ -919,7 +939,7 @@
       </div>
       </div>
     </div>
-    <div class="block" id="invBlock">
+    <div class="block feature f-inv" id="invBlock" data-feature="Investigations">
       <h2 id="inv-h">Investigations for this atmosphere</h2>
       <p class="intro" id="invIntro">Loading NASA's investigations…</p>
       <div class="seg" role="group" aria-label="Filter by fire safety area" id="invFocus"></div>
@@ -928,7 +948,7 @@
       <div class="inv-list" id="invList"></div>
       <button type="button" id="invMore" class="secondary inv-more hidden"></button>
     </div>
-    <div class="block env-block">
+    <div class="block env-block feature f-env" data-feature="Mission environment">
       <h2 id="env-h">Mission environment</h2>
       <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and Phenox steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
       <div class="env">
@@ -955,8 +975,7 @@
         </aside>
       </div>
     </div>
-    <section>
-
+    <section class="block feature f-import" data-feature="Contribute data">
       <h2 id="import-h">Contribute data</h2>
       <p class="intro">Have a new NASA combustion CSV? Upload it and Phenox matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed. Uploads are marked <b>community-contributed, unverified</b> everywhere they're shown or cited, until someone reviews them; they never get presented with the same authority as the NASA PSI data.</p>
       <form id="importForm" class="fields" style="margin-top:0">
