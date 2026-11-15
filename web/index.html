@@ -490,6 +490,22 @@
   .env-ev li + li { margin-top: 10px; }
   .env-ev span { display: block; color: var(--on-dark-2); }
   @media (max-width: 900px) { .env { grid-template-columns: 1fr; } .env-stage { min-height: 400px; } }
+
+  /* First visit walkthrough */
+  .tour-scrim { position: fixed; z-index: 10000; background: rgba(5, 15, 32, .76); pointer-events: auto; }
+  .tour-ring { position: fixed; z-index: 10001; border: 2px solid #ff684d; border-radius: 12px; box-shadow: 0 0 0 4px rgba(255, 104, 77, .2); pointer-events: none; transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
+  .tour-card { position: fixed; z-index: 10002; width: min(390px, calc(100vw - 32px)); padding: 22px; color: #f4f6fa; background: #10233f; border: 1px solid rgba(255,255,255,.2); border-radius: 14px; box-shadow: 0 18px 55px rgba(0,0,0,.38); }
+  .tour-card h2 { margin: 0 0 9px; color: #fff; font-size: 1.3rem; }
+  .tour-card p { margin: 0; color: #d5dfed; line-height: 1.55; }
+  .tour-count { margin-bottom: 8px !important; color: #ff9a82 !important; font-size: .78rem; }
+  .tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+  .tour-actions button { min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; background: transparent; font: inherit; cursor: pointer; }
+  .tour-actions button:focus-visible { outline: 3px solid #ff9a82; outline-offset: 3px; }
+  .tour-actions .tour-next { border-color: #ff684d; background: #c83c2d; }
+  .tour-actions .tour-skip { border: 0; padding-left: 0; color: #d5dfed; }
+  .tour-actions button:disabled { opacity: .45; cursor: default; }
+  @media (max-width: 600px) { .tour-card { padding: 18px; } }
+  @media (prefers-reduced-motion: reduce) { .tour-ring { transition: none; } }
 </style>
 </head>
 <body>
@@ -583,6 +599,7 @@
         <input id="api" type="url" spellcheck="false">
         <label class="inline"><input id="mock" type="checkbox"> Mock mode: no network, synthetic data</label>
         <p class="small">Defaults to the live FireLine worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
+        <button type="button" id="tourReplay" class="secondary">Show usage tour</button>
       </details>
   </section>
   <div id="status" class="status" role="status" aria-live="polite"></div>
@@ -1596,5 +1613,99 @@ ${move}`;
   drawSpecs(); clearVerdict(); connect();
 })();
 </script>
+
+<script>
+(() => {
+  const steps = [
+    { target: '#hero-h', title: 'Welcome to FireLine', text: 'This page compares candidate materials with recorded spacecraft combustion tests. The tour takes you through the controls and the evidence.' },
+    { target: '#materials', title: 'Set the atmosphere', text: 'Choose a mission preset, enter oxygen and pressure, then list materials separated by commas. Use the same fuel names found in the test data for the closest matches.' },
+    { target: '#go', title: 'Rank materials', text: 'Rank materials checks each one at nominal pressure and across the depress floor. Results appear below the mission environment, with evidence and confidence for each call.' },
+    { target: '#env-h', title: 'Read the mission view', text: 'This view shows the selected mission context and summarizes material verdicts and supporting evidence. The 3D location is for context; it does not affect the ranking.' },
+    { target: '#method', title: 'Understand each verdict', text: 'Open “How the verdicts are made” to see how test counts, distance from tested conditions, and the tested range shape each result.' },
+    { target: '#importGo', title: 'Contribute test data', text: 'Researchers can add a combustion CSV here. Uploads are marked community-contributed and unverified until reviewed.' },
+    { target: '#chatToggle', title: 'Ask Mission Control', text: 'Ask a question about oxygen, pressure, or a material. Mission Control looks up test evidence and summarizes it.' },
+  ];
+  let index = 0, active = false, target = null;
+  const seenKey = 'fireline.tour.seen';
+  const hasSeen = () => { try { return localStorage.getItem(seenKey) === '1'; } catch { return false; } };
+  const scrims = ['top', 'left', 'right', 'bottom'].map((name) => {
+    const el = document.createElement('div'); el.className = 'tour-scrim'; el.dataset.side = name; return el;
+  });
+  const ring = document.createElement('div'); ring.className = 'tour-ring'; ring.setAttribute('aria-hidden', 'true');
+  const card = document.createElement('section');
+  card.className = 'tour-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-live', 'polite'); card.setAttribute('aria-labelledby', 'tourTitle');
+  card.innerHTML = '<p class="tour-count" id="tourCount"></p><h2 id="tourTitle"></h2><p id="tourText"></p><div class="tour-actions"><button class="tour-skip" type="button" id="tourSkip">Skip tour</button><button class="tour-next" type="button" id="tourNext">Next</button></div>';
+  const blockScroll = (e) => { if (active) e.preventDefault(); };
+  function hide() {
+    active = false; target?.classList.remove('tour-target'); target = null;
+    scrims.forEach((el) => el.remove()); ring.remove(); card.remove();
+    window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true);
+    document.removeEventListener('wheel', blockScroll, true); document.removeEventListener('touchmove', blockScroll, true);
+  }
+  function finish() { try { localStorage.setItem(seenKey, '1'); } catch {} hide(); }
+  function position() {
+    if (!active || !target) return;
+    const r = target.getBoundingClientRect(), pad = 7;
+    const x = Math.max(8, r.left - pad), y = Math.max(8, r.top - pad);
+    const right = Math.min(innerWidth - 8, r.right + pad), bottom = Math.min(innerHeight - 8, r.bottom + pad);
+    const by = bottom, bw = innerWidth - right, bh = innerHeight - bottom;
+    const boxes = [
+      { left: 0, top: 0, width: innerWidth, height: y },
+      { left: 0, top: y, width: x, height: Math.max(0, innerHeight - y) },
+      { left: right, top: y, width: bw, height: Math.max(0, innerHeight - y) },
+      { left: x, top: by, width: Math.max(0, right - x), height: bh },
+    ];
+    scrims.forEach((el, i) => { const b = boxes[i]; Object.assign(el.style, { left: `${b.left}px`, top: `${b.top}px`, width: `${b.width}px`, height: `${b.height}px` }); });
+    Object.assign(ring.style, { left: `${x}px`, top: `${y}px`, width: `${Math.max(0, right - x)}px`, height: `${Math.max(0, bottom - y)}px` });
+    const c = card.getBoundingClientRect(), left = Math.min(innerWidth - c.width - 16, Math.max(16, r.left));
+    const below = r.bottom + 20 + c.height <= innerHeight;
+    card.style.left = `${left}px`; card.style.top = `${below ? r.bottom + 20 : Math.max(16, r.top - c.height - 20)}px`;
+  }
+  function render() {
+    const step = steps[index];
+    target?.classList.remove('tour-target');
+    target = document.querySelector(step.target);
+    if (!target) { index++; if (index >= steps.length) return finish(); return render(); }
+    target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center', inline: 'nearest' });
+    target.classList.add('tour-target');
+    card.querySelector('#tourCount').textContent = `Step ${index + 1} of ${steps.length}`;
+    card.querySelector('#tourTitle').textContent = step.title;
+    card.querySelector('#tourText').textContent = step.text;
+    card.querySelector('#tourNext').textContent = index === steps.length - 1 ? 'Finish' : 'Next';
+    card.querySelector('#tourSkip').textContent = index === steps.length - 1 ? '' : 'Skip tour';
+    card.querySelector('#tourSkip').hidden = index === steps.length - 1;
+    card.querySelector('#tourNext').disabled = true;
+    document.body.append(...scrims, ring, card);
+    requestAnimationFrame(() => { position(); card.querySelector('#tourNext').disabled = false; });
+  }
+  function start(force = false) {
+    if (active || (!force && hasSeen())) return;
+    active = true; index = 0; render();
+    window.addEventListener('resize', position); window.addEventListener('scroll', position, true);
+    document.addEventListener('wheel', blockScroll, { capture: true, passive: false });
+    document.addEventListener('touchmove', blockScroll, { capture: true, passive: false });
+    card.querySelector('#tourNext').focus();
+  }
+  card.addEventListener('click', (e) => {
+    if (e.target.id === 'tourNext') { if (index === steps.length - 1) finish(); else { index++; render(); } }
+    if (e.target.id === 'tourSkip') finish();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!active) return;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) { e.preventDefault(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); const skip = card.querySelector('#tourSkip'); (e.shiftKey && !skip.hidden ? skip : card.querySelector('#tourNext')).focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (index === steps.length - 1) finish(); else { index++; render(); } }
+  });
+  document.querySelector('#tourReplay')?.addEventListener('click', () => start(true));
+  function startWhenReady() {
+    const boot = document.querySelector('#boot');
+    if (!boot || boot.hidden || boot.getAttribute('aria-hidden') === 'true') start();
+    else requestAnimationFrame(startWhenReady);
+  }
+  document.addEventListener('DOMContentLoaded', startWhenReady);
+})();
+</script>
+
 </body>
 </html>
