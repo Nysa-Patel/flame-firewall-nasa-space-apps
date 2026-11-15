@@ -119,7 +119,11 @@
 
   /* hero: huge title with the flame chamber floating over it */
   .hero { position: relative; padding: 34px 0 30px; }
-  .title { font-size: clamp(76px, 17vw, 236px); line-height: .84; font-weight: 700; letter-spacing: -.06em; color: var(--ink); white-space: nowrap; }
+  .title { font-size: clamp(76px, 17vw, 236px); line-height: .84; font-weight: 700; letter-spacing: -.06em; color: var(--ink); white-space: nowrap; position: relative; width: fit-content; }
+  /* fire inside the wordmark: a shader canvas (decoration script) masked by the letters themselves. The HTML text stays the layout
+     and the fallback; it only turns transparent once the shader is drawing */
+  canvas.title-fire { position: absolute; left: -.05em; top: -.15em; width: calc(100% + .1em); height: calc(100% + .3em); pointer-events: none; }
+  .title.gl { color: transparent; }
   .orb { position: absolute; left: 73%; top: 46%; width: clamp(190px, 28vw, 340px); aspect-ratio: 1; translate: -50% -52%; display: grid; place-items: center; }
   /* flat steel chamber: brushed-steel ring with machined grooves, a ribbed rim and bolts; sun upper left */
   .housing { position: relative; width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center;
@@ -220,11 +224,12 @@
   .status.error { color: #a3221a; font-weight: 700; }
 
   /* loading: a WebGL flaming ball on black that heats from blue to white-hot, a big percent, and one thin progress line */
-  .blaze { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: var(--blaze-bg); color: var(--blaze-ink); opacity: 1; transition: opacity .45s var(--spring);
+  .blaze { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: var(--blaze-bg); color: var(--blaze-ink); opacity: 1; transition: opacity .45s var(--spring), background-color .7s ease;
     --p: 0; --heat: color-mix(in srgb, var(--blaze-warm) calc(var(--p) * 100%), var(--blaze-cold)); }
   .blaze[hidden] { display: none !important; }
   .blaze.out { opacity: 0; }
-  .blaze-foot { transition: opacity .3s; } .blaze.building .blaze-foot { opacity: 0; }
+  .blaze-foot { transition: opacity .3s; } .blaze.building .blaze-foot, .blaze.landing .blaze-foot { opacity: 0; }
+  .blaze.landing { background-color: transparent; }
   .blaze-field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .4s; }
   .blaze.gl .blaze-field { opacity: 1; }
   /* no WebGL: a plain glowing ball in the same heat color */
@@ -1095,18 +1100,18 @@
     return r;
   }
 
-  // One entrance as the loader leaves. When the particles have already built the page, there is nothing left to reveal.
-  function entrance(built) {
+  // One entrance as the loader leaves: the top bar drops in, the wordmark slides in from the left, the rest rises, the chamber settles.
+  function entrance() {
     if (!M || reduce()) return;   // the CSS keyframes play it
     document.documentElement.classList.add('motion');
-    if (built) return;
     const play = (sel, kf, o) => {
       const els = [...document.querySelectorAll(sel)];
       M.animate(els, kf, { type: 'spring', ...o }).then(() => els.forEach((el) => { el.style.transform = el.style.opacity = el.style.filter = ''; }));
     };
-    play('.topbar', { opacity: [0, 1], y: [-18, 0] }, { stiffness: 220, damping: 22 });
-    play('.title, .hero h1, .lede, .flame-note, .accent-dot, .facts', { opacity: [0, 1], y: [26, 0], filter: ['blur(8px)', 'blur(0px)'] }, { stiffness: 170, damping: 24, delay: M.stagger(.09, { startDelay: .1 }) });
-    play('.orb', { opacity: [0, 1], scale: [.86, 1] }, { stiffness: 150, damping: 16, delay: .2 });
+    play('.topbar', { opacity: [0, 1], y: [-48, 0] }, { stiffness: 200, damping: 22 });
+    play('.title', { opacity: [0, 1], x: [-90, 0] }, { stiffness: 140, damping: 20, delay: .08 });
+    play('.hero h1, .lede, .flame-note, .accent-dot, .facts, .orb-hint', { opacity: [0, 1], y: [40, 0], filter: ['blur(6px)', 'blur(0px)'] }, { stiffness: 160, damping: 22, delay: M.stagger(.08, { startDelay: .18 }) });
+    play('.orb', { scale: [.7, 1] }, { stiffness: 120, damping: 14 });
   }
 
   // ---- count-up: numbers roll from 0 to their value when results arrive ----
@@ -1196,6 +1201,48 @@
     new ResizeObserver(() => { r.setSize(canvas.clientWidth, canvas.clientHeight, false); on || draw(0); }).observe(canvas);
     new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(canvas);
     new MutationObserver(() => on || draw(0)).observe($('o2conv'), { childList: true, characterData: true, subtree: true });
+  }).catch(() => {});
+
+  // ---- Wordmark fire: the letters of "FireLine." burn from the bottom up. The text is drawn into a mask with the page's own font,
+  // and the fire shows only inside the glyphs: navy at the top of each letter, amber, orange and red tongues rising from the baseline. ----
+  libs.then(async ([THREE]) => {
+    await document.fonts.ready;
+    const T = THREE.TSL, title = document.querySelector('.title'), canvas = document.createElement('canvas');
+    const r = await gpu(THREE, canvas, true), scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const mask = document.createElement('canvas'), mx = mask.getContext('2d'), tex = new THREE.CanvasTexture(mask);
+    const base = T.uniform(.2), cap = T.uniform(.7), asp = T.uniform(4), uv = T.uv(), t = T.time, n01 = (v) => v.mul(.5).add(.5);
+    const x = uv.x.mul(asp).div(cap), y = uv.y.sub(base).div(cap);   // in cap heights, 0 at the baseline
+    // each letter gets its own flame height; turbulence scrolls upward so the tongues rise
+    const reach = T.mix(.35, .95, n01(T.mx_noise_float(T.vec3(x.mul(1.6), t.mul(.7), 3))).pow(1.4));
+    const turb = n01(T.mx_fractal_noise_float(T.vec3(x.mul(2.4), y.mul(2.4).sub(t.mul(1.8)), t.mul(.35)))).mul(.85)
+      .add(n01(T.mx_noise_float(T.vec3(x.mul(6), y.mul(5.5).sub(t.mul(3.4)), 1))).mul(.3));
+    const f = T.clamp(turb.sub(y.div(reach)).mul(2.6).add(y.oneMinus().mul(.15)), 0, 1);
+    const glow = f.mul(n01(T.mx_noise_float(T.vec3(x.mul(4), t.mul(2.4), 7))).mul(.35).add(.65));
+    const cell = T.floor(T.vec2(x.mul(40), y.sub(t.mul(.5)).mul(22)));
+    const spark = T.step(.993, T.hash(cell.x.add(cell.y.mul(157)))).mul(T.smoothstep(.1, .3, y)).mul(y.oneMinus().max(0));
+    const fire = T.mix(T.mix(T.color(css('--accent')), T.color(css('--blaze-warm')), T.smoothstep(0, .35, f)), T.color(css('--caution')), T.smoothstep(.72, 1, glow));
+    const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+    mat.colorNode = T.mix(T.mix(T.color(css('--ink')), fire, T.smoothstep(0, .18, f)), T.color(css('--blaze-hot')), spark);
+    mat.opacityNode = T.texture(tex, uv).a;   // only inside the letters
+    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+    function letters() {   // draw the wordmark into the mask exactly where the HTML text sits
+      const cs = getComputedStyle(title), fs = parseFloat(cs.fontSize), dpr = Math.min(devicePixelRatio, 2);
+      const w = canvas.clientWidth, h = canvas.clientHeight, probe = document.createElement('span');
+      probe.style.cssText = 'display: inline-block; width: 0; height: 0; vertical-align: baseline;';
+      title.append(probe); const by = probe.offsetTop + fs * .15; probe.remove();   // baseline, in canvas px
+      Object.assign(mask, { width: Math.round(w * dpr), height: Math.round(h * dpr) });
+      mx.scale(dpr, dpr); mx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; mx.letterSpacing = cs.letterSpacing; mx.fillStyle = '#000';
+      mx.fillText(title.firstChild.textContent, fs * .05, by);
+      tex.needsUpdate = true;
+      base.value = 1 - by / h; cap.value = fs * .7 / h; asp.value = w / h;
+      r.setSize(w, h, false);
+    }
+    let on = false;
+    const draw = () => r.render(scene, cam);
+    const run = (v) => { on = v && !reduce(); r.setAnimationLoop(on ? draw : null); if (!on) draw(); };
+    canvas.className = 'title-fire'; canvas.setAttribute('aria-hidden', 'true'); title.append(canvas);
+    new ResizeObserver(() => { letters(); draw(); title.classList.add('gl'); }).observe(canvas);
+    new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(canvas);
   }).catch(() => {});
 
   // ---- hero background: the same controlled fireball, drawn as gold dust so the navy type stays readable ----
@@ -1306,16 +1353,20 @@
   const heatTo = (to, ms) => { const id = ++heatTok; return tween(heat, to, ms, (v) => id === heatTok && setHeat(v)); };
 
   const fxP = reduce() ? Promise.reject() : libs.then(async ([THREE, m, m3]) => {
-    const T = THREE.TSL, canvas = veil.querySelector('canvas'), r = await gpu(THREE, canvas, false);
+    const T = THREE.TSL, canvas = veil.querySelector('canvas'), r = await gpu(THREE, canvas, true);
     const scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 10);
     const U = { globe: T.uniform(1), heat: T.uniform(heat) }, size = T.uniform(new THREE.Vector2()), dot = T.uniform(.01), rad = T.uniform(.4);
-    scene.background = new THREE.Color(css('--blaze-bg')); cam.position.z = 4;
+    const ring = T.uniform(0), centre = T.uniform(new THREE.Vector3(0, .1, 0)); let rad0 = .4;
+    cam.position.z = 4;
     // each dot is born in the core and streams out along a noise tongue (life 0 → 1), fading as it goes; tongues reach further as it heats
     const gp = T.attribute('globePos'), seed = T.attribute('seed'), g = U.globe;
     const life = T.fract(T.time.mul(seed.y.mul(.35).add(.25)).add(seed.x)), a = T.time.mul(.25), ca = T.cos(a), sa = T.sin(a);
     const dir = T.vec3(gp.x.mul(ca).add(gp.z.mul(sa)), gp.y, gp.z.mul(ca).sub(gp.x.mul(sa)));
     const tongue = T.mx_noise_float(gp.mul(1.8).add(T.vec3(0, 0, T.time.mul(.6)))).mul(.5).add(.5);
-    const fire = dir.mul(rad.mul(T.mix(.12, T.float(.75).add(tongue.mul(tongue).mul(T.mix(.35, 1.1, U.heat))), life))).add(T.vec3(0, .1, 0));
+    const flare = tongue.mul(tongue).mul(T.mix(.35, 1.1, U.heat));
+    // first load: a circle of fire, each dot born on the ring and licking outward as the ring turns
+    const ang = T.atan(gp.y, gp.x).add(T.time.mul(.3)), around = T.vec3(T.cos(ang), T.sin(ang), gp.z.mul(.12));
+    const fire = T.mix(dir.mul(rad.mul(T.mix(.12, T.float(.75).add(flare), life))), around.mul(rad.mul(T.mix(.85, T.float(1.05).add(flare.mul(.7)), life))), ring).add(centre);
     const cold = T.color(css('--blaze-cold')), warm = T.color(css('--blaze-warm')), hot = T.color(css('--blaze-hot'));
     const edge = T.mix(T.mix(cold, warm, T.smoothstep(.35, .75, U.heat)), hot, T.smoothstep(.9, 1, U.heat));
     const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending });
@@ -1338,7 +1389,7 @@
       geo.instanceCount = n;
       if (mesh) { mesh.geometry.dispose(); mesh.geometry = geo; } else { scene.add(mesh = new THREE.Mesh(geo, mat)); mesh.frustumCulled = false; }
       const asp = W / H; cam.left = -asp; cam.right = asp; cam.updateProjectionMatrix(); r.setSize(W, H, false);
-      size.value.setScalar(cell * 2 / H * 1.04); dot.value = 6 / H; rad.value = Math.min(.42, asp * .62);
+      size.value.setScalar(cell * 2 / H * 1.04); dot.value = 6 / H; rad.value = rad0 = Math.min(.42, asp * .62);
     }
     // the page under the veil as a picture: the live DOM drawn through an SVG foreignObject (no web font, no canvases; fine at dot size),
     // read back one pixel per dot, the way the motion.dev example samples its photograph
@@ -1346,7 +1397,7 @@
       layout();
       const live = document.documentElement, doc = live.cloneNode(true), cw = live.clientWidth, inputs = live.querySelectorAll('input, textarea');
       doc.querySelectorAll('input, textarea').forEach((n, i) => { const v = inputs[i]; if (n.tagName === 'TEXTAREA') n.textContent = v.value; else n.setAttribute('value', v.value); n.toggleAttribute('checked', v.checked); });
-      doc.querySelectorAll('script, noscript, canvas, link, #boot').forEach((n) => n.remove());
+      doc.querySelectorAll('script, noscript, canvas, link, #boot').forEach((n) => n.remove()); doc.querySelector('.title')?.classList.remove('gl');
       doc.querySelector('head').insertAdjacentHTML('beforeend', '<style>*, *::before, *::after { animation: none !important; transition: none !important; }</style>');
       const img = new Image(), cv = Object.assign(document.createElement('canvas'), { width: cols, height: rows }), cx = cv.getContext('2d', { willReadFrequently: true });
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${H}"><foreignObject y="${-scrollY}" width="${cw}" height="${scrollY + H}">${new XMLSerializer().serializeToString(doc)}</foreignObject></svg>`);
@@ -1366,7 +1417,17 @@
     layout();
     return fx = {
       heat: U.heat,
-      show() { layout(); globe.jump(1); blend(THREE.AdditiveBlending); r.setAnimationLoop(() => r.render(scene, cam)); },
+      show(circle) { layout(); globe.jump(1); ring.value = circle ? 1 : 0; centre.value.set(0, .1, 0); rad.value = rad0; blend(THREE.AdditiveBlending); r.setAnimationLoop(() => r.render(scene, cam)); },
+      // the circle pulls into a ball, flies into the chamber's porthole and cools to that flame's colour
+      land: (el, cool) => new Promise((ok) => {
+        const b = el.getBoundingClientRect(), to = new THREE.Vector3(((b.left + b.width / 2) / W * 2 - 1) * W / H, 1 - (b.top + b.height / 2) / H * 2, 0);
+        const from = centre.value.clone(), r0 = rad.value, r1 = b.width / H * .42, h0 = U.heat.value;
+        m.animate(0, 1, { type: 'spring', stiffness: 55, damping: 14, onComplete: ok, onUpdate: (v) => {
+          centre.value.lerpVectors(from, to, v); rad.value = r0 + (r1 - r0) * v;
+          ring.value = Math.max(0, 1 - v * 1.6); U.heat.value = h0 + (cool - h0) * Math.min(1, v);
+        } });
+        setTimeout(ok, 2200);
+      }),
       hide() { r.setAnimationLoop(null); },
       build: () => sample().then(() => new Promise((ok) => {
         veil.classList.add('building'); blend(THREE.NormalBlending);
@@ -1378,17 +1439,21 @@
   fxP.catch(() => {});
 
   if (reduce()) veil.remove();
-  else (async () => {   // first load: heat while the libraries arrive, burn, build the page, hand over
+  else (async () => {   // first load: a circle of fire heats while the libraries arrive, then becomes the chamber's flame as the page slides in
     shell.inert = true;
     heatTo(.45, 900);
     const f = await Promise.race([fxP, wait(4000)]).catch(() => null);
-    if (f) { f.show(); veil.classList.add('gl'); }
+    if (f) { f.show(true); veil.classList.add('gl'); }
     await heatTo(1, 1400);
-    if (f) await f.build().catch(() => {});
-    veil.classList.add('out'); entrance(!!f);
+    if (f) {
+      const porthole = document.querySelector('.chamber');
+      heatTok++; veil.classList.add('landing'); entrance();
+      await f.land(porthole, Math.max(0, Math.min(1, ((Number($('o2').value) || 0) - 15) / 85))).catch(() => {});
+    } else entrance();
+    veil.classList.add('out');
     await wait(460);
     shell.inert = false; if (f) f.hide();
-    veil.hidden = true; veil.classList.remove('boot', 'out', 'building');
+    veil.hidden = true; veil.classList.remove('boot', 'out', 'building', 'landing');
     veil.setAttribute('aria-hidden', 'true'); foot.removeAttribute('role'); bar.setAttribute('aria-label', 'Ranking');
   })();
 
@@ -1419,7 +1484,7 @@
     foot.textContent = status.textContent;
     if (!veil.hidden) return;
     veil.classList.remove('out', 'building'); veil.classList.toggle('gl', !!fx);
-    setHeat(.05); if (fx) fx.show(); veil.hidden = false; ranking.classList.add('dealing'); openedAt = performance.now(); heatTo(.84, 2600);
+    setHeat(.05); if (fx) fx.show(false); veil.hidden = false; ranking.classList.add('dealing'); openedAt = performance.now(); heatTo(.84, 2600);
   }).observe(status, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   new MutationObserver(() => results.classList.contains('hidden') || finish()).observe(results, { attributes: true, attributeFilter: ['class'] });
 
