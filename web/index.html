@@ -128,6 +128,40 @@
   .orb svg { position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; }
   .hero-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 30px; }
   .dot-group { display: flex; gap: 14px; }
+
+  /* clickable chamber: a transparent button over the orb opens one random real NASA test record */
+  .orb-hit { position: absolute; inset: 0; z-index: 2; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+  .orb-hit:hover:not(:disabled), .orb-hit:active:not(:disabled) { scale: 1; box-shadow: none; }
+  .orb-hit:focus-visible { border-radius: 50%; outline: 2px solid var(--ink); outline-offset: 8px; }
+  .orb-hint { position: absolute; top: calc(100% + 14px); left: 50%; translate: -50% 0; z-index: 2; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: #fff;
+    font-size: 12px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; pointer-events: none; transition: background-color .3s var(--spring); }
+  .orb:has(.orb-hit:hover) .orb-hint, .orb:has(.orb-hit:focus-visible) .orb-hint { background: var(--accent); }
+
+  dialog.log { width: min(560px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line-dark); border-radius: 28px; background: var(--char); color: var(--on-dark); box-shadow: 0 30px 80px rgba(11, 27, 51, .5); }
+  dialog.log::backdrop { background: rgba(5, 10, 20, .6); backdrop-filter: blur(4px); }
+  dialog.log[open] { animation: log-in .45s var(--spring); }
+  @keyframes log-in { from { opacity: 0; translate: 0 14px; scale: .96; } }
+  @media (prefers-reduced-motion: reduce) { dialog.log[open] { animation: none; } }
+  .log a { color: var(--sky); }
+  .log-body { padding: 26px 28px 24px; }
+  .log-kicker { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--on-dark-2); }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
+  .log-dot.live { background: var(--pass); box-shadow: 0 0 0 4px var(--pass-t); }
+  .log-title { font-size: clamp(26px, 5vw, 34px); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; overflow-wrap: anywhere; }
+  .log-sub { margin-top: 8px; color: var(--on-dark-2); }
+  .log-sub b { color: var(--on-dark); font-weight: 600; }
+  .log-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 20px 0 0; border-top: 1px solid var(--line-dark); }
+  .log-grid > div { padding: 14px 0; border-bottom: 1px solid var(--line-dark); }
+  .log-grid .wide { grid-column: 1 / -1; }
+  .log-grid dt { font-size: 13px; color: var(--on-dark-2); }
+  .log-grid dt span { opacity: .8; }
+  .log-grid dd { margin: 4px 0 0; font-size: clamp(26px, 5vw, 34px); font-weight: 300; letter-spacing: -.035em; line-height: 1.1; overflow-wrap: anywhere; }
+  .log-grid dd small { margin-left: 8px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); }
+  .log-grid dd.text { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .log-grid dd.dim { font-size: 16px; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); }
+  .log-foot { margin-top: 14px; font-size: 13px; color: var(--on-dark-2); overflow-wrap: anywhere; }
+  .log-wait { padding: 28px 0; color: var(--on-dark-2); }
+  .log-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .hero h1 { font-size: clamp(30px, 3.6vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -.035em; }
   .lede { margin-top: 14px; max-width: 30rem; font-size: 17px; color: var(--ink-2); }
   .flame-note { margin-top: 10px; font-size: 14px; color: var(--ink-2); max-width: 52ch; }
@@ -254,7 +288,8 @@
   @media (max-width: 760px) {
     .topbar nav { display: none; }
     .title { font-size: 19.5vw; }
-    .orb { position: relative; left: auto; top: auto; width: 52vw; margin: 3vw auto 0;
+    .orb-hint { top: calc(100% + 8px); }
+    .orb { position: relative; left: auto; top: auto; width: 52vw; margin: 3vw auto 46px;
       transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); }
     .hero-row { grid-template-columns: 1fr; }
     .accent-dot { width: auto; height: auto; min-height: 44px; border-radius: 999px; justify-self: start; padding: 10px 20px; }
@@ -434,9 +469,11 @@
 
   <section class="hero" aria-labelledby="hero-h">
     <p class="title" aria-hidden="true">FireLine.</p>
-    <div class="orb" aria-hidden="true">
-      <svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
-      <div class="chamber"><div id="flame"></div></div>
+    <div class="orb">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><ellipse cx="50" cy="50" rx="47" ry="16" fill="none" stroke="#0b1b33" stroke-width=".5" transform="rotate(-18 50 50)"/><ellipse cx="50" cy="50" rx="44" ry="13" fill="none" stroke="#d42a1c" stroke-width="1.2" transform="rotate(-18 50 50)" stroke-dasharray="36 140"/></svg>
+      <div class="chamber" aria-hidden="true"><div id="flame"></div></div>
+      <button type="button" class="orb-hit" id="orbHit" aria-haspopup="dialog" aria-label="Show a random real NASA test record"></button>
+      <span class="orb-hint" aria-hidden="true">Click for a real NASA test</span>
     </div>
     <div class="hero-row">
       <div>
@@ -598,6 +635,17 @@
     <footer>Data from NASA's Physical Sciences Informatics repository of combustion investigations, loaded into Tiger Data. The worker returns facts; the verdict logic runs in this page.</footer>
   </div>
 </div>
+
+<dialog id="logDialog" class="log" aria-label="Random NASA test record">
+  <div class="log-body">
+    <p class="log-kicker"><span class="log-dot" id="logDot" aria-hidden="true"></span><span id="logSource">Mission log</span></p>
+    <div id="logContent" aria-live="polite"></div>
+    <div class="log-actions">
+      <button type="button" id="logAgain">Another record</button>
+      <button type="button" id="logClose" class="secondary">Close</button>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (() => {
@@ -840,6 +888,60 @@
       : `<p class="quiet" style="margin-top:12px">${q ? 'Nothing matches that search.' : 'Rank some materials first; the investigations they cite will be listed here.'}</p>`;
   }
   $('invSearch').addEventListener('input', () => animateHeight($('invList'), renderInvestigations));
+
+  // ---------- Mission log: click the chamber for one random real test record ----------
+  const logDialog = $('logDialog');
+  const MOCK_LOG = [
+    { investigation_id: 'MOCK-1', investigation_title: 'Synthetic example', fuel_material: 'heptane (mock)', o2_fraction: 0.21, pressure_atm: 1, burn_rate: 0.52, outcome: 'Extinction' },
+    { investigation_id: 'MOCK-2', investigation_title: 'Synthetic example', fuel_material: 'methanol (mock)', o2_fraction: 0.3, pressure_atm: 0.7, burn_rate: 0.81, outcome: 'Completion' },
+    { investigation_id: 'MOCK-3', investigation_title: 'Synthetic example', fuel_material: 'pmma (mock)', o2_fraction: 0.4, pressure_atm: 0.5, burn_rate: null, outcome: 'Disruption' },
+  ];
+  async function fetchLog() {
+    if (mockOn()) return { ...MOCK_LOG[Math.floor(Math.random() * MOCK_LOG.length)], mock: true };
+    const res = await fetch(apiBase() + '/sample', { cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 404 && d.error === 'not found') throw new Error('this worker has no /sample route yet, so it needs a redeploy');
+    if (!res.ok || d.error) throw new Error(d.error || `HTTP ${res.status}`);
+    return d;
+  }
+  function renderLog(r) {
+    const readout = (label, value, { note = '', text = false, wide = false } = {}) => value == null
+      ? `<div${wide ? ' class="wide"' : ''}><dt>${label}</dt><dd class="dim">Not recorded</dd></div>`
+      : `<div${wide ? ' class="wide"' : ''}><dt>${label}</dt><dd${text ? ' class="text"' : ''}>${value}${note ? `<small>${note}</small>` : ''}</dd></div>`;
+    const when = r.test_date ? new Date(r.test_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : null;
+    return `<h2 class="log-title">${esc(r.fuel_material || 'Unnamed fuel')}</h2>
+      <p class="log-sub"><b>${esc(r.investigation_title || r.investigation_id)}</b> · ${esc(r.investigation_id)}</p>
+      <dl class="log-grid">
+        ${readout('Oxygen', `${num(r.o2_fraction * 100, 1)}%`)}
+        ${readout('Pressure', `${num(r.pressure_atm, 3)} atm`, { note: `${num(r.pressure_atm * PSI_PER_ATM, 1)} psia` })}
+        ${readout('Burn rate <span>(units vary by investigation)</span>', r.burn_rate == null ? null : num(r.burn_rate, 3))}
+        ${readout('Outcome', r.outcome ? esc(r.outcome) : null, { text: true })}
+        ${readout('Test date', when, { text: true, wide: true })}
+      </dl>
+      <p class="log-foot">${r.mock
+        ? 'Mock record: synthetic numbers for UI development only. Turn mock mode off in Settings for a real one.'
+        : `Random pick from ${Number(r.pool_size).toLocaleString()} NASA tests that have oxygen, pressure and a recorded result. DOI ${doiLink(r.doi)}${r.source_file ? `. Source file ${esc(r.source_file)}` : ''}.`}</p>`;
+  }
+  let logBusy = false;
+  async function loadLog() {
+    if (logBusy) return; logBusy = true;
+    $('logAgain').disabled = true;
+    $('logContent').innerHTML = '<p class="log-wait">Pulling a record from Tiger Data…</p>';
+    try {
+      const r = await fetchLog();
+      $('logSource').textContent = r.mock ? 'Mock data · not from NASA' : 'Live from Tiger Data';
+      $('logDot').className = 'log-dot' + (r.mock ? '' : ' live');
+      $('logContent').innerHTML = renderLog(r);
+    } catch (err) {
+      $('logSource').textContent = 'Mission log';
+      $('logDot').className = 'log-dot';
+      $('logContent').innerHTML = `<p class="log-wait">Couldn't load a test record: ${esc(err.message)}.</p>`;
+    } finally { logBusy = false; $('logAgain').disabled = false; }
+  }
+  $('orbHit').addEventListener('click', () => { if (!logDialog.open) logDialog.showModal(); loadLog(); });
+  $('logAgain').addEventListener('click', loadLog);
+  $('logClose').addEventListener('click', () => logDialog.close());
+  logDialog.addEventListener('click', (e) => { if (e.target === logDialog) logDialog.close(); });
 
   // ---------- Contribute data (CSV upload) ----------
   $('importGo').addEventListener('click', async () => {
