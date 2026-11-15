@@ -1498,7 +1498,7 @@
     const base = T.uniform(.2), cap = T.uniform(.7), asp = T.uniform(4), uv = T.uv(), t = T.time, n01 = (v) => v.mul(.5).add(.5);
     const x = uv.x.mul(asp).div(cap), y = uv.y.sub(base).div(cap);   // in cap heights, 0 at the baseline
     // each letter gets its own flame height; turbulence scrolls upward so the tongues rise
-    const reach = T.mix(.35, .95, n01(T.mx_noise_float(T.vec3(x.mul(1.6), t.mul(.7), 3))).pow(1.4));
+    const reach = T.mix(.2, .55, n01(T.mx_noise_float(T.vec3(x.mul(1.6), t.mul(.7), 3))).pow(1.4));   // flame height in cap heights (was .35 to .95; lowered 15 Nov 2026)
     const turb = n01(T.mx_fractal_noise_float(T.vec3(x.mul(2.4), y.mul(2.4).sub(t.mul(1.8)), t.mul(.35)))).mul(.85)
       .add(n01(T.mx_noise_float(T.vec3(x.mul(6), y.mul(5.5).sub(t.mul(3.4)), 1))).mul(.3));
     const f = T.clamp(turb.sub(y.div(reach)).mul(2.6).add(y.oneMinus().mul(.15)), 0, 1);
@@ -1507,7 +1507,8 @@
     const spark = T.step(.993, T.hash(cell.x.add(cell.y.mul(157)))).mul(T.smoothstep(.1, .3, y)).mul(y.oneMinus().max(0));
     const fire = T.mix(T.mix(T.color(css('--accent')), T.color(css('--blaze-warm')), T.smoothstep(0, .35, f)), T.color(css('--caution')), T.smoothstep(.72, 1, glow));
     const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, toneMapped: false });
-    mat.colorNode = T.mix(T.mix(T.color(css('--ink')), fire, T.smoothstep(0, .18, f)), T.color(css('--blaze-hot')), spark);
+    const DIM = .5;   // how strongly the fire shows through the navy letters (1 = full); dimmed 15 Nov 2026
+    mat.colorNode = T.mix(T.mix(T.color(css('--ink')), fire, T.smoothstep(0, .18, f).mul(DIM)), T.color(css('--blaze-hot')), spark.mul(DIM * .6));
     mat.opacityNode = T.texture(tex, uv).a;   // only inside the letters
     scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
     function letters() {   // draw the wordmark into the mask exactly where the HTML text sits
