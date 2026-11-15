@@ -376,26 +376,19 @@
   .dark .quiet, .dark .intro, .dark .inv-source, .dark .scenario-label { color: var(--on-dark-2); }
   .dark a { color: var(--sky); }
   .dark section + section, .dark .block + .block { margin-top: 56px; }
-  /* one colour per feature (15 Nov 2026), so each part of the page reads as its own tool: a tinted panel, a stripe and a name tag in the
-     feature's colour, and the heading icon in it too. These hues are only for telling features apart; they avoid the reading colours
-     (teal, amber, coral) and keep red to the light section. */
-  :root { --f-lab: #ff8a2a; --f-atmo: var(--accent); --f-rank: #9cc4ff; --f-map: #c9a7ff; --f-method: #e4e9f2; --f-inv: #f49ac1; --f-env: #b5e655; --f-import: #7fd6ff; }
-  .f-lab { --f: var(--f-lab); } .f-atmo { --f: var(--f-atmo); } .f-rank { --f: var(--f-rank); } .f-map { --f: var(--f-map); }
-  .f-method { --f: var(--f-method); } .f-inv { --f: var(--f-inv); } .f-env { --f: var(--f-env); } .f-import { --f: var(--f-import); }
+  /* features alternate between two shades of the page's own colours (15 Nov 2026), so neighbouring features read as separate tools:
+     on navy, a lighter and a darker panel in turn; each carries a small name tag. Order on navy: Material ranking (light), Test map
+     (dark), pressure sweep (light), How it works (dark), Investigations (light), Mission environment (dark), Contribute data (light). */
   .feature { position: relative; }
-  .feature::before { content: ''; position: absolute; top: 0; left: 28px; right: 28px; height: 4px; border-radius: 0 0 4px 4px; background: var(--f); pointer-events: none; }
   .feature[data-feature]::after { content: attr(data-feature); position: absolute; top: 0; left: 28px; translate: 0 -50%; padding: 4px 12px; border-radius: 999px;
-    background: var(--f); color: var(--char); font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; pointer-events: none; }
-  .feature h2[id]::before { background: var(--f); opacity: 1; }
-  .dark .feature { padding: 40px 32px 32px; border-radius: 28px; background: color-mix(in srgb, var(--f) 8%, var(--char)); border: 1px solid color-mix(in srgb, var(--f) 32%, transparent); }
+    font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; pointer-events: none; background: var(--ink); color: #fff; }
+  .dark .feature { padding: 40px 32px 32px; border-radius: 28px; border: 1px solid var(--line-dark); }
+  .dark .f-rank, .dark .f-inv, .dark .f-import { background: color-mix(in srgb, #fff 7%, var(--char)); }
+  .dark .f-map, .dark .f-method, .dark .f-env { background: color-mix(in srgb, #000 28%, var(--char)); border-color: color-mix(in srgb, #000 30%, var(--line-dark)); }
+  .dark .feature[data-feature]::after { background: var(--on-dark); color: var(--char); }
   .dark .feature + .feature, .dark #results + .feature, .dark .feature + section.feature { margin-top: 40px; }
-  #results:not(.hidden) + .env-block { margin-top: 40px; }
-  .hero .lab.feature { border-color: color-mix(in srgb, var(--f) 45%, var(--line)); }
-  .atmo.feature { border-color: color-mix(in srgb, var(--f) 35%, var(--line)); }
-  .atmo.feature[data-feature]::after, .lab.feature[data-feature]::after { color: #fff; }
-  .lab.feature[data-feature]::after { color: var(--ink); }
-  .atmo .atmo-step { color: var(--f); }
-  @media (max-width: 760px) { .dark .feature { padding: 34px 18px 22px; border-radius: 22px; } .feature::before, .feature[data-feature]::after { left: 18px; } .feature::before { right: 18px; } }
+  .atmo .atmo-step { color: var(--accent); }
+  @media (max-width: 760px) { .dark .feature { padding: 34px 18px 22px; border-radius: 22px; } .feature[data-feature]::after { left: 18px; } }
   .results-head { text-align: center; margin-bottom: 26px; }
   .results-head h2 { margin-bottom: 10px; }
   .scenario-label { display: inline-block; background: var(--paper); color: var(--ink) !important; font-weight: 700; padding: 4px 14px; border-radius: 999px; }
