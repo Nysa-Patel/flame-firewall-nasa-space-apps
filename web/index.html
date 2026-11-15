@@ -368,6 +368,46 @@
     .facts > div { padding: 12px 10px 0; }
     .facts span { font-size: 12px; }
   }
+
+  /* ===== mission environment: OpenSpace link. Display only; verdicts come from the app above ===== */
+  #env-h { --i: var(--i-satellite); }
+  .preset input[value=mars] + span { --i: var(--i-planet); }
+  .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
+  .env-block + #results { margin-top: 56px; }
+  .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
+  .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 45%, #1b3766 0%, #0a1830 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
+  .env-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
+  .env-where { font-size: 13px; color: var(--on-dark-2); }
+  .env-title { font-size: 26px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
+  .env-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    background: var(--none-t); color: var(--on-dark); }
+  .env-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
+  .env-status.connected { background: var(--pass-t); } .env-status.connected i { background: var(--pass); }
+  .env-status.connecting { background: var(--caution-t); } .env-status.connecting i { background: var(--caution); }
+  .env-svg { flex: 1; width: 100%; min-height: 0; max-height: 300px; margin: 10px auto; }
+  .env-caption { margin: 0 auto 16px; max-width: 48ch; text-align: center; font-size: 14px; color: var(--on-dark-2); }
+  .env-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
+  .env-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--card); }
+  .env-toggle button { background: transparent; border-color: transparent; color: var(--on-dark-2); padding: 8px 18px; min-height: 40px; font-weight: 600; }
+  .env-toggle button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
+  .env-toggle button:hover:not(:disabled) { box-shadow: none; }
+  button.env-link { background: none; border-color: transparent; color: var(--sky); text-decoration: underline; padding: 8px 6px; font-weight: 600; }
+  button.env-link:hover:not(:disabled) { box-shadow: none; }
+  .env-panel { background: var(--card); border-radius: 24px; padding: 6px 22px; overflow-wrap: anywhere; }
+  .env-panel > div { padding: 16px 0; border-bottom: 1px solid var(--line-dark); }
+  .env-panel > div:last-child { border-bottom: 0; }
+  .env-panel h3 { font-size: 14px; font-weight: 600; color: var(--on-dark-2); margin-bottom: 8px; }
+  .env-panel dl { margin: 0; font-size: 14px; }
+  .env-panel dl div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+  .env-panel dt { color: var(--on-dark-2); }
+  .env-panel dd { margin: 0; text-align: right; }
+  .env-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .env-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 0; }
+  .env-ev { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .env-ev li + li { margin-top: 10px; }
+  .env-ev span { display: block; color: var(--on-dark-2); }
+  @media (max-width: 900px) { .env { grid-template-columns: 1fr; } .env-stage { min-height: 400px; } }
 </style>
 </head>
 <body>
@@ -456,6 +496,32 @@
 
 <div class="dark">
   <div class="shell">
+    <div class="block env-block">
+      <h2 id="env-h">Mission environment</h2>
+      <p class="intro">See where this atmosphere would be used. The 3D view runs in <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app; FireLine steers its camera to match the mission you pick. OpenSpace only shows the location. It plays no part in the verdicts.</p>
+      <div class="env">
+        <div class="env-stage">
+          <div class="env-top">
+            <div><div class="env-where" id="envWhere"></div><div class="env-title" id="envTitle"></div></div>
+            <span class="env-status" id="envStatus" role="status"></span>
+          </div>
+          <svg class="env-svg" id="envSvg" viewBox="0 0 200 200" role="img"></svg>
+          <p class="env-caption" id="envCaption"></p>
+          <div class="env-controls">
+            <div class="env-toggle" role="group" aria-label="Camera view">
+              <button type="button" id="envClose" aria-pressed="true"></button>
+              <button type="button" id="envWide" aria-pressed="false"></button>
+            </div>
+            <button type="button" id="envRetry" class="env-link hidden">Retry now</button>
+          </div>
+        </div>
+        <aside class="env-panel" aria-label="Mission summary">
+          <div><h3>Mission specifications</h3><dl id="envSpecs"></dl></div>
+          <div><h3>Material verdicts</h3><div id="envVerdict"></div></div>
+          <div><h3>Supporting evidence</h3><div id="envEvidence"></div></div>
+        </aside>
+      </div>
+    </div>
     <div id="results" class="hidden">
       <div class="block">
         <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span></div>
@@ -542,6 +608,7 @@
   const PRESETS = {
     iss:    { name: 'ISS cabin',          o2: 21,  p: 14.7, pmin: 10.2, note: 'Sea-level-equivalent cabin air. 10.2 psia is the reduced-pressure campout used before spacewalks, so the sweep covers a partial depress.' },
     lunar:  { name: 'Lunar base or rover', o2: 30, p: 10.2, pmin: 8.2,  note: 'Reduced pressure with enriched oxygen to shorten spacewalk prebreathe. NASA\'s exploration atmosphere target is 8.2 psia at 34% oxygen; adjust the fields to test it.' },
+    mars:   { name: 'Mars habitat',       o2: 34,  p: 8.2,  pmin: 7,    note: 'NASA\'s exploration atmosphere target of 8.2 psia at 34% oxygen, applied to a surface habitat. The 7 psia depress floor is a placeholder planning figure; set your own.' },
     suit:   { name: 'Spacesuit',          o2: 100, p: 4.3,  pmin: 3.5,  note: 'Pure oxygen at 4.3 psia, as in the current EMU suit. 3.5 psia is the emergency low-pressure contingency.' },
     custom: { name: 'Custom',             o2: 30,  p: 10.3, pmin: 7,    note: 'Enter any atmosphere. Pressures are psia here; the worker is queried in atm.' },
   };
@@ -734,6 +801,7 @@
     $('matrix').innerHTML = `<tr><th>Material</th>${points.map((p) => `<th>${p.psi} psia <span class="quiet">(${num(p.atm)} atm)</span></th>`).join('')}</tr>` +
       rows.map((row) => `<tr><td>${esc(row.material)}</td>${row.perPoint.map((x) => `<td class="cell ${LEVELS[x.a.level].key}">${LEVELS[x.a.level].label}${x.a.level < 3 ? ` <span class="quiet">${x.a.confidence}</span>` : ''}</td>`).join('')}</tr>`).join('');
     $('results').classList.remove('hidden');
+    document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], confidence: row.nominal.a.confidence, nearest: row.nominal.r.nearest })) } }));
   }
 
   // ---------- investigation browser ----------
@@ -1438,6 +1506,137 @@
       if (!results.classList.contains('hidden')) finish();
     }).observe(results, { attributes: true, attributeFilter: ['class'] });
   })();
+})();
+</script>
+<script>
+// ---------- Mission environment: OpenSpace link ----------
+// Display only. This block steers the camera of a locally running OpenSpace
+// (https://github.com/OpenSpace/OpenSpace) and mirrors numbers the page already
+// has. It computes nothing about combustion; verdicts arrive via the
+// 'fireline:ranked' event fired by render() above.
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Which place each preset shows. Site coordinates are reference points for aiming the camera, not mission data.
+  const ISS = { where: 'Low Earth orbit', body: 'Earth', color: '#4f8fe6', node: 'ISS', trail: 'ISS_trail',
+    asset: 'scene/solarsystem/planets/earth/satellites/misc/iss', close: 'Station', wide: 'Orbit', closeText: 'the International Space Station' };
+  const VIEWS = {
+    iss: ISS,
+    suit: { ...ISS, where: 'Spacewalk, low Earth orbit' },
+    lunar: { where: 'Lunar surface', body: 'Moon', color: '#b9c0c9', close: 'Base site', wide: 'Moon', closeText: 'the Shackleton crater rim, a reference site near the lunar south pole',
+      site: { lat: -89.5, lon: 0, alt: 150000 } },
+    mars: { where: 'Martian surface', body: 'Mars', color: '#d9703a', close: 'Habitat site', wide: 'Mars', closeText: 'Jezero crater, a reference site',
+      site: { lat: 18.38, lon: 77.58, alt: 300000 } },
+  };
+
+  // ---- OpenSpace connection (WebSocket server, default port 4682) ----
+  const HOST = new URLSearchParams(location.search).get('openspace') || 'localhost';
+  let socket = null, status = 'disconnected', topic = 0, attempts = 0, retryTimer = null;
+  function connect() {
+    clearTimeout(retryTimer);
+    setStatus('connecting');
+    let ws;
+    try { ws = new WebSocket(`ws://${HOST}:4682/websocket`); } catch { return retryLater(); }
+    socket = ws;
+    ws.onopen = () => { if (socket !== ws) return; attempts = 0; setStatus('connected'); runLua(PREPARE); sendView(); };
+    ws.onclose = () => { if (socket !== ws) return; socket = null; retryLater(); };
+    ws.onerror = () => ws.close();
+  }
+  function retryLater() {
+    setStatus('disconnected');
+    attempts += 1;
+    retryTimer = setTimeout(connect, Math.min(15000, 3000 * attempts));
+  }
+  function runLua(script) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    socket.send(JSON.stringify({ topic: topic++, type: 'luascript', payload: { script, return: false } }));
+  }
+
+  // ---- Lua sent to OpenSpace. Built only from the constants above; works with old and new function names. ----
+  const SECONDS = 4;
+  const PREPARE = `if not openspace.hasSceneGraphNode('${ISS.node}') then pcall(function() openspace.asset.add('${ISS.asset}') end) end`;
+  function viewLua(v, mode) {
+    const wide = `nav.flyTo('${v.body}', ${SECONDS})`;
+    let move = wide;
+    if (mode === 'close' && v.node) move = `if openspace.hasSceneGraphNode('${v.node}') then nav.flyTo('${v.node}', ${SECONDS}) else ${wide} end`;
+    else if (mode === 'close' && v.site) move = `if geo then geo('${v.body}', ${v.site.lat}, ${v.site.lon}, ${v.site.alt}, ${SECONDS}) else ${wide} end`;
+    const trail = v.trail ? `local t = 'Scene.${v.trail}.Renderable.Enabled'\nif openspace.hasProperty(t) then openspace.setPropertyValueSingle(t, true) end` : '';
+    return `local nav = openspace.navigation
+if not (nav and nav.flyTo) then nav = openspace.pathnavigation end
+local geo = (openspace.navigation and openspace.navigation.flyToGeo) or (openspace.globebrowsing and openspace.globebrowsing.flyToGeo)
+pcall(function() openspace.pathnavigation.stopPath() end)
+${trail}
+${move}`;
+  }
+
+  // ---- stage ----
+  let key = 'iss', mode = 'close';
+  const sendView = () => runLua(viewLua(VIEWS[key], mode));
+  function setStatus(next) {
+    status = next;
+    $('envStatus').className = 'env-status ' + next;
+    $('envStatus').innerHTML = '<i aria-hidden="true"></i>' + { connected: 'OpenSpace connected', connecting: 'Looking for OpenSpace…', disconnected: 'OpenSpace not running' }[next];
+    $('envRetry').classList.toggle('hidden', next !== 'disconnected');
+    drawStage();
+  }
+  function drawStage() {
+    const v = VIEWS[key];
+    $('envWhere').textContent = VIEWS[checked()?.value] ? v.where : `Custom atmosphere, still showing ${v.body}`;
+    $('envTitle').textContent = presetName();
+    $('envClose').textContent = v.close; $('envWide').textContent = v.wide;
+    $('envClose').setAttribute('aria-pressed', mode === 'close'); $('envWide').setAttribute('aria-pressed', mode === 'wide');
+    const target = mode === 'close' ? v.closeText : `the whole ${v.body === 'Earth' ? 'Earth with the station\'s orbit' : v.body}`;
+    $('envCaption').textContent = status === 'connected' ? `The OpenSpace window is showing ${target}.`
+      : `Start OpenSpace on this computer to see ${target} in 3D. It will follow your mission choice automatically.`;
+    const lat = v.site ? v.site.lat * Math.PI / 180 : 0;
+    const mark = v.node ? '<ellipse cx="100" cy="100" rx="84" ry="26" fill="none" stroke="#fff" stroke-opacity=".55" stroke-dasharray="3 4" transform="rotate(-20 100 100)"/><circle cx="179" cy="71" r="4" fill="#fff"/>'
+      : `<circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="4" fill="#fff"/><circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="9" fill="none" stroke="#fff" stroke-opacity=".6"/>`;
+    $('envSvg').setAttribute('aria-label', `Schematic of ${v.body}`);
+    $('envSvg').innerHTML = `<defs><radialGradient id="envShade" cx="35%" cy="35%" r="75%"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="58" fill="${v.color}"/><circle cx="100" cy="100" r="58" fill="url(#envShade)"/>${mark}`;
+  }
+  function setMode(next) { mode = next; drawStage(); sendView(); }
+  $('envClose').addEventListener('click', () => setMode('close'));
+  $('envWide').addEventListener('click', () => setMode('wide'));
+  $('envRetry').addEventListener('click', () => { attempts = 0; connect(); });
+
+  // ---- panel: mirrors the form and the latest ranking ----
+  const checked = () => document.querySelector('input[name=preset]:checked');
+  const presetName = () => checked()?.nextElementSibling?.childNodes[0]?.textContent.trim() || '';
+  const show = (x, d) => (Number.isFinite(x) ? String(Number(x.toFixed(d))) : '—');
+  function drawSpecs() {
+    const o2 = parseFloat($('o2').value), p = parseFloat($('p').value), pmin = parseFloat($('pmin').value);
+    const row = (k, val) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`;
+    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Shown in OpenSpace', VIEWS[key].body) + row('Oxygen', `${show(o2, 1)}% by volume`)
+      + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
+  }
+  function clearVerdict() {
+    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see FireLine\'s verdicts for this atmosphere.</p>';
+    $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each verdict will be listed here.</p>';
+  }
+  document.addEventListener('fireline:ranked', (e) => {
+    const items = e.detail.items;
+    $('envVerdict').innerHTML = `<p class="small quiet" style="margin-bottom:6px">At ${esc(e.detail.scenario.pNom)} psia nominal. Confidence is out of 99.</p><ul class="env-list">`
+      + items.map((it) => `<li><span>${esc(it.material)}</span><span>${it.level.key !== 'none' ? `<span class="quiet">${it.confidence}</span> ` : ''}<span class="chip ${it.level.key}"><b>${it.level.label}</b></span></span></li>`).join('') + '</ul>';
+    const seen = new Map();
+    items.forEach((it) => { const n = it.nearest; if (n && !seen.has(n.investigation_id)) seen.set(n.investigation_id, n); });
+    $('envEvidence').innerHTML = seen.size ? '<ul class="env-ev">' + [...seen.values()].map((n) => `<li><b>${esc(n.investigation_title || n.investigation_id)}</b><span>${esc(n.investigation_id)}${n.doi ? `, DOI <a href="https://doi.org/${esc(n.doi)}" target="_blank" rel="noopener">${esc(n.doi)}</a>` : ''}</span></li>`).join('') + '</ul><p class="small quiet" style="margin-top:8px">Full test records are in the ranking below.</p>'
+      : '<p class="small quiet">No quantified NASA tests near these conditions.</p>';
+  });
+
+  // Preset changed: move the camera. "Custom" keeps the current place.
+  $('presets').addEventListener('change', () => {
+    const k = checked()?.value;
+    if (VIEWS[k]) { key = k; mode = 'close'; sendView(); }
+    drawStage(); drawSpecs(); clearVerdict();
+  });
+  // Numbers edited by hand: the page switches itself to Custom, so only the panel updates.
+  $('form').addEventListener('input', (e) => { if (['o2', 'p', 'pmin'].includes(e.target.id)) { drawStage(); drawSpecs(); clearVerdict(); } });
+
+  key = VIEWS[checked()?.value] ? checked().value : 'iss';
+  drawSpecs(); clearVerdict(); connect();
 })();
 </script>
 </body>
