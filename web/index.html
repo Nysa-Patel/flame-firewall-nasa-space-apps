@@ -268,6 +268,11 @@
   .rank .rec { color: var(--on-dark); }
   .rank .cite { font-size: 14px; color: var(--on-dark-2); }
   .rank .cite b { color: var(--on-dark); font-weight: 600; }
+  .briefing { margin-top: 18px; padding: 18px 22px; border: 1px solid var(--line-dark); border-radius: 20px; background: var(--card-2); }
+  .briefing h3 { display: flex; align-items: center; gap: 10px; font-size: 16px; margin-bottom: 8px; }
+  .briefing p { white-space: pre-wrap; }
+  .briefing .tag { background: var(--paper); color: var(--ink); }
+  .results-tools { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
   .rank .map-cta { margin-top: 16px; }
   .rank a.map-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 18px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); transition: scale .35s var(--spring), box-shadow .35s var(--spring); }
   .rank a.map-btn:hover { scale: 1.03; box-shadow: 0 10px 26px rgba(0, 0, 0, .35); }
@@ -681,9 +686,10 @@
       <div class="block">
         <div class="results-head"><h2 id="results-h">Ranking</h2><span class="scenario-label" id="scenarioLabel"></span>
           <ul class="legend" aria-label="How each test ended"><li><i class="o-out"></i>Went out on its own</li><li><i class="o-disrupt"></i>Droplet broke apart</li><li><i class="o-burn"></i>Kept burning</li><li><i></i>Result not recorded</li></ul>
-          <div class="results-tools"><button type="button" id="csv" class="secondary">Download the evidence as CSV</button></div>
+          <div class="results-tools"><button type="button" id="csv" class="secondary">Download the evidence as CSV</button><button type="button" id="aiBriefing" class="secondary">AI briefing</button></div>
         </div>
         <section id="ranking" class="ranking" aria-labelledby="results-h"></section>
+        <section id="briefing" class="briefing hidden" aria-live="polite" aria-labelledby="briefing-h"><h3 id="briefing-h"><span class="tag">AI-written</span> Ranking briefing</h3><p id="briefingText"></p></section>
       </div>
       <div class="block" id="mapBlock">
         <h2 id="map-h">Where NASA tested each fuel</h2>
@@ -1011,6 +1017,8 @@
   let lastRun = null;
   function render(rows, points, s) {
     lastRun = { rows, points, s };
+    $('briefing').classList.add('hidden'); $('briefingText').textContent = '';
+    $('aiBriefing').disabled = false;
     $('scenarioLabel').textContent = `${s.name}, ${num(s.o2 * 100, 1)}% oxygen at ${s.pNom} psia`;
     const best = rows.find((r) => r.nominal.a.level === 0)?.material;
     const usedNames = new Map();
@@ -1043,6 +1051,35 @@
     $('results').classList.remove('hidden');
     document.dispatchEvent(new CustomEvent('fireline:ranked', { detail: { scenario: s, items: rows.map((row) => ({ material: row.material, level: LEVELS[row.nominal.a.level], count: short(row.nominal.a), nearest: row.nominal.r.nearest })) } }));
   }
+
+  // ---------- AI briefing: summarize ranked facts while keeping the investigation evidence in view ----------
+  $('aiBriefing').addEventListener('click', async () => {
+    if (!lastRun || $('aiBriefing').disabled) return;
+    if (mockOn()) { setStatus('AI briefing needs the live worker. Turn mock mode off in Settings to use /chat.', true); return; }
+    const { rows, s } = lastRun;
+    const facts = rows.map((row, i) => {
+      const r = row.nominal.r, a = row.nominal.a, n = r.nearest;
+      const outcome = a.t ? `${a.t.out} went out, ${a.t.burn} kept burning, ${a.t.disrupt} broke apart, ${a.t.unknown} had no result (${a.t.n} tests)` : 'no outcome tally available';
+      const investigation = n ? `${n.investigation_title || n.investigation_id} [${n.investigation_id}]${n.doi ? `, DOI ${n.doi}` : ''}` : (r.fallback?.investigations || []).map((x) => `${x.title || x.investigation_id} [${x.investigation_id}]`).join('; ') || 'no investigation found';
+      const range = row.perPoint.map((x) => `${x.pt.psi} psia ${LEVELS[x.a.level].label}`).join(', ');
+      return `${i + 1}. ${row.material}: ${LEVELS[a.level].label}; ${outcome}; pressure sweep: ${range}; nearest investigation: ${investigation}; relation: ${r.relation || 'unavailable'}${a.flags.length ? `; caveats: ${a.flags.join('; ')}` : ''}.`;
+    }).join('\n');
+    const message = `Write a short, plain-language briefing (2–4 sentences) about this ranked set of NASA microgravity combustion facts. Describe the ranking cautiously; this is not a safety certification. Cite the supporting investigation by its exact title and accession in square brackets (for example [Flame Extinguishment Experiment, FLEX]) wherever you make a claim. If no investigation is available for a fact, say so; do not invent citations or facts. Atmosphere: ${num(s.o2 * 100, 1)}% oxygen, ${s.pNom} psia nominal, down to ${s.pMin} psia. Ranked facts:\n${facts}`;
+    const button = $('aiBriefing'), panel = $('briefing');
+    button.disabled = true; button.textContent = 'Writing briefing…';
+    panel.classList.remove('hidden'); $('briefingText').textContent = 'Asking Mission Control to summarize the ranked facts…';
+    try {
+      const res = await fetch(apiBase() + '/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message }) });
+      const d = await res.json(); if (!res.ok || d.error) throw new Error((d.error || `HTTP ${res.status}`) + (d.detail ? ': ' + d.detail : ''));
+      if (!d.reply) throw new Error('The chat service returned no briefing.');
+      $('briefingText').textContent = d.reply;
+    } catch (err) {
+      $('briefingText').textContent = 'The AI briefing could not be generated: ' + err.message;
+    } finally {
+      button.disabled = false; button.textContent = 'AI briefing';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
 
   // ---------- tested envelope: one oxygen x pressure table per ranked fuel, with the mission drawn on it ----------
   // same rule as the worker: the term must start a word, so "ethanol" does not match "Methanol"
