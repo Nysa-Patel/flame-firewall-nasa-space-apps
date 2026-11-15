@@ -2,10 +2,10 @@
 // Job: given { o2_fraction, pressure_atm, material }, return FACTS from Tiger Data.
 // It never decides PASS/CAUTION/FAIL and never writes explanations. That is Person D's layer.
 import postgres from 'postgres';
-import { handleChat } from './chat';
+import { handleChat, CHAT_MODELS, type ChatModel } from './chat';
 import { importCsv } from './import';
 
-export interface Env { HYPERDRIVE: Hyperdrive; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string; UPLOAD_KEY?: string }
+export interface Env { HYPERDRIVE: Hyperdrive; XAI_API_KEY?: string; GEMINI_API_KEY: string; AI_GATEWAY_ACCOUNT_ID: string; AI_GATEWAY_ID: string; CF_AIG_TOKEN?: string; UPLOAD_KEY?: string }
 export type Sql = ReturnType<typeof postgres>;
 
 // ---- how flammability_envelope buckets work (from its view definition) ----
@@ -216,10 +216,12 @@ export default {
       try { body = await request.json(); } catch { return json({ error: 'body must be valid JSON' }, 400); }
       const message = (body as any)?.message;
       if (typeof message !== 'string' || !message.trim()) return json({ error: 'message (string) is required' }, 400);
+      const model = ((body as any)?.model ?? 'grok') as ChatModel;
+      if (!CHAT_MODELS.includes(model)) return json({ error: 'model must be one of: ' + CHAT_MODELS.join(', ') }, 400);
 
       const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
       try {
-        return json(await handleChat(sql, env, message));
+        return json(await handleChat(sql, env, message, model));
       } catch (e) {
         console.error(e);
         return json({ error: 'chat failed', detail: String((e as Error).message) }, 500);
