@@ -268,6 +268,12 @@
   .rank .rec { color: var(--on-dark); }
   .rank .cite { font-size: 14px; color: var(--on-dark-2); }
   .rank .cite b { color: var(--on-dark); font-weight: 600; }
+  .rank .map-cta { margin-top: 16px; }
+  .rank a.map-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 18px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); transition: scale .35s var(--spring), box-shadow .35s var(--spring); }
+  .rank a.map-btn:hover { scale: 1.03; box-shadow: 0 10px 26px rgba(0, 0, 0, .35); }
+  .rank a.map-btn:active { scale: .98; }
+  .rank a.map-btn:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .sweep { margin-top: 8px; }
   .chip { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--lv-t); color: var(--on-dark); }
   .chip b { color: var(--lv); }
@@ -692,11 +698,9 @@
       <div class="block">
         <h2 id="method">How the readings are made</h2>
       <div class="method">
-        <p>Every test here was lit on purpose, so the question is never whether the fuel can burn. It is how the flame ended. For each material and pressure, the worker returns the nearest oxygen-and-pressure bucket NASA tested. Phenox counts how the tests in it ended: the flame went out on its own, it kept burning until the fuel was gone, the droplet broke apart, or no result was recorded.</p>
-        <p>Only the first two are conclusive. Goes out means at least two thirds of the conclusive tests went out on their own. Mixed means at least one third. Keeps burning means fewer. Goes out is lowered to Mixed when the scenario sits outside the range tested for that material, or when its oxygen is higher than any test of it.</p>
-        <p>No data means one of three things: nothing was tested, the nearest bucket is more than two bucket widths away, or none of its tests has a conclusive result. Phenox does not read across a gap that wide.</p>
-        <p>Beside each share is its 95% range (a Wilson interval): with few tests it is wide, and that width is the honest measure of how much the record supports the reading.</p>
-        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification, and Goes out never means safe to fly. All of the evidence is from microgravity; there are no partial-gravity tests in NASA's repository yet.</p>
+        <p>Every test here was lit on purpose, so the question is how the flame ended. For each material and pressure, Phenox takes the nearest oxygen-and-pressure conditions NASA tested and counts the outcomes: went out on its own, kept burning, droplet broke apart, or no result recorded.</p>
+        <p>Only the first two are conclusive. Goes out means at least two thirds of them went out on their own, Mixed at least one third, and Keeps burning fewer. Goes out drops to Mixed outside the range tested for that material. No data means nothing close was tested (more than two bucket widths away) or no result was conclusive.</p>
+        <p>Each share has a 95% range that widens when few tests back it. This is a reading of historical results, not a NASA flammability certification, and Goes out never means safe to fly. All of the evidence is from microgravity.</p>
         <p><a href="methods.html">Every formula, with a worked example and an interval you can try</a></p>
         <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
       </div>
@@ -1030,7 +1034,7 @@
           <p class="rec">${esc(recommend(a, best !== row.material ? best : null))} ${esc(rangeSummary(row, points))}</p>
           ${read}
           <p class="cite">${cite}</p>
-          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${n ? `<p class="cite"><a href="flammability.html?material=${encodeURIComponent(n.fuel_material || row.material)}&o2=${num(s.o2 * 100, 1)}&p=${row.nominal.pt.atm}" target="_blank" rel="noopener">See this fuel's flammability map in 3D</a></p>` : ''}${ev}</div></article>`;
+          <div class="sweep" aria-label="Verdict by pressure">${sweep}</div>${n ? `<p class="map-cta"><a class="map-btn" href="flammability.html?material=${encodeURIComponent(n.fuel_material || row.material)}&o2=${num(s.o2 * 100, 1)}&p=${row.nominal.pt.atm}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>See this fuel's flammability map in 3D<span class="sr-only"> (opens in a new tab)</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></p>` : ''}${ev}</div></article>`;
     }).join('');
     renderMaps(rows, points, s);
     $('rangeIntro').textContent = `Oxygen held at ${num(s.o2 * 100, 1)}% while pressure steps from the nominal ${s.pNom} psia down to the ${s.pMin} psia depress floor. Each cell is the reading from the nearest tested bucket at that point, with how many of its conclusive tests went out.`;
@@ -1118,7 +1122,7 @@
   const HARDWARE = [[/^flame extinguishment|^cool flames investigation$/i, 'Burning liquid droplets in the Combustion Integrated Rack'], [/^advanced combustion via microgravity/i, 'Gas flames on the ACME hardware in the Combustion Integrated Rack'],
     [/^burning and suppression of solids|^smoke point in co-flow|^structure and liftoff/i, 'Flow duct in the Microgravity Science Glovebox'], [/^spacecraft fire/i, 'Large samples burned inside an uncrewed Cygnus cargo vehicle']];
   let INV = [], invArea = 'all', invAll = false;
-  const INV_SHOWN = 6;
+  const INV_SHOWN = 4;
   pointsReady.then(async (P) => {
     if (!P) { $('invIntro').textContent = 'The investigation list could not be loaded. Check the worker address in Settings, or open the page from a web server so the bundled snapshot can be read.'; $('invFocus').classList.add('hidden'); return; }
     let extra = {};   // objectives, once the worker has GET /investigations
