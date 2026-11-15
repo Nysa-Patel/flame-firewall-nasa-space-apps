@@ -371,14 +371,16 @@
     .facts span { font-size: 12px; }
   }
 
-  /* ===== mission environment: OpenSpace link. Display only; verdicts come from the app above ===== */
+  /* ===== mission environment: where the mission is. Display only; verdicts come from the app above.
+     Never opens a connection on its own: OpenSpace is contacted only after the user presses Connect. ===== */
+  :root { --env-earth: #4f8fe6; --env-moon: #b9c0c9; --env-mars: #d9703a; }   /* schematic planet fills, illustration only */
   #env-h { --i: var(--i-satellite); }
   .preset input[value=mars] + span { --i: var(--i-planet); }
-  .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: no-preference) { .preset input[value=mars]:checked + span::before { animation: moon-rock 3.2s ease-in-out infinite; } }
   .env-block + #results { margin-top: 56px; }
   .env { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: stretch; }
   .env-stage { display: flex; flex-direction: column; min-height: 460px; padding: 22px 24px; border-radius: 24px;
-    background: radial-gradient(ellipse at 50% 45%, #1b3766 0%, #0a1830 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
+    background: radial-gradient(ellipse at 50% 45%, var(--card-2) 0%, var(--char) 72%); box-shadow: inset 0 0 0 1px var(--line-dark); }
   .env-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
   .env-where { font-size: 13px; color: var(--on-dark-2); }
   .env-title { font-size: 26px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; }
@@ -388,12 +390,18 @@
   .env-status.connected { background: var(--pass-t); } .env-status.connected i { background: var(--pass); }
   .env-status.connecting { background: var(--caution-t); } .env-status.connecting i { background: var(--caution); }
   .env-svg { flex: 1; width: 100%; min-height: 0; max-height: 300px; margin: 10px auto; }
-  .env-caption { margin: 0 auto 16px; max-width: 48ch; text-align: center; font-size: 14px; color: var(--on-dark-2); }
+  .env-caption { margin: 0 auto 16px; max-width: 52ch; text-align: center; font-size: 14px; color: var(--on-dark-2); }
   .env-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
   .env-toggle { display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--card); }
   .env-toggle button { background: transparent; border-color: transparent; color: var(--on-dark-2); padding: 8px 18px; min-height: 40px; font-weight: 600; }
   .env-toggle button[aria-pressed=true] { background: var(--paper); color: var(--ink); }
   .env-toggle button:hover:not(:disabled) { box-shadow: none; }
+  /* navy section: actions are white pills, never red */
+  a.env-open { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 22px; border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 700; font-size: 15px; text-decoration: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    a.env-open { transition: scale .45s var(--spring); }
+    a.env-open:hover { scale: 1.04; } a.env-open:active { scale: .97; }
+  }
   button.env-link { background: none; border-color: transparent; color: var(--sky); text-decoration: underline; padding: 8px 6px; font-weight: 600; }
   button.env-link:hover:not(:disabled) { box-shadow: none; }
   .env-panel { background: var(--card); border-radius: 24px; padding: 6px 22px; overflow-wrap: anywhere; }
@@ -503,7 +511,7 @@
   <div class="shell">
     <div class="block env-block">
       <h2 id="env-h">Mission environment</h2>
-      <p class="intro">See where this atmosphere would be used. The 3D view runs in <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app; FireLine steers its camera to match the mission you pick. OpenSpace only shows the location. It plays no part in the verdicts.</p>
+      <p class="intro">See where this atmosphere would be used. Open the place in 3D in a new tab with <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and FireLine steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
       <div class="env">
         <div class="env-stage">
           <div class="env-top">
@@ -517,7 +525,8 @@
               <button type="button" id="envClose" aria-pressed="true"></button>
               <button type="button" id="envWide" aria-pressed="false"></button>
             </div>
-            <button type="button" id="envRetry" class="env-link hidden">Retry now</button>
+            <a id="envOpen" class="env-open" target="_blank" rel="noopener">Open 3D view in new tab</a>
+            <button type="button" id="envConnect" class="env-link">Connect OpenSpace</button>
           </div>
         </div>
         <aside class="env-panel" aria-label="Mission summary">
@@ -1514,45 +1523,44 @@
 })();
 </script>
 <script>
-// ---------- Mission environment: OpenSpace link ----------
-// Display only. This block steers the camera of a locally running OpenSpace
-// (https://github.com/OpenSpace/OpenSpace) and mirrors numbers the page already
-// has. It computes nothing about combustion; verdicts arrive via the
-// 'fireline:ranked' event fired by render() above.
+// ---------- Mission environment ----------
+// Display only. Shows where the chosen mission is, links to NASA's Eyes (3D in the browser), and can steer the camera
+// of a locally running OpenSpace (https://github.com/OpenSpace/OpenSpace). It mirrors numbers the page already has and
+// computes nothing about combustion; verdicts arrive via the 'fireline:ranked' event fired by render() above.
+// It never connects on its own. A page that reaches for localhost on load makes Chrome show every visitor a
+// local-network permission prompt, so the socket opens only when the user presses Connect.
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // Which place each preset shows. Site coordinates are reference points for aiming the camera, not mission data.
-  const ISS = { where: 'Low Earth orbit', body: 'Earth', color: '#4f8fe6', node: 'ISS', trail: 'ISS_trail',
-    asset: 'scene/solarsystem/planets/earth/satellites/misc/iss', close: 'Station', wide: 'Orbit', closeText: 'the International Space Station' };
+  const EYES = 'https://eyes.nasa.gov/apps/solar-system/#/';
+  const ISS = { where: 'Low Earth orbit', body: 'Earth', fill: 'var(--env-earth)', node: 'ISS', trail: 'ISS_trail',
+    asset: 'scene/solarsystem/planets/earth/satellites/misc/iss', eyes: { close: EYES + 'sc_iss', wide: EYES + 'earth' },
+    close: 'Station', wide: 'Orbit', closeText: 'the International Space Station' };
   const VIEWS = {
     iss: ISS,
     suit: { ...ISS, where: 'Spacewalk, low Earth orbit' },
-    lunar: { where: 'Lunar surface', body: 'Moon', color: '#b9c0c9', close: 'Base site', wide: 'Moon', closeText: 'the Shackleton crater rim, a reference site near the lunar south pole',
-      site: { lat: -89.5, lon: 0, alt: 150000 } },
-    mars: { where: 'Martian surface', body: 'Mars', color: '#d9703a', close: 'Habitat site', wide: 'Mars', closeText: 'Jezero crater, a reference site',
-      site: { lat: 18.38, lon: 77.58, alt: 300000 } },
+    lunar: { where: 'Lunar surface', body: 'Moon', fill: 'var(--env-moon)', eyes: { close: EYES + 'moon', wide: EYES + 'moon' },
+      close: 'Base site', wide: 'Moon', closeText: 'the Shackleton crater rim, a reference site near the lunar south pole', site: { lat: -89.5, lon: 0, alt: 150000 } },
+    mars: { where: 'Martian surface', body: 'Mars', fill: 'var(--env-mars)', eyes: { close: EYES + 'sc_mars_2020_landing_site', wide: EYES + 'mars' },
+      close: 'Habitat site', wide: 'Mars', closeText: 'Jezero crater, a reference site', site: { lat: 18.38, lon: 77.58, alt: 300000 } },
   };
 
-  // ---- OpenSpace connection (WebSocket server, default port 4682) ----
-  const HOST = new URLSearchParams(location.search).get('openspace') || 'localhost';
-  let socket = null, status = 'disconnected', topic = 0, attempts = 0, retryTimer = null;
+  // ---- OpenSpace connection (WebSocket server, default port 4682). Opened by the Connect button only; no retries. ----
+  const HOST = (new URLSearchParams(location.search).get('openspace') || 'localhost').replace(/[^A-Za-z0-9.\-]/g, '');
+  const STATUS = { idle: 'OpenSpace not connected', connecting: 'Looking for OpenSpace…', connected: 'OpenSpace connected', failed: 'OpenSpace not found' };
+  let socket = null, status = 'idle', topic = 0;
   function connect() {
-    clearTimeout(retryTimer);
+    if (socket) return;
     setStatus('connecting');
     let ws;
-    try { ws = new WebSocket(`ws://${HOST}:4682/websocket`); } catch { return retryLater(); }
+    try { ws = new WebSocket(`ws://${HOST}:4682/websocket`); } catch { return setStatus('failed'); }
     socket = ws;
-    ws.onopen = () => { if (socket !== ws) return; attempts = 0; setStatus('connected'); runLua(PREPARE); sendView(); };
-    ws.onclose = () => { if (socket !== ws) return; socket = null; retryLater(); };
+    ws.onopen = () => { if (socket !== ws) return; setStatus('connected'); runLua(PREPARE); sendView(); };
+    ws.onclose = () => { if (socket !== ws) return; socket = null; setStatus(status === 'connected' ? 'idle' : 'failed'); };
     ws.onerror = () => ws.close();
-  }
-  function retryLater() {
-    setStatus('disconnected');
-    attempts += 1;
-    retryTimer = setTimeout(connect, Math.min(15000, 3000 * attempts));
   }
   function runLua(script) {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
@@ -1579,11 +1587,14 @@ ${move}`;
   // ---- stage ----
   let key = 'iss', mode = 'close';
   const sendView = () => runLua(viewLua(VIEWS[key], mode));
+  const checked = () => document.querySelector('input[name=preset]:checked');
+  const presetName = () => checked()?.nextElementSibling?.childNodes[0]?.textContent.trim() || '';
   function setStatus(next) {
     status = next;
     $('envStatus').className = 'env-status ' + next;
-    $('envStatus').innerHTML = '<i aria-hidden="true"></i>' + { connected: 'OpenSpace connected', connecting: 'Looking for OpenSpace…', disconnected: 'OpenSpace not running' }[next];
-    $('envRetry').classList.toggle('hidden', next !== 'disconnected');
+    $('envStatus').innerHTML = '<i aria-hidden="true"></i>' + STATUS[next];
+    $('envConnect').classList.toggle('hidden', next === 'connected' || next === 'connecting');
+    $('envConnect').textContent = next === 'failed' ? 'Try OpenSpace again' : 'Connect OpenSpace';
     drawStage();
   }
   function drawStage() {
@@ -1593,28 +1604,29 @@ ${move}`;
     $('envClose').textContent = v.close; $('envWide').textContent = v.wide;
     $('envClose').setAttribute('aria-pressed', mode === 'close'); $('envWide').setAttribute('aria-pressed', mode === 'wide');
     const target = mode === 'close' ? v.closeText : `the whole ${v.body === 'Earth' ? 'Earth with the station\'s orbit' : v.body}`;
+    $('envOpen').href = v.eyes[mode];
     $('envCaption').textContent = status === 'connected' ? `The OpenSpace window is showing ${target}.`
-      : `Start OpenSpace on this computer to see ${target} in 3D. It will follow your mission choice automatically.`;
+      : status === 'failed' ? `OpenSpace did not answer on this computer. Start it and try again, or open ${target} in 3D in a new tab.`
+      : `Open ${target} in 3D in a new tab. If OpenSpace is running on this computer, connect it and it follows your mission choice.`;
     const lat = v.site ? v.site.lat * Math.PI / 180 : 0;
-    const mark = v.node ? '<ellipse cx="100" cy="100" rx="84" ry="26" fill="none" stroke="#fff" stroke-opacity=".55" stroke-dasharray="3 4" transform="rotate(-20 100 100)"/><circle cx="179" cy="71" r="4" fill="#fff"/>'
-      : `<circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="4" fill="#fff"/><circle cx="${(100 + 29 * Math.cos(lat)).toFixed(1)}" cy="${(100 - 58 * Math.sin(lat)).toFixed(1)}" r="9" fill="none" stroke="#fff" stroke-opacity=".6"/>`;
+    const x = (100 + 29 * Math.cos(lat)).toFixed(1), y = (100 - 58 * Math.sin(lat)).toFixed(1);
+    const mark = v.node ? '<ellipse cx="100" cy="100" rx="84" ry="26" fill="none" style="stroke:var(--on-dark)" stroke-opacity=".55" stroke-dasharray="3 4" transform="rotate(-20 100 100)"/><circle cx="179" cy="71" r="4" style="fill:var(--on-dark)"/>'
+      : `<circle cx="${x}" cy="${y}" r="4" style="fill:var(--on-dark)"/><circle cx="${x}" cy="${y}" r="9" fill="none" style="stroke:var(--on-dark)" stroke-opacity=".6"/>`;
     $('envSvg').setAttribute('aria-label', `Schematic of ${v.body}`);
-    $('envSvg').innerHTML = `<defs><radialGradient id="envShade" cx="35%" cy="35%" r="75%"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs>
-      <circle cx="100" cy="100" r="58" fill="${v.color}"/><circle cx="100" cy="100" r="58" fill="url(#envShade)"/>${mark}`;
+    $('envSvg').innerHTML = `<defs><radialGradient id="envShade" cx="35%" cy="35%" r="75%"><stop offset="0" style="stop-color:var(--char)" stop-opacity="0"/><stop offset="1" style="stop-color:var(--char)" stop-opacity=".8"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="58" style="fill:${v.fill}"/><circle cx="100" cy="100" r="58" fill="url(#envShade)"/>${mark}`;
   }
   function setMode(next) { mode = next; drawStage(); sendView(); }
   $('envClose').addEventListener('click', () => setMode('close'));
   $('envWide').addEventListener('click', () => setMode('wide'));
-  $('envRetry').addEventListener('click', () => { attempts = 0; connect(); });
+  $('envConnect').addEventListener('click', connect);
 
   // ---- panel: mirrors the form and the latest ranking ----
-  const checked = () => document.querySelector('input[name=preset]:checked');
-  const presetName = () => checked()?.nextElementSibling?.childNodes[0]?.textContent.trim() || '';
   const show = (x, d) => (Number.isFinite(x) ? String(Number(x.toFixed(d))) : '—');
   function drawSpecs() {
     const o2 = parseFloat($('o2').value), p = parseFloat($('p').value), pmin = parseFloat($('pmin').value);
     const row = (k, val) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`;
-    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Shown in OpenSpace', VIEWS[key].body) + row('Oxygen', `${show(o2, 1)}% by volume`)
+    $('envSpecs').innerHTML = row('Mission', presetName()) + row('Location shown', VIEWS[key].body) + row('Oxygen', `${show(o2, 1)}% by volume`)
       + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
   }
   function clearVerdict() {
@@ -1630,6 +1642,8 @@ ${move}`;
     $('envEvidence').innerHTML = seen.size ? '<ul class="env-ev">' + [...seen.values()].map((n) => `<li><b>${esc(n.investigation_title || n.investigation_id)}</b><span>${esc(n.investigation_id)}${n.doi ? `, DOI <a href="https://doi.org/${esc(n.doi)}" target="_blank" rel="noopener">${esc(n.doi)}</a>` : ''}</span></li>`).join('') + '</ul><p class="small quiet" style="margin-top:8px">Full test records are in the ranking below.</p>'
       : '<p class="small quiet">No quantified NASA tests near these conditions.</p>';
   });
+  // The app hides #results while a ranking is in flight and leaves it hidden if the request fails; drop the old verdicts with it.
+  new MutationObserver(() => { if ($('results').classList.contains('hidden')) clearVerdict(); }).observe($('results'), { attributes: true, attributeFilter: ['class'] });
 
   // Preset changed: move the camera. "Custom" keeps the current place.
   $('presets').addEventListener('change', () => {
@@ -1641,7 +1655,7 @@ ${move}`;
   $('form').addEventListener('input', (e) => { if (['o2', 'p', 'pmin'].includes(e.target.id)) { drawStage(); drawSpecs(); clearVerdict(); } });
 
   key = VIEWS[checked()?.value] ? checked().value : 'iss';
-  drawSpecs(); clearVerdict(); connect();
+  setStatus('idle'); drawSpecs(); clearVerdict();
 })();
 </script>
 </body>
