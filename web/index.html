@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FireLine</title>
+<title>Project Phenox</title>
 <meta name="description" content="Rank candidate materials against NASA microgravity combustion tests for a chosen cabin atmosphere.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22g%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%235f8dff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b1f3f%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2216%22%20fill%3D%22%230b1f3f%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2210%22%20fill%3D%22url(%23g)%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -544,13 +544,13 @@
 <noscript><style>#boot{display:none !important}</style></noscript>
 <div class="shell">
   <header class="topbar">
-    <div class="brand">FireLine.</div>
+    <div class="brand">Phenox.</div>
     <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="#method">Method</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
   <section class="hero" aria-labelledby="hero-h">
-    <p class="title" aria-hidden="true">FireLine.</p>
+    <p class="title" aria-hidden="true">Phenox.</p>
     <div class="orb">
       <div class="housing" aria-hidden="true">
         <svg class="trim" viewBox="0 0 100 100">
@@ -572,7 +572,7 @@
     <div class="hero-row">
       <div>
         <h1 id="hero-h">Will it burn up there?</h1>
-        <p class="lede">Choose a cabin atmosphere and list the materials you're considering. FireLine ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
+        <p class="lede">Choose a cabin atmosphere and list the materials you're considering. Phenox ranks them against NASA's real microgravity combustion tests and shows the evidence behind every call.</p>
         <p class="flame-note" id="flameNote"></p>
       </div>
       <a class="accent-dot" href="viz.html" target="_blank" rel="noopener">Launch 3D model</a>
@@ -622,7 +622,7 @@
         <label for="api">Worker address</label>
         <input id="api" type="url" spellcheck="false">
         <label class="inline"><input id="mock" type="checkbox"> Mock mode: no network, synthetic data</label>
-        <p class="small">Defaults to the live FireLine worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
+        <p class="small">Defaults to the live Phenox worker. Override with <code>?api=</code> or <code>?mock=1</code> in the address bar.</p>
         <button type="button" id="tourReplay" class="secondary">Show usage tour</button>
       </details>
   </section>
@@ -633,7 +633,7 @@
   <div class="shell">
     <div class="block env-block">
       <h2 id="env-h">Mission environment</h2>
-      <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and FireLine steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
+      <p class="intro">See where this atmosphere would be used. The live 3D view is <a href="https://science.nasa.gov/eyes/" target="_blank" rel="noopener">NASA's Eyes on the Solar System</a>, loaded from NASA when you reach this section; drag it to look around. If you run <a href="https://www.openspaceproject.com/" target="_blank" rel="noopener">OpenSpace</a>, a free desktop app, connect it and Phenox steers its camera to match the mission you pick. Both only show the location; neither plays any part in the verdicts.</p>
       <div class="env">
         <div class="env-stage">
           <div class="env-top">
@@ -674,7 +674,7 @@
         <p>For each material and pressure, the worker returns the nearest O₂-and-pressure bucket that NASA actually tested, with the count of tests whose recorded outcome was extinction or disruption. The remainder is the burn share.</p>
         <p>Pass means a burn share of one third or less. Caution means up to two thirds. Fail means more. A Pass is downgraded to Caution when the scenario sits outside the range tested for that material, or when its oxygen level is higher than any test of it.</p>
         <p>Confidence, out of 99, grows with the number of tests in the bucket and with how close that bucket is to the scenario: an exact bucket scores higher than interpolation, which scores higher than extrapolation.</p>
-        <p>This is FireLine's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
+        <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification. The dataset covers fuel materials only; fire suppressants are not in it.</p>
         <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
       </div>
       </div>
@@ -682,7 +682,7 @@
     <section>
 
       <h2 id="import-h">Contribute data</h2>
-      <p class="intro">Have a new NASA combustion CSV? Upload it and FireLine matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed. Uploads are marked <b>community-contributed, unverified</b> everywhere they're shown or cited, until someone reviews them; they never get presented with the same authority as the NASA PSI data.</p>
+      <p class="intro">Have a new NASA combustion CSV? Upload it and Phenox matches its columns the same way the PSI scrape was matched, adds it to Tiger Data, and folds it straight into the ranking and envelope above — the dataset grows as new experiments come in, instead of staying fixed. Uploads are marked <b>community-contributed, unverified</b> everywhere they're shown or cited, until someone reviews them; they never get presented with the same authority as the NASA PSI data.</p>
       <form id="importForm" class="fields" style="margin-top:0">
         <div>
           <label for="importTitle">Dataset title <span class="quiet">(e.g. "Saffire-IV droplet trials")</span></label>
@@ -1240,7 +1240,7 @@
     new MutationObserver(() => on || draw(0)).observe($('o2conv'), { childList: true, characterData: true, subtree: true });
   }).catch(() => {});
 
-  // ---- Wordmark fire: the letters of "FireLine." burn from the bottom up. The text is drawn into a mask with the page's own font,
+  // ---- Wordmark fire: the letters of "Phenox." burn from the bottom up. The text is drawn into a mask with the page's own font,
   // and the fire shows only inside the glyphs: navy at the top of each letter, amber, orange and red tongues rising from the baseline. ----
   libs.then(async ([THREE]) => {
     await document.fonts.ready;
@@ -1653,7 +1653,7 @@ ${move}`;
       + row('Nominal pressure', `${show(p, 2)} psia (${show(p / 14.696, 3)} atm)`) + row('Depress floor', `${show(pmin, 2)} psia (${show(pmin / 14.696, 3)} atm)`);
   }
   function clearVerdict() {
-    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see FireLine\'s verdicts for this atmosphere.</p>';
+    $('envVerdict').innerHTML = '<p class="small quiet">Rank materials to see Phenox\'s verdicts for this atmosphere.</p>';
     $('envEvidence').innerHTML = '<p class="small quiet">The NASA investigations behind each verdict will be listed here.</p>';
   }
   document.addEventListener('fireline:ranked', (e) => {
@@ -1685,7 +1685,7 @@ ${move}`;
 <script>
 (() => {
   const steps = [
-    { target: '#hero-h', title: 'Welcome to FireLine', text: 'This page compares candidate materials with recorded spacecraft combustion tests. The tour takes you through the controls and the evidence.' },
+    { target: '#hero-h', title: 'Welcome to Phenox', text: 'This page compares candidate materials with recorded spacecraft combustion tests. The tour takes you through the controls and the evidence.' },
     { target: '#materials', title: 'Set the atmosphere', text: 'Choose a mission preset, enter oxygen and pressure, then list materials separated by commas. Use the same fuel names found in the test data for the closest matches.' },
     { target: '#go', title: 'Rank materials', text: 'Rank materials checks each one at nominal pressure and across the depress floor. Results appear below the mission environment, with evidence and confidence for each call.' },
     { target: '#env-h', title: 'Read the mission view', text: 'This view shows the selected mission context and summarizes material verdicts and supporting evidence. The 3D location is for context; it does not affect the ranking.' },

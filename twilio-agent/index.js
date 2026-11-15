@@ -1,4 +1,4 @@
-// FireLine mission control, over SMS/voice.
+// Phenox mission control, over SMS/voice.
 // Forwards whatever the user says to the already-deployed /chat endpoint
 // (Gemini + Tiger Data live there) and speaks/texts back the reply.
 // No LLM call happens here — this file is just the Twilio <-> worker bridge.
@@ -36,7 +36,7 @@ const smsChannel = new SMSChannel(tac);
 // with the caller's own question.
 voiceChannel.onInboundCallTwiml(async () => ({
   welcomeGreeting:
-    "You've reached FireLine Mission Control. Ask your question — for example, " +
+    "You've reached Phenox Mission Control. Ask your question — for example, " +
     'is heptane safe at 30 percent oxygen and 0.7 atmospheres.',
 }));
 
@@ -53,4 +53,4 @@ tac.onMessageReady(async ({ message }) => {
 
 const server = new TACServer(tac, { voiceChannel, messagingChannels: [smsChannel] });
 await server.start();
-console.log('FireLine Twilio agent running, forwarding to', WORKER_URL);
+console.log('Phenox Twilio agent running, forwarding to', WORKER_URL);

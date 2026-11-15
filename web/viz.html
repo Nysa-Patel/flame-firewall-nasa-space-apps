@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FireLine · the data in 3D</title>
-<meta name="description" content="Every NASA microgravity combustion test in FireLine that recorded an oxygen level, as a 3D model you can turn and click.">
+<title>Phenox · the data in 3D</title>
+<meta name="description" content="Every NASA microgravity combustion test in Phenox that recorded an oxygen level, as a 3D model you can turn and click.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <style>
   /* Tokens are the same as web/index.html: a light page (grey, white, navy ink, NASA red for actions)
      with the model in a navy card, the way the main page uses navy cards. Outcome colors are test results,
-     not FireLine verdicts, so they do not reuse the pass/caution/fail colors. */
+     not Phenox verdicts, so they do not reuse the pass/caution/fail colors. */
   :root {
     --grey: #eef1f5; --paper: #ffffff; --ink: #0b1b33; --ink-2: #47556b; --line: #d5dbe5;
     --char: #0b1f3f; --card: #132b52; --card-2: #1b3766; --on-dark: #f2f5fa; --on-dark-2: #b6c3d8; --line-dark: #2c4878;
@@ -144,7 +144,7 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="index.html">FireLine.</a>
+  <a class="brand" href="index.html">Phenox.</a>
   <span class="chip" id="source" role="status">Loading data…</span>
   <button class="btn" id="filterBtn" type="button" aria-expanded="false" aria-controls="filters">Filters</button>
   <button class="btn" id="tableBtn" type="button">Table<span class="full"> view</span></button>
@@ -202,7 +202,7 @@
 </dialog>
 
 <script type="module">
-// FireLine 3D model. Data comes from the worker's GET /points (live), then the bundled points.json
+// Phenox 3D model. Data comes from the worker's GET /points (live), then the bundled points.json
 // snapshot (real NASA data exported from the same query), then a labeled mock set. Every number in
 // the findings is computed here from whatever loaded; none are written in by hand.
 const $ = (id) => document.getElementById(id);
@@ -417,7 +417,7 @@ $('read').innerHTML = [
   `${int(SHELF.length)} of the tests that recorded oxygen have no pressure on record, so they cannot be placed here. Open Table view to see them.`,
   'Points are nudged slightly so tests at the same condition do not hide each other.',
   MAIN_HEADER ? `Burn rate is the column NASA labels “${esc(MAIN_HEADER)}”${UNIT === 'mm²/s' ? '; its values match a droplet burning-rate constant in mm²/s' : ''}.` : '',
-  'Rings mark planning atmospheres from the FireLine presets. They are not test results.',
+  'Rings mark planning atmospheres from the Phenox presets. They are not test results.',
 ].filter(Boolean).map((t) => `<li>${t}</li>`).join('');
 
 const fl = $('findings');

@@ -1,6 +1,6 @@
-# FireLine Twilio agent
+# Phenox Twilio agent
 
-SMS/voice front end for the FireLine mission control chatbot. This is just a
+SMS/voice front end for the Phenox mission control chatbot. This is just a
 bridge: it takes what the caller/texter says, forwards it to the deployed
 `/chat` endpoint on the Cloudflare Worker (which does the Gemini + Tiger Data
 work), and sends the reply back over SMS or voice.

@@ -1,4 +1,4 @@
-// FireLine "Person B" Worker.
+// Phenox "Person B" Worker.
 // Job: given { o2_fraction, pressure_atm, material }, return FACTS from Tiger Data.
 // It never decides PASS/CAUTION/FAIL and never writes explanations. That is Person D's layer.
 import postgres from 'postgres';

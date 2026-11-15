@@ -1,4 +1,4 @@
-# FireLine data pipeline
+# Phenox data pipeline
 
 Pulls real combustion data from NASA's PSI repository and loads it into Tiger Data.
 
