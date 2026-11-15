@@ -1116,7 +1116,7 @@
   const HARDWARE = [[/^flame extinguishment|^cool flames investigation$/i, 'Burning liquid droplets in the Combustion Integrated Rack'], [/^advanced combustion via microgravity/i, 'Gas flames on the ACME hardware in the Combustion Integrated Rack'],
     [/^burning and suppression of solids|^smoke point in co-flow|^structure and liftoff/i, 'Flow duct in the Microgravity Science Glovebox'], [/^spacecraft fire/i, 'Large samples burned inside an uncrewed Cygnus cargo vehicle']];
   let INV = [], invArea = 'all', invAll = false;
-  const INV_SHOWN = 6;
+  const INV_SHOWN = 4;
   pointsReady.then(async (P) => {
     if (!P) { $('invIntro').textContent = 'The investigation list could not be loaded. Check the worker address in Settings, or open the page from a web server so the bundled snapshot can be read.'; $('invFocus').classList.add('hidden'); return; }
     let extra = {};   // objectives, once the worker has GET /investigations
