@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phenox method</title>
+<meta name="description" content="How Phenox turns NASA microgravity combustion tests into a reading: the buckets, the distance rule, the conclusive share, the thresholds and the Wilson interval, with worked examples.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<style>
+  /* Tokens from web/index.html. Light section for reading; navy cards wherever the verdict colours appear, as on the main page. */
+  :root {
+    --grey: #eef1f5; --paper: #ffffff; --ink: #0b1b33; --ink-2: #47556b; --line: #d5dbe5;
+    --char: #0b1f3f; --card: #132b52; --card-2: #1b3766; --on-dark: #f2f5fa; --on-dark-2: #b6c3d8; --line-dark: #2c4878;
+    --accent: #d42a1c; --accent-ink: #ffffff; --sky: #9cc4ff;
+    --pass: #45d2c3; --caution: #f6b445; --fail: #ff8a7a; --none: #a9b4c6;
+    --r-out: #3987e5; --r-disrupt: #199e70; --r-burn: #d95926; --r-unknown: #8a97ad;
+    --spring: linear(0, 0.012 1%, 0.05 2.2%, 0.39 7.2%, 0.73 12.8%, 0.96 18%, 1.07 23%, 1.11 28%, 1.07 34%, 1.01 44%, 0.99 56%, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grey); color: var(--ink); font: 17px/1.6 "Space Grotesk", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 8px; }
+  .dark :focus-visible { outline-color: var(--sky); }
+  .shell { max-width: 1060px; margin: 0 auto; padding: 0 16px; }
+  .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; background: var(--paper); border-radius: 0 0 20px 20px; padding: 12px 16px 12px 22px; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.02em; margin-right: auto; text-decoration: none; display: inline-flex; align-items: center; min-height: 40px; }
+  .topbar a:not(.brand):not(.pill) { display: inline-flex; align-items: center; min-height: 40px; font-weight: 600; font-size: 15px; }
+  .pill { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 700; font-size: 15px; transition: scale .45s var(--spring); }
+  .pill:hover { scale: 1.04; } .pill:active { scale: .97; }
+
+  header.hero { padding: 54px 0 20px; }
+  .hero h1 { max-width: 20ch; font-size: clamp(36px, 6vw, 68px); font-weight: 700; line-height: 1; letter-spacing: -.045em; }
+  .hero p { max-width: 62ch; margin-top: 18px; font-size: 19px; color: var(--ink-2); }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; }
+  .toc a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border-radius: 999px; background: var(--paper); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .toc b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px; }
+
+  section.step { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 18px; padding: 44px 0; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+  .num { font-size: 44px; font-weight: 300; line-height: 1; letter-spacing: -.04em; color: var(--ink-2); }
+  .step h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 600; line-height: 1.15; letter-spacing: -.025em; }
+  .step p { max-width: 68ch; margin-top: 12px; }
+  .step .quiet, .quiet { color: var(--ink-2); }
+  .small { font-size: 14px; }
+  code { font-size: .9em; padding: 1px 6px; border-radius: 6px; background: var(--paper); }
+
+  /* formulas: plain HTML, no math library */
+  .eq { margin-top: 18px; padding: 20px 24px; border-radius: 18px; background: var(--paper); font-size: 20px; overflow-x: auto; }
+  .eq .row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; min-width: max-content; }
+  .eq .row + .row { margin-top: 14px; }
+  .eq var { font-style: italic; font-family: "Space Grotesk", serif; }
+  .eq .lbl { min-width: 7.5em; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .frac { display: inline-grid; text-align: center; vertical-align: middle; line-height: 1.25; }
+  .frac > span:first-child { padding: 0 4px 2px; border-bottom: 1.5px solid currentColor; }
+  .frac > span:last-child { padding: 2px 4px 0; }
+  .sqrt { display: inline-flex; align-items: stretch; }
+  .sqrt::before { content: '√'; font-size: 1.3em; line-height: 1; margin-right: 1px; }
+  .sqrt > span { border-top: 1.5px solid currentColor; padding: 2px 3px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .floor::before { content: '⌊'; } .floor::after { content: '⌋'; }
+  .eq .where { margin-top: 14px; font-size: 14px; color: var(--ink-2); max-width: 70ch; }
+
+  table { border-collapse: collapse; font-size: 15px; }
+  .wrap { position: relative; overflow-x: auto; margin-top: 18px; border-radius: 16px; background: var(--paper); }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  td.num { text-align: right; }
+  .sw { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; }
+  .sw.out { border-radius: 50%; background: var(--r-out); } .sw.burn { background: var(--r-burn); }
+  .sw.disrupt { background: var(--r-disrupt); rotate: 45deg; scale: .85; } .sw.unknown { width: 8px; height: 8px; border-radius: 50%; background: var(--r-unknown); }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--grey); }
+
+  figure { margin: 20px 0 0; }
+  figure svg { display: block; max-width: 100%; height: auto; }
+  figure svg text { font-family: inherit; }
+  figcaption { margin-top: 10px; max-width: 68ch; font-size: 14px; color: var(--ink-2); }
+  .dark { background: var(--char); color: var(--on-dark); border-radius: 22px; padding: 22px 24px; }
+  .dark .quiet, .dark figcaption { color: var(--on-dark-2); }
+
+  /* verdict words: word + shape, never colour alone */
+  .v { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--c); }
+  .v::before { content: ''; width: .9em; height: .9em; background: var(--c); }
+  .v.ok { --c: var(--pass); } .v.ok::before { border-radius: 50%; }
+  .v.warn { --c: var(--caution); } .v.warn::before { clip-path: polygon(50% 4%, 100% 96%, 0 96%); }
+  .v.bad { --c: var(--fail); } .v.bad::before { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+  .v.none { --c: var(--none); } .v.none::before { height: .25em; border-radius: 2px; }
+
+  /* the interval explorer */
+  .lab { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin-top: 4px; }
+  .lab label { display: block; font-size: 14px; font-weight: 600; color: var(--on-dark-2); }
+  .lab output { font-size: 28px; font-weight: 300; color: var(--on-dark); display: block; line-height: 1.2; }
+  input[type=range] { width: 100%; min-height: 40px; accent-color: var(--sky); }
+  .readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin-top: 16px; font-size: 16px; }
+  .readout b { font-weight: 600; }
+  #ivSvg { margin-top: 14px; }
+  .mark { transition: transform .45s var(--spring); }
+  @media (prefers-reduced-motion: reduce) { .mark, .pill { transition: none; } }
+
+  .callout { margin-top: 18px; padding: 16px 20px; border-left: 4px solid var(--ink); background: var(--paper); border-radius: 0 14px 14px 0; max-width: 72ch; }
+  footer { padding: 30px 0 60px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 14px; }
+  .status { margin-top: 10px; font-size: 14px; color: var(--ink-2); }
+
+  @media (max-width: 640px) {
+    section.step { grid-template-columns: minmax(0, 1fr); }
+    .num { font-size: 30px; margin-bottom: 6px; }
+    .eq { font-size: 17px; padding: 16px; }
+    .lab { grid-template-columns: minmax(0, 1fr); }
+    .dark { padding: 18px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="index.html">Project Phenox</a>
+    <a href="viz.html">Visualize the data</a>
+    <a class="pill" href="index.html#scenario-h">Rank materials</a>
+  </header>
+
+  <header class="hero">
+    <h1>How a reading is made</h1>
+    <p>Every reading on Phenox comes from NASA tests that were lit on purpose, so the record tells us how each flame ended, not whether a material can burn. This page follows one question from the raw files to the word on the card, with every rule and formula the code uses.</p>
+    <p class="status" id="status" role="status">Loading the test table for the worked examples…</p>
+    <ol class="toc">
+      <li><a href="#s1"><b>1</b>From files to rows</a></li>
+      <li><a href="#s2"><b>2</b>How a flame ended</a></li>
+      <li><a href="#s3"><b>3</b>Buckets</a></li>
+      <li><a href="#s4"><b>4</b>The nearest tests</a></li>
+      <li><a href="#s5"><b>5</b>The share</a></li>
+      <li><a href="#s6"><b>6</b>The reading</a></li>
+      <li><a href="#s7"><b>7</b>How sure</a></li>
+      <li><a href="#s8"><b>8</b>Down to the depress floor</a></li>
+    </ol>
+  </header>
+
+  <main>
+    <section class="step" id="s1" aria-labelledby="s1-h">
+      <span class="num" aria-hidden="true">1</span>
+      <div>
+        <h2 id="s1-h">From NASA's files to rows</h2>
+        <p>NASA's Physical Sciences Informatics repository publishes each combustion investigation as spreadsheets, one row per test, with column names that differ from one investigation to the next. Phenox reads them all, finds the columns that hold oxygen, pressure, fuel, burn rate and outcome, and stores every test in one table in Tiger Data, a Postgres database. The original row is kept beside the cleaned values.</p>
+        <p>Oxygen becomes a fraction from 0 to 1 and pressure becomes atmospheres. Many investigations recorded oxygen or pressure once for the whole run rather than per test, so only some rows end up with both.</p>
+        <div class="wrap"><table aria-label="How much of the record each step keeps"><tbody id="funnel"><tr><td class="quiet">Loading…</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="step" id="s2" aria-labelledby="s2-h">
+      <span class="num" aria-hidden="true">2</span>
+      <div>
+        <h2 id="s2-h">How each flame ended</h2>
+        <p>Every test's outcome is read from the words NASA wrote down and put in one of four classes. Only the first two say how the flame ended, so only they are <b>conclusive</b>. A droplet that broke apart ended the test for a different reason, and a blank tells us nothing.</p>
+        <div class="wrap"><table>
+          <thead><tr><th>Recorded as</th><th>Class</th><th>Conclusive</th><th class="num">Tests with oxygen</th></tr></thead>
+          <tbody id="classes"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="step" id="s3" aria-labelledby="s3-h">
+      <span class="num" aria-hidden="true">3</span>
+      <div>
+        <h2 id="s3-h">Buckets: grouping tests that ran at nearly the same conditions</h2>
+        <p>Tests rarely repeat an exact oxygen level and pressure, so the database groups them into buckets 5 percentage points of oxygen wide and 0.1 atm of pressure tall, up to 2 atm. It is Postgres's <code>width_bucket</code>:</p>
+        <div class="eq" role="math" aria-label="oxygen bucket equals floor of oxygen over 0.05, plus 1; pressure bucket equals floor of pressure over 0.1, plus 1">
+          <div class="row"><span class="lbl">Oxygen bucket</span><var>b</var><sub>O₂</sub> = <span class="floor"><span class="frac"><span><var>x</var></span><span>0.05</span></span></span> + 1</div>
+          <div class="row"><span class="lbl">Pressure bucket</span><var>b</var><sub>p</sub> = <span class="floor"><span class="frac"><span><var>p</var></span><span>0.1</span></span></span> + 1</div>
+          <p class="where"><var>x</var> is the oxygen fraction (0.21 for 21%), <var>p</var> the pressure in atm, and ⌊ ⌋ rounds down. Bucket <var>b</var> covers oxygen from (<var>b</var> − 1) × 5% up to <var>b</var> × 5%. Each bucket's centre is (<var>b</var> − ½) times its width.</p>
+        </div>
+        <figure>
+          <svg id="bucketSvg" viewBox="0 0 620 330" role="img" aria-label="A grid of buckets with a test at 21% oxygen and 1.0 atm falling into the bucket from 20 to 25% oxygen and 1.0 to 1.1 atm"></svg>
+          <figcaption>A test at 21% oxygen and 1.0 atm lands in oxygen bucket 5 (20–25%) and pressure bucket 11 (1.0–1.1 atm). Every test in that rectangle is counted together. A test exactly on a lower edge, like this one at 1.0 atm, belongs to the bucket above it: the lower edge is included and the upper edge is not.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="step" id="s4" aria-labelledby="s4-h">
+      <span class="num" aria-hidden="true">4</span>
+      <div>
+        <h2 id="s4-h">Finding the nearest tests</h2>
+        <p>For your atmosphere and a material, the worker looks at every bucket where that material was tested and picks the one whose centre is closest. Distance is counted in bucket widths, so 5 points of oxygen and 0.1 atm weigh the same:</p>
+        <div class="eq" role="math" aria-label="distance equals the square root of the sum of the squared oxygen gap over 0.05 and the squared pressure gap over 0.1">
+          <div class="row"><var>d</var> = <span class="sqrt"><span>( <span class="frac"><span><var>x</var> − <var>c</var><sub>x</sub></span><span>0.05</span></span> )² + ( <span class="frac"><span><var>p</var> − <var>c</var><sub>p</sub></span><span>0.1</span></span> )²</span></span></div>
+          <p class="where"><var>c</var><sub>x</sub> and <var>c</var><sub>p</sub> are the bucket's centre. Ties go to the bucket with more tests.</p>
+        </div>
+        <p>The worker then says how the atmosphere relates to what was tested:</p>
+        <div class="wrap"><table>
+          <thead><tr><th>Relation</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag">Exact bucket</span></td><td>Your atmosphere falls inside the nearest bucket.</td></tr>
+            <tr><td><span class="tag">Interpolation</span></td><td>Not in a tested bucket, but inside the lowest-to-highest oxygen and pressure ever tested for this material.</td></tr>
+            <tr><td><span class="tag">Extrapolation</span></td><td>Outside that range: beyond anything tested.</td></tr>
+          </tbody>
+        </table></div>
+        <figure class="dark">
+          <svg id="distSvg" viewBox="0 0 620 304" role="img" aria-label="Distance rule: buckets inside the dashed circle of two bucket widths can be read; further than that is No data"></svg>
+          <figcaption><span id="distCap"></span>Phenox reads across at most <b>2 bucket widths</b>, the dashed circle. A nearest bucket further away than that gives <span class="v none">No data</span>, however many tests it holds.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="step" id="s5" aria-labelledby="s5-h">
+      <span class="num" aria-hidden="true">5</span>
+      <div>
+        <h2 id="s5-h">The share that went out</h2>
+        <p>Inside the nearest bucket, count the conclusive tests. With <var>k</var> flames that went out and <var>m</var> that kept burning:</p>
+        <div class="eq" role="math" aria-label="n equals k plus m; share equals k over n">
+          <div class="row"><span class="lbl">Conclusive tests</span><var>n</var> = <var>k</var> + <var>m</var></div>
+          <div class="row"><span class="lbl">Share that went out</span><var>ŝ</var> = <span class="frac"><span><var>k</var></span><span><var>n</var></span></span></div>
+          <p class="where">Broken-apart droplets and unrecorded results are not in <var>n</var>. They are still shown on the card, so you can see how much was left out.</p>
+        </div>
+        <div class="callout" id="example"><b>Worked example.</b> <span id="exText">Loading…</span></div>
+      </div>
+    </section>
+
+    <section class="step" id="s6" aria-labelledby="s6-h">
+      <span class="num" aria-hidden="true">6</span>
+      <div>
+        <h2 id="s6-h">From share to reading</h2>
+        <p>The share is split into thirds. The cut points are Phenox's choice, documented here, not a NASA standard.</p>
+        <div class="eq" role="math" aria-label="Goes out if share is at least two thirds; Mixed if at least one third; Keeps burning otherwise">
+          <div class="row"><span class="lbl">Goes out</span><var>ŝ</var> ≥ <span class="frac"><span>2</span><span>3</span></span></div>
+          <div class="row"><span class="lbl">Mixed</span><span class="frac"><span>1</span><span>3</span></span> ≤ <var>ŝ</var> &lt; <span class="frac"><span>2</span><span>3</span></span></div>
+          <div class="row"><span class="lbl">Keeps burning</span><var>ŝ</var> &lt; <span class="frac"><span>1</span><span>3</span></span></div>
+          <div class="row"><span class="lbl">No data</span><var>d</var> &gt; 2, or <var>n</var> = 0, or nothing tested</div>
+        </div>
+        <figure class="dark">
+          <svg viewBox="0 0 620 120" role="img" aria-label="A line from 0 to 100 percent split into three zones: below a third Keeps burning, a third to two thirds Mixed, two thirds and above Goes out">
+            <rect x="20" y="40" width="193" height="22" rx="4" fill="var(--fail)"/><rect x="215" y="40" width="191" height="22" rx="0" fill="var(--caution)"/><rect x="408" y="40" width="192" height="22" rx="4" fill="var(--pass)"/>
+            <g font-size="14" font-weight="700"><text x="116" y="30" text-anchor="middle" fill="var(--fail)">Keeps burning</text><text x="311" y="30" text-anchor="middle" fill="var(--caution)">Mixed</text><text x="504" y="30" text-anchor="middle" fill="var(--pass)">Goes out</text></g>
+            <polygon points="116,72 124,86 108,86" fill="none"/>
+            <g fill="var(--char)"><polygon points="100,46 108,46 113,51 113,57 108,62 100,62 95,57 95,51" transform="translate(16 -3)"/><polygon points="311,45 319,59 303,59"/><circle cx="504" cy="51" r="7"/></g>
+            <g font-size="13" fill="var(--on-dark-2)"><text x="20" y="84" text-anchor="middle">0%</text><text x="214" y="84" text-anchor="middle">33%</text><text x="407" y="84" text-anchor="middle">67%</text><text x="600" y="84" text-anchor="middle">100%</text></g>
+            <text x="310" y="110" text-anchor="middle" font-size="13" fill="var(--on-dark-2)">share of conclusive tests that went out</text>
+          </svg>
+          <figcaption>Each reading is always a word and a shape: <span class="v ok">Goes out</span> <span class="v warn">Mixed</span> <span class="v bad">Keeps burning</span> <span class="v none">No data</span>.</figcaption>
+        </figure>
+        <p>Two rules then lower <span class="v ok" style="--c:var(--ink)">Goes out</span> to Mixed, because a good record nearby says little about conditions nobody tried:</p>
+        <div class="wrap"><table><tbody>
+          <tr><td>The relation is <span class="tag">Extrapolation</span></td><td>your atmosphere is outside every oxygen and pressure tested for the material</td></tr>
+          <tr><td><var>x</var> &gt; highest oxygen tested</td><td>your atmosphere is richer in oxygen than any test of it</td></tr>
+        </tbody></table></div>
+        <div class="callout">Goes out describes a flame that was already lit and then went out. It is never a clearance to fly a material. NASA qualifies materials with its own standard, NASA-STD-6001.</div>
+      </div>
+    </section>
+
+    <section class="step" id="s7" aria-labelledby="s7-h">
+      <span class="num" aria-hidden="true">7</span>
+      <div>
+        <h2 id="s7-h">How sure: the 95% Wilson interval</h2>
+        <p>Two out of two is 100%, and so is fifty out of fifty, but they do not deserve the same trust. Beside every share Phenox shows a range that the true share would fall inside 95 times in 100 if the tests were run again. It uses the Wilson score interval:</p>
+        <div class="eq" role="math" aria-label="centre equals share plus z squared over 2n, all over 1 plus z squared over n; half width equals z over 1 plus z squared over n, times the square root of share times one minus share over n plus z squared over 4 n squared; z equals 1.96">
+          <div class="row"><span class="lbl">Centre</span><var>c</var> = <span class="frac"><span><var>ŝ</var> + <span class="frac"><span><var>z</var>²</span><span>2<var>n</var></span></span></span><span>1 + <span class="frac"><span><var>z</var>²</span><span><var>n</var></span></span></span></span></div>
+          <div class="row"><span class="lbl">Half width</span><var>h</var> = <span class="frac"><span><var>z</var></span><span>1 + <span class="frac"><span><var>z</var>²</span><span><var>n</var></span></span></span></span> <span class="sqrt"><span><span class="frac"><span><var>ŝ</var>(1 − <var>ŝ</var>)</span><span><var>n</var></span></span> + <span class="frac"><span><var>z</var>²</span><span>4<var>n</var>²</span></span></span></span></div>
+          <div class="row"><span class="lbl">Range</span>[ <var>c</var> − <var>h</var>, <var>c</var> + <var>h</var> ], with <var>z</var> = 1.96</div>
+          <p class="where">The simpler textbook range, <var>ŝ</var> ± <var>z</var>√(<var>ŝ</var>(1 − <var>ŝ</var>)/<var>n</var>), collapses to zero width at 0% or 100% and can spill below 0 or above 100% with few tests. Wilson stays inside 0 to 100% and stays honest at the ends.</p>
+        </div>
+        <div class="dark" style="margin-top:20px">
+          <h3 style="font-size:18px;font-weight:600">Try it</h3>
+          <p class="quiet small" style="margin-top:4px">Set how many conclusive tests there were and how many went out. The reading and both ranges update.</p>
+          <div class="lab" style="margin-top:14px">
+            <div><label for="ivN">Conclusive tests, <var>n</var></label><output id="ivNo" for="ivN">15</output><input id="ivN" type="range" min="1" max="60" value="15"></div>
+            <div><label for="ivK">Went out, <var>k</var></label><output id="ivKo" for="ivK">9</output><input id="ivK" type="range" min="0" max="15" value="9"></div>
+          </div>
+          <svg id="ivSvg" viewBox="0 0 620 130" role="img" aria-labelledby="ivRead"></svg>
+          <p class="readout" id="ivRead" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="s8" aria-labelledby="s8-h">
+      <span class="num" aria-hidden="true">8</span>
+      <div>
+        <h2 id="s8-h">Down to the depress floor</h2>
+        <p>A cabin can lose pressure, so each material is read at four pressures from the nominal one down to the floor you set. The form takes pounds per square inch; the worker is asked in atmospheres.</p>
+        <div class="eq" role="math" aria-label="pressure at step i equals nominal minus nominal minus floor times i over 3, for i from 0 to 3; atmospheres equal psia over 14.696; oxygen fraction equals percent over 100">
+          <div class="row"><span class="lbl">Sweep</span><var>p</var><sub><var>i</var></sub> = <var>p</var><sub>nom</sub> − (<var>p</var><sub>nom</sub> − <var>p</var><sub>floor</sub>) · <span class="frac"><span><var>i</var></span><span>3</span></span>,&nbsp; <var>i</var> = 0, 1, 2, 3</div>
+          <div class="row"><span class="lbl">Units</span>atm = <span class="frac"><span>psia</span><span>14.696</span></span>,&nbsp;&nbsp; <var>x</var> = <span class="frac"><span>oxygen %</span><span>100</span></span></div>
+        </div>
+        <p class="quiet" id="sweepEx"></p>
+        <p>Materials are ranked by their reading at nominal pressure, then by their worst reading down the sweep, then by how many conclusive tests back them.</p>
+        <div class="callout">What this cannot tell you: every test here was in microgravity, and NASA's repository has no Moon or Mars gravity tests yet. Material names are matched from the start of a word in NASA's fuel names: <code>pmma</code> finds “2 cm pmma sphere” and <code>dodecane</code> finds “iso-dodecane”, but <code>ethanol</code> does not find “Methanol”. The card always shows the fuel name it matched.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Data: NASA Physical Sciences Informatics, loaded into Tiger Data. The rule on this page is the <code>assess()</code> function in the ranking page; if one changes, the other must change with it. Phenox's reading of historical test outcomes, not a NASA flammability certification.</footer>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const int = (n) => Number(n).toLocaleString('en-US');
+const pc = (f) => Math.round(f * 100) + '%';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- the same rule as index.html (classify, buckets, wilson, thresholds) ----------
+function classify(o) {
+  const s = String(o ?? '').trim().toLowerCase();
+  if (!s || s === '-') return 'unknown';
+  if (s.startsWith('disrupt')) return 'disrupt';
+  if (s === 'se' || s.includes('extinct') || s.includes('self-ext') || s.includes('self ext')) return 'out';
+  if (s === 'ft' || s.includes('complet') || s.includes('flow term')) return 'burn';
+  return 'unknown';
+}
+const o2Bucket = (x) => Math.floor(x * 20) + 1, pBucket = (p) => Math.floor(p * 10) + 1;
+function wilson(k, n) {
+  const z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+const reading = (s) => (s >= 2 / 3 ? ['ok', 'Goes out'] : s >= 1 / 3 ? ['warn', 'Mixed'] : ['bad', 'Keeps burning']);
+
+// ---------- figure 3: buckets ----------
+{
+  const L = 64, T = 30, cw = 104, ch = 50, o0 = 3, p1 = 12;   // oxygen buckets 3..7 (10–35%), pressure buckets 8..12 (0.7–1.2 atm)
+  const X = (x) => L + (x * 20 - (o0 - 1)) * cw, Y = (p) => T + (p1 / 10 - p) * 10 * ch;   // oxygen fraction, atm -> px
+  let s = '';
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+    const hit = o0 + i === 5 && p1 - j === 11;
+    s += `<rect x="${L + i * cw + 2}" y="${T + j * ch + 2}" width="${cw - 4}" height="${ch - 4}" rx="6" fill="${hit ? 'var(--ink)' : 'var(--paper)'}" stroke="var(--line)"/>`;
+    if (hit) s += `<text x="${L + i * cw + 12}" y="${T + j * ch + 21}" font-size="12" font-weight="700" fill="#fff">bucket 5, 11</text><text x="${L + i * cw + 12}" y="${T + j * ch + 37}" font-size="11" fill="#d3dbe8">20–25%, 1.0–1.1 atm</text>`;
+  }
+  for (let i = 0; i <= 5; i++) s += `<text x="${L + i * cw}" y="${T + 5 * ch + 20}" text-anchor="middle" font-size="13" fill="var(--ink-2)">${(o0 - 1 + i) * 5}%</text>`;
+  for (let j = 0; j <= 5; j++) s += `<text x="${L - 10}" y="${T + j * ch + 5}" text-anchor="end" font-size="13" fill="var(--ink-2)">${((p1 - j) / 10).toFixed(1)}</text>`;
+  const px = X(0.21), py = Y(1.0);   // the test sits exactly on the bucket's lower edge, which belongs to this bucket
+  s += `<line x1="${px}" y1="${py}" x2="${px + 18}" y2="${py + 22}" stroke="var(--ink)" stroke-width="1.5"/><text x="${px + 22}" y="${py + 30}" font-size="13" font-weight="600" fill="var(--ink)">a test at 21% oxygen, 1.0 atm</text>`;
+  s += `<circle cx="${px}" cy="${py}" r="7" fill="var(--accent)" stroke="#fff" stroke-width="2"/>`;
+  s += `<text x="0" y="16" font-size="13" font-weight="600" fill="var(--ink)">Pressure, atm</text><text x="${L + 2.5 * cw}" y="${T + 5 * ch + 44}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">Oxygen</text>`;
+  $('bucketSvg').innerHTML = s;
+}
+
+// ---------- figure 4: the distance rule, drawn in bucket widths so the circle is round ----------
+{
+  const L = 60, T = 20, u = 56, cols = 9, rows = 5;   // one bucket width = u px on both axes
+  const ix = 4.2, iy = 2.3;                            // your atmosphere, in bucket units from the top-left
+  const tested = [[1, 1, 'ok'], [2, 1, 'ok'], [3, 3, 'warn'], [6, 3, 'bad'], [7, 0, 'ok'], [8, 4, 'none']];
+  let s = '';
+  for (let i = 0; i <= cols; i++) s += `<line x1="${L + i * u}" x2="${L + i * u}" y1="${T}" y2="${T + rows * u}" stroke="var(--line-dark)"/>`;
+  for (let j = 0; j <= rows; j++) s += `<line x1="${L}" x2="${L + cols * u}" y1="${T + j * u}" y2="${T + j * u}" stroke="var(--line-dark)"/>`;
+  const R = 2 * u, cx = L + ix * u, cy = T + iy * u;
+  tested.forEach(([i, j]) => {
+    const bx = L + (i + .5) * u, by = T + (j + .5) * u, d = Math.hypot(bx - cx, by - cy) / u, inside = d <= 2;
+    s += `<rect x="${L + i * u + 3}" y="${T + j * u + 3}" width="${u - 6}" height="${u - 6}" rx="6" fill="${inside ? 'var(--card-2)' : 'none'}" stroke="${inside ? 'var(--sky)' : 'var(--line-dark)'}" stroke-dasharray="${inside ? '' : '4 3'}"/>`
+      + `<text x="${bx}" y="${by + 4}" text-anchor="middle" font-size="12" fill="${inside ? 'var(--on-dark)' : 'var(--on-dark-2)'}">${d.toFixed(1)}</text>`;
+  });
+  const near = tested.map(([i, j]) => ({ i, j, d: Math.hypot(L + (i + .5) * u - cx, T + (j + .5) * u - cy) / u })).sort((a, b) => a.d - b.d)[0];
+  s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--sky)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  s += `<line x1="${cx}" y1="${cy}" x2="${L + (near.i + .5) * u}" y2="${T + (near.j + .5) * u}" stroke="var(--on-dark)" stroke-width="2"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="7" fill="var(--on-dark)"/><text x="${cx + 12}" y="${cy - 10}" font-size="13" font-weight="700" fill="var(--on-dark)">your atmosphere</text>`;
+  s += `<text x="${cx + R * .72}" y="${cy + R * .72 + 18}" font-size="13" fill="var(--sky)">2 bucket widths</text>`;
+  $('distSvg').innerHTML = s;
+  $('distCap').textContent = `Each outlined square is a bucket where the material was tested; its number is the distance from your atmosphere in bucket widths. The line goes to the nearest, ${near.d.toFixed(1)} away. `;
+}
+
+// ---------- figure 7: the interval explorer ----------
+function drawInterval() {
+  const n = Number($('ivN').value); $('ivK').max = n; const k = Math.min(Number($('ivK').value), n); $('ivK').value = k;
+  $('ivNo').textContent = n; $('ivKo').textContent = k;
+  const s = k / n, [lo, hi] = wilson(k, n), z = 1.96, wald = z * Math.sqrt(s * (1 - s) / n), [cls, word] = reading(s);
+  const X = (v) => 20 + v * 580;
+  const zone = (a, b, c) => `<rect x="${X(a)}" y="58" width="${X(b) - X(a)}" height="6" fill="var(--${c})" opacity=".5"/>`;
+  $('ivSvg').innerHTML = zone(0, 1 / 3, 'fail') + zone(1 / 3, 2 / 3, 'caution') + zone(2 / 3, 1, 'pass')
+    + `<text x="16" y="20" font-size="12" fill="var(--on-dark-2)">Wilson 95% range</text><rect x="${X(lo)}" y="26" width="${Math.max(2, X(hi) - X(lo))}" height="14" rx="7" fill="var(--sky)"/>`
+    + `<text x="16" y="96" font-size="12" fill="var(--on-dark-2)">Textbook range</text><rect x="${X(Math.max(-0.05, s - wald))}" y="102" width="${Math.max(2, X(Math.min(1.05, s + wald)) - X(Math.max(-0.05, s - wald)))}" height="10" rx="5" fill="none" stroke="var(--on-dark-2)" stroke-dasharray="4 3"/>`
+    + `<g class="mark" style="transform:translateX(${X(s)}px)"><line x1="0" x2="0" y1="20" y2="118" stroke="var(--on-dark)" stroke-width="2"/></g>`
+    + [0, 1 / 3, 2 / 3, 1].map((v) => `<text x="${X(v)}" y="80" text-anchor="middle" font-size="11" fill="var(--on-dark-2)">${Math.round(v * 100)}%</text>`).join('');
+  $('ivRead').innerHTML = `<span><b>${k} of ${n}</b> went out: ${pc(s)}</span><span>Wilson range <b>${pc(lo)} to ${pc(hi)}</b></span>`
+    + `<span>Textbook range ${pc(Math.max(0, s - wald))} to ${pc(Math.min(1, s + wald))}${s - wald < 0 || s + wald > 1 ? ' (spills past the ends)' : wald === 0 ? ' (zero width)' : ''}</span><span class="v ${cls}">${word}</span>`;
+}
+$('ivN').addEventListener('input', drawInterval); $('ivK').addEventListener('input', drawInterval);
+drawInterval();
+
+// sweep example: the ISS preset
+{
+  const nom = 14.7, floor = 10.2, pts = [0, 1, 2, 3].map((i) => nom - (nom - floor) * i / 3);
+  $('sweepEx').textContent = `Example, the ISS preset: ${nom} psia down to ${floor} psia gives ${pts.map((p) => `${p.toFixed(1)} psia (${(p / 14.696).toFixed(3)} atm)`).join(', ')}.`;
+}
+
+// ---------- the test table, for the counts and the worked example. Live /points, then the bundled snapshot ----------
+const params = new URLSearchParams(location.search);
+const DEPLOYED = 'https://fireline-verdict.fireline-team.workers.dev';
+const servedByWorker = /\.workers\.dev$/.test(location.hostname) || location.port === '8787';
+let saved = null; try { saved = localStorage.getItem('fireline.api'); } catch {}
+const API = (params.get('api') || saved || (servedByWorker ? location.origin : DEPLOYED)).trim().replace(/\/+$/, '');
+async function get(u) { const c = new AbortController(), t = setTimeout(() => c.abort(), 8000); try { const r = await fetch(u, { signal: c.signal }); if (!r.ok) throw 0; const d = await r.json(); if (!Array.isArray(d.rows)) throw 0; return d; } finally { clearTimeout(t); } }
+let data = null, source = '';
+try { data = await get(API + '/points'); source = 'the live worker'; } catch { try { data = await get('points.json'); source = 'the saved copy of the NASA test data'; } catch {} }
+
+if (!data) {
+  $('status').textContent = 'The test table could not be loaded, so the counts and the worked example are missing. The rules and formulas above are complete without them.';
+  $('funnel').innerHTML = '<tr><td class="quiet">Counts unavailable: the test table did not load.</td></tr>';
+  $('exText').textContent = 'Unavailable: the test table did not load.';
+  $('classes').innerHTML = '<tr><td>Extinction, SE</td><td><i class="sw out"></i>Went out on its own</td><td>Yes</td><td class="num">—</td></tr><tr><td>Completion, FT</td><td><i class="sw burn"></i>Kept burning</td><td>Yes</td><td class="num">—</td></tr><tr><td>Disruption</td><td><i class="sw disrupt"></i>Droplet broke apart</td><td>No</td><td class="num">—</td></tr><tr><td>blank, -</td><td><i class="sw unknown"></i>Not recorded</td><td>No</td><td class="num">—</td></tr>';
+} else {
+  const c = Object.fromEntries(data.columns.map((k, i) => [k, i]));
+  const rows = data.rows.map((r) => ({ fuel: String(r[c.fuel_material] ?? '').trim(), o2: r[c.o2_fraction] == null ? null : Number(r[c.o2_fraction]), p: r[c.pressure_atm] == null ? null : Number(r[c.pressure_atm]), outcome: r[c.outcome], cls: classify(r[c.outcome]) }))
+    .filter((t) => t.o2 != null && t.o2 >= 0 && t.o2 <= 1);
+  const total = Number(data.summary?.tests_total) || rows.length, both = rows.filter((t) => t.p != null), conc = rows.filter((t) => t.cls === 'out' || t.cls === 'burn');
+  $('status').textContent = `Counts below come from ${source}.`;
+  $('funnel').innerHTML = [['Tests in the database', total], ['Recorded an oxygen level', rows.length], ['Also recorded pressure', both.length], ['Say how the flame ended (conclusive)', conc.length]]
+    .map(([l, n]) => `<tr><td>${l}</td><td class="num"><b>${int(n)}</b></td><td class="num quiet">${pc(n / total)} of all</td></tr>`).join('');
+
+  // outcome classes, with the words actually recorded
+  const words = new Map(); rows.forEach((t) => { const w = String(t.outcome ?? '').trim() || '(blank)'; const e = words.get(t.cls) || new Map(); e.set(w, (e.get(w) || 0) + 1); words.set(t.cls, e); });
+  const NAME = { out: 'Went out on its own', burn: 'Kept burning', disrupt: 'Droplet broke apart', unknown: 'Not recorded' };
+  $('classes').innerHTML = ['out', 'burn', 'disrupt', 'unknown'].map((k) => {
+    const e = words.get(k) || new Map(), n = [...e.values()].reduce((a, b) => a + b, 0);
+    return `<tr><td>${[...e.keys()].sort((a, b) => e.get(b) - e.get(a)).map(esc).join(', ') || '—'}</td><td><i class="sw ${k}"></i>${NAME[k]}</td><td>${k === 'out' || k === 'burn' ? 'Yes' : 'No'}</td><td class="num">${int(n)}</td></tr>`;
+  }).join('');
+  $('classes').insertAdjacentHTML('afterend', '');
+
+  // worked example: heptane in ISS cabin air, 21% oxygen at 1 atm
+  const x = 0.21, p = 1.0, fuel = 'heptane', ob = o2Bucket(x), pb = pBucket(p);
+  const mine = both.filter((t) => new RegExp('(^|[^A-Za-z0-9_])' + fuel, 'i').test(t.fuel));
+  const inB = mine.filter((t) => o2Bucket(t.o2) === ob && pBucket(t.p) === pb);
+  const cnt = { out: 0, burn: 0, disrupt: 0, unknown: 0 }; inB.forEach((t) => cnt[t.cls]++);
+  const n = cnt.out + cnt.burn;
+  if (!inB.length || !n) $('exText').textContent = `Heptane at ISS cabin air (21% oxygen, 1 atm) has no conclusive tests in its bucket in this copy of the data.`;
+  else {
+    const s = cnt.out / n, [lo, hi] = wilson(cnt.out, n), [cls, word] = reading(s), cx = (ob - 0.5) * 0.05, cp = (pb - 0.5) * 0.1, d = Math.hypot((x - cx) / 0.05, (p - cp) / 0.1);
+    $('exText').innerHTML = `Heptane in ISS cabin air, 21% oxygen at 1 atm. That is oxygen bucket ${ob} (${(ob - 1) * 5}–${ob * 5}%) and pressure bucket ${pb} (${((pb - 1) / 10).toFixed(1)}–${(pb / 10).toFixed(1)} atm), an exact bucket, ${d.toFixed(2)} widths from its centre. It holds ${inB.length} tests: <i class="sw out"></i>${cnt.out} went out, <i class="sw burn"></i>${cnt.burn} kept burning, <i class="sw disrupt"></i>${cnt.disrupt} broke apart and ${cnt.unknown} had no result. So <var>n</var> = ${cnt.out} + ${cnt.burn} = ${n} and <var>ŝ</var> = ${cnt.out}/${n} = ${pc(s)}, with a Wilson range of ${pc(lo)} to ${pc(hi)}. That is <span class="v ${cls}" style="--c:var(--ink)">${word}</span>.`;
+    // start the explorer on the same numbers
+    $('ivN').value = n; $('ivK').max = n; $('ivK').value = cnt.out; drawInterval();
+  }
+}
+</script>
+</body>
+</html>

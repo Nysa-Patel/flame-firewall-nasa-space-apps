@@ -236,7 +236,8 @@ const FUELS = [...fuelCounts.entries()].sort((a, b) => b[1] - a[1]).map(([name])
 // ---------- state ----------
 let fuel = null, measure = 'share', selected = null;
 const want = (params.get('material') || '').trim().toLowerCase();
-const startFuel = FUELS.find((f) => want && f.toLowerCase().includes(want)) || FUELS[0];
+const wantRe = new RegExp('(^|[^A-Za-z0-9_])' + want.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');   // the worker's rule: from the start of a word
+const startFuel = FUELS.find((f) => want && f.toLowerCase() === want) || FUELS.find((f) => want && wantRe.test(f)) || FUELS[0];
 
 // ---------- scene: data units -> scene units ----------
 const W = 12, D = 8, H = 4.2, SLAB = 0.14;

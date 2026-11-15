@@ -584,7 +584,7 @@
 <div class="shell">
   <header class="topbar">
     <div class="brand">Project Phenox</div>
-    <nav aria-label="Sections"><a href="#scenario-h">Atmosphere</a><a href="viz.html">Visualize the data</a><a href="#inv-h">Investigations</a><a href="#import-h">Contribute data</a><a href="#chat-h">Mission Control</a></nav>
+    <nav aria-label="Sections"><a href="methods.html">How it works</a><a href="viz.html">Visualize the data</a><a href="#import-h">Contribute data</a></nav>
     <a class="pill-dark" href="#scenario-h">Rank materials</a>
   </header>
 
@@ -646,7 +646,7 @@
             <div class="conv" id="pminconv"></div>
           </div>
           <div class="wide">
-            <label for="materials">Candidate materials <span class="quiet">(comma separated; matched against NASA test fuel names)</span></label>
+            <label for="materials">Candidate materials <span class="quiet">(comma separated; matched to the start of a word in NASA's fuel names)</span></label>
             <textarea id="materials" rows="2"></textarea>
             <div class="picks hidden" id="fuelPicks" role="group" aria-label="Fuels with oxygen and pressure on record"></div>
           </div>
@@ -697,6 +697,7 @@
         <p>No data means one of three things: nothing was tested, the nearest bucket is more than two bucket widths away, or none of its tests has a conclusive result. Phenox does not read across a gap that wide.</p>
         <p>Beside each share is its 95% range (a Wilson interval): with few tests it is wide, and that width is the honest measure of how much the record supports the reading.</p>
         <p>This is Phenox's reading of historical test outcomes, not a NASA flammability certification, and Goes out never means safe to fly. All of the evidence is from microgravity; there are no partial-gravity tests in NASA's repository yet.</p>
+        <p><a href="methods.html">Every formula, with a worked example and an interval you can try</a></p>
         <details class="raw"><summary>Raw worker responses</summary><pre id="raw"></pre></details>
       </div>
       </div>
@@ -1040,7 +1041,9 @@
   }
 
   // ---------- tested envelope: one oxygen x pressure table per ranked fuel, with the mission drawn on it ----------
-  const matching = (term) => (POINTS ? POINTS.rows.filter((t) => t.fuel.toLowerCase().includes(term)) : []);   // same substring match as the worker
+  // same rule as the worker: the term must start a word, so "ethanol" does not match "Methanol"
+  const wordStart = (term) => new RegExp('(^|[^A-Za-z0-9_])' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const matching = (term) => { const re = wordStart(term); return POINTS ? POINTS.rows.filter((t) => re.test(t.fuel)) : []; };
   function renderMaps(rows, points, s) {
     const maps = rows.map((row) => {
       const tests = matching(row.material).filter((t) => t.p != null && t.o2 >= 0 && t.o2 <= 1);

@@ -27,7 +27,9 @@ const HEADERS = {
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body, null, 2), { status, headers: HEADERS });
 
 const clip = (s: unknown, n = 600) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + '…' : s ?? null);
-const likePattern = (m: string) => (m ? `%${m.replace(/[\\%_]/g, (c) => '\\' + c)}%` : '%');
+// Material names match from the start of a word (Postgres \m), so "ethanol" no longer finds "Methanol" but "pmma" still
+// finds "2 cm pmma sphere" and "dodecane" finds "iso-dodecane". An empty material matches everything. Used with ~* (case-insensitive).
+const wordPattern = (m: string) => (m ? '\\m' + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '');
 // Community CSV uploads get accession ids prefixed "USER-" (see import.ts). Everything
 // else came from the original NASA PSI scrape. Callers (the page, the chat prompt) use
 // this to flag unreviewed data instead of presenting it with NASA's authority.
@@ -36,7 +38,7 @@ const isVerified = (investigationId: string) => !investigationId.startsWith('USE
 export interface VerdictInput { o2: number; p: number; material: string }
 
 export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) {
-  const pattern = likePattern(material);
+  const pattern = wordPattern(material);
   const notes: string[] = [
     'Extinction/disruption counts follow the flammability_envelope view: outcomes containing "extinct" / "disrupt". Outcomes like "SE" or "FT" are not counted in either.',
     'avg_burn_rate is null when none of the tests in that bucket recorded a burn rate.',
@@ -53,7 +55,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
     LEFT JOIN investigations i ON i.accession = e.investigation_id
     WHERE e.o2_bucket BETWEEN 1 AND 20
       AND e.pressure_bucket BETWEEN 1 AND 20
-      AND COALESCE(e.fuel_material, '') ILIKE ${pattern}
+      AND COALESCE(e.fuel_material, '') ~* ${pattern}
     ORDER BY sqrt(power((${o2}::float8 - (e.o2_bucket - 0.5) * 0.05) / 0.05, 2)
                 + power((${p}::float8 - (e.pressure_bucket - 0.5) * 0.1) / 0.1, 2)) ASC,
              e.n_tests DESC
@@ -68,7 +70,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
              min(pressure_atm) AS p_min, max(pressure_atm) AS p_max, count(*)::int AS n
       FROM experimental_tests
       WHERE o2_fraction BETWEEN 0 AND 1 AND pressure_atm BETWEEN 0 AND 2
-        AND COALESCE(fuel_material, '') ILIKE ${pattern}`;
+        AND COALESCE(fuel_material, '') ~* ${pattern}`;
 
     const toNeighbor = (c: any) => {
       const o2c = round((c.o2_bucket - 0.5) * O2_W);
@@ -133,7 +135,7 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
              count(*)::int AS n_matching_tests
       FROM experimental_tests t
       JOIN investigations i ON i.accession = t.investigation_id
-      WHERE COALESCE(t.fuel_material, '') ILIKE ${pattern}
+      WHERE COALESCE(t.fuel_material, '') ~* ${pattern}
       GROUP BY i.accession, i.title, i.raw->>'doi', i.objective, i.approach, i.raw->>'description'
       ORDER BY n_matching_tests DESC
       LIMIT 5`;
@@ -142,8 +144,8 @@ export async function buildVerdict(sql: Sql, { o2, p, material }: VerdictInput) 
       investigations = await sql`
         SELECT accession, title, raw->>'doi' AS doi, objective, approach, raw->>'description' AS description, 0 AS n_matching_tests
         FROM investigations
-        WHERE title ILIKE ${pattern} OR objective ILIKE ${pattern} OR approach ILIKE ${pattern}
-           OR raw->>'description' ILIKE ${pattern}
+        WHERE title ~* ${pattern} OR objective ~* ${pattern} OR approach ~* ${pattern}
+           OR raw->>'description' ~* ${pattern}
         LIMIT 5`;
     }
   } else {
